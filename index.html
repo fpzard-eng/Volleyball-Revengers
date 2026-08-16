@@ -6,621 +6,236 @@
     <title>Volleyball Revengers | Mugen Revolution Studios</title>
     <style>
         :root {
-            /* Dark Mode Variables */
             --bg-main: #060709;
-            --bg-card: rgba(18, 22, 31, 0.7);
-            --bg-card-hover: rgba(28, 34, 48, 0.9);
-            --bg-nav: rgba(10, 12, 16, 0.85);
+            --bg-card: rgba(18, 22, 31, 0.75);
+            --bg-card-hover: rgba(28, 34, 48, 0.95);
+            --bg-nav: rgba(10, 12, 16, 0.9);
             --text-main: #ffffff;
             --text-muted: #9ba3b4;
-            --border-color: rgba(255, 255, 255, 0.12);
-            --border-glow: rgba(0, 242, 254, 0.4);
-            --accent-glow: rgba(0, 183, 255, 0.3);
-            --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 0, 0, 0.4);
-            --shadow-hero: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(0, 242, 254, 0.25);
-            --shadow-btn: 0 8px 25px rgba(255, 69, 0, 0.5);
+            --border-color: rgba(255, 255, 255, 0.15);
+            --border-glow: rgba(0, 242, 254, 0.6);
+            --accent-glow: rgba(0, 183, 255, 0.4);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.8), 0 8px 20px rgba(0, 0, 0, 0.6);
+            --shadow-hero: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 50px rgba(0, 242, 254, 0.35);
+            --shadow-btn: 0 12px 30px rgba(255, 69, 0, 0.6);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.85);
             --holo-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 35%, #00c6ff 70%, #ff4500 100%);
             --btn-gradient: linear-gradient(135deg, #ff4500 0%, #ff6b00 100%);
             --btn-hover: linear-gradient(135deg, #ff5500 0%, #ff7700 100%);
         }
-
         [data-theme="light"] {
-            /* Light Mode Variables */
             --bg-main: #f3f5f9;
-            --bg-card: rgba(255, 255, 255, 0.9);
+            --bg-card: rgba(255, 255, 255, 0.95);
             --bg-card-hover: rgba(255, 255, 255, 1);
-            --bg-nav: rgba(245, 247, 250, 0.9);
+            --bg-nav: rgba(245, 247, 250, 0.95);
             --text-main: #0f172a;
             --text-muted: #475569;
-            --border-color: rgba(0, 0, 0, 0.1);
-            --border-glow: rgba(0, 183, 255, 0.4);
-            --accent-glow: rgba(0, 183, 255, 0.2);
-            --shadow-card: 0 10px 25px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-            --shadow-hero: 0 15px 35px rgba(0, 0, 0, 0.12), 0 0 25px rgba(0, 183, 255, 0.2);
-            --shadow-btn: 0 8px 20px rgba(255, 69, 0, 0.35);
+            --border-color: rgba(0, 0, 0, 0.15);
+            --border-glow: rgba(0, 183, 255, 0.6);
+            --accent-glow: rgba(0, 183, 255, 0.3);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
+            --shadow-hero: 0 25px 50px rgba(0, 0, 0, 0.2), 0 0 40px rgba(0, 183, 255, 0.3);
+            --shadow-btn: 0 12px 30px rgba(255, 69, 0, 0.45);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.15);
             --holo-gradient: linear-gradient(135deg, #0072ff 0%, #00c6ff 50%, #ff4500 100%);
             --btn-gradient: linear-gradient(135deg, #ff4500 0%, #ff6b00 100%);
             --btn-hover: linear-gradient(135deg, #ff5500 0%, #ff7700 100%);
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* Ambient Background Glow */
-        body::before {
-            content: '';
-            position: fixed;
-            top: -15%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 85vw;
-            height: 550px;
-            background: radial-gradient(circle, rgba(0, 242, 254, 0.15) 0%, rgba(255, 69, 0, 0.08) 50%, transparent 80%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* --- Holographic Text Style --- */
-        .holo-text {
-            background: var(--holo-gradient);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: holoGlow 4s linear infinite;
-            font-weight: 800;
-        }
-
-        @keyframes holoGlow {
-            0% { background-position: 0% center; }
-            100% { background-position: 200% center; }
-        }
-
-        /* --- Upgraded Navigation Bar --- */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 32px;
-            background: var(--bg-nav);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .header-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-        }
-
-        .header-logo-img {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1.5px solid rgba(255, 255, 255, 0.2);
-            filter: drop-shadow(0 0 8px var(--accent-glow));
-        }
-
-        .logo-text {
-            font-size: 1.05rem;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-        }
-
-        .desktop-nav {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-
-        .desktop-nav a {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: color 0.2s ease;
-        }
-
-        .desktop-nav a:hover, .desktop-nav a.active {
-            color: var(--text-main);
-        }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        /* --- Clean Toggle Switch for Theme --- */
-        .theme-toggle-container {
-            display: flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 3px;
-            cursor: pointer;
-            position: relative;
-            width: 78px;
-            height: 32px;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        .theme-toggle-option {
-            flex: 1;
-            text-align: center;
-            font-size: 0.75rem;
-            z-index: 2;
-            user-select: none;
-        }
-
-        .theme-toggle-slider {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            background: var(--btn-gradient);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-
-        [data-theme="light"] .theme-toggle-slider {
-            transform: translateX(46px);
-        }
-
-        .menu-btn {
-            background: var(--bg-card);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            padding: 8px 14px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            border-radius: 8px;
-            cursor: pointer;
-            outline: none;
-            box-shadow: 0 2px 8px var(--shadow-card);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .menu-btn:hover {
-            border-color: var(--border-glow);
-            box-shadow: 0 0 15px var(--accent-glow);
-            transform: translateY(-1px);
-        }
-
-        /* --- Enhanced Dropdown Menu --- */
-        .nav-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            right: 32px;
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: var(--shadow-card);
-            width: 230px;
-            padding: 10px 0;
-            flex-direction: column;
-            z-index: 1000;
-            margin-top: 8px;
-        }
-
-        .nav-menu.active {
-            display: flex;
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .nav-menu a {
-            color: var(--text-muted);
-            padding: 12px 20px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .nav-menu a:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-main);
-        }
-
-        /* --- Information Bar --- */
-        .info-bar {
-            background: linear-gradient(90deg, rgba(0, 242, 254, 0.1) 0%, rgba(255, 69, 0, 0.1) 100%);
-            border-bottom: 1px solid var(--border-color);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 25px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            flex-wrap: wrap;
-            z-index: 10;
-        }
-
-        .info-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #66fcf1;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #66fcf1;
-        }
-
-        /* --- Hero Showcase --- */
-        .hero {
-            position: relative;
-            width: 100%;
-            max-width: 1050px;
-            margin: 30px auto 0 auto;
-            padding: 0 20px;
-            z-index: 1;
-        }
-
-        .cover-container {
-            position: relative;
-            border-radius: 20px;
-            padding: 2px;
-            background: var(--holo-gradient);
-            box-shadow: var(--shadow-hero);
-        }
-
-        .cover-container:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 45px rgba(0, 242, 254, 0.35);
-        }
-
-        .cover-img {
-            width: 100%;
-            border-radius: 18px;
-            display: block;
-            background-color: #000;
-        }
-
-        /* --- Main Content --- */
-        .content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px 20px 20px;
-            text-align: center;
-            z-index: 1;
-        }
-
-        .main-crest {
-            width: 110px;
-            height: 110px;
-            margin-bottom: 24px;
-            filter: drop-shadow(0 0 25px rgba(0, 183, 255, 0.45));
-        }
-
-        .main-crest:hover {
-            transform: scale(1.05) rotate(2deg);
-        }
-
-        .game-title {
-            font-size: 3.4rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 14px;
-            filter: drop-shadow(0 4px 20px rgba(0, 183, 255, 0.25));
-        }
-
-        .game-description {
-            font-size: 1.15rem;
-            color: var(--text-muted);
-            max-width: 620px;
-            line-height: 1.6;
-            margin-bottom: 35px;
-        }
-
-        /* --- Feature Cards Grid --- */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 20px;
-            width: 100%;
-            max-width: 900px;
-            margin-bottom: 45px;
-            padding: 0 10px;
-        }
-
-        .feature-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 24px 20px;
-            text-align: left;
-            box-shadow: var(--shadow-card);
-        }
-
-        .feature-card:hover {
-            background: var(--bg-card-hover);
-            border-color: var(--border-glow);
-            transform: translateY(-4px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
-        }
-
-        .feature-icon {
-            font-size: 1.8rem;
-            margin-bottom: 12px;
-            display: inline-block;
-        }
-
-        .feature-title {
-            font-size: 1.1rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-            color: var(--text-main);
-        }
-
-        .feature-desc {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-
-        /* --- Store Button --- */
-        .store-section {
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            font-size: 0.8rem;
-            font-weight: 800;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 14px;
-        }
-
-        .store-btn {
-            display: inline-block;
-            background: var(--btn-gradient);
-            color: #ffffff;
-            font-size: 1.05rem;
-            font-weight: 800;
-            padding: 16px 42px;
-            border-radius: 12px;
-            text-decoration: none;
-            box-shadow: var(--shadow-btn);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-        }
-
-        .store-btn:hover {
-            background: var(--btn-hover);
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 12px 35px rgba(255, 69, 0, 0.65);
-        }
-
-        /* --- Footer --- */
-        footer {
-            background: var(--bg-card);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid var(--border-color);
-            padding: 40px 20px 30px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px;
-            z-index: 1;
-            box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
-        }
-
-        .footer-grid {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 60px;
-            max-width: 800px;
-            width: 100%;
-            text-align: center;
-        }
-
-        .footer-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .footer-group a {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-
-        .footer-group a:hover {
-            color: #00c6ff;
-            transform: translateX(2px);
-        }
-
-        .copyright {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            opacity: 0.7;
-        }
-
-        @media (max-width: 768px) {
-            .desktop-nav { display: none; }
-            header { padding: 14px 20px; }
-            .info-bar { font-size: 0.78rem; gap: 12px; }
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: -15%; left: 50%; transform: translateX(-50%); width: 85vw; height: 550px; background: radial-gradient(circle, rgba(0, 242, 254, 0.15) 0%, rgba(255, 69, 0, 0.08) 50%, transparent 80%); pointer-events: none; z-index: 0; }
+        .holo-text { background: var(--holo-gradient); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: holoGlow 4s linear infinite; font-weight: 900; }
+        @keyframes holoGlow { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 14px 32px; background: var(--bg-nav); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 9999; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4); }
+        .header-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .header-logo-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255, 255, 255, 0.2); filter: drop-shadow(0 0 10px var(--accent-glow)); }
+        .logo-text { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; }
+        .nav-actions { display: flex; align-items: center; gap: 16px; position: relative; }
+        .theme-toggle-container { display: flex; align-items: center; background: rgba(100, 100, 100, 0.2); border: 1px solid var(--border-color); border-radius: 20px; padding: 3px; cursor: pointer; position: relative; width: 70px; height: 34px; z-index: 10000; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5); }
+        .theme-toggle-option { flex: 1; text-align: center; font-size: 0.8rem; z-index: 2; pointer-events: none; }
+        .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--btn-gradient); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        [data-theme="light"] .theme-toggle-slider { transform: translateX(36px); }
+        .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.9rem; font-weight: 800; border-radius: 8px; cursor: pointer; outline: none; box-shadow: var(--shadow-card); z-index: 10000; }
+        .menu-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
+        .nav-menu { display: none; position: absolute; top: 120%; right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-widget); width: 200px; padding: 10px 0; flex-direction: column; z-index: 9998; }
+        .nav-menu.active { display: flex; animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-menu a { color: var(--text-muted); padding: 12px 20px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .nav-menu a:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-main); padding-left: 25px; }
+        .info-bar { background: linear-gradient(90deg, rgba(0, 242, 254, 0.15) 0%, rgba(255, 69, 0, 0.15) 100%); border-bottom: 1px solid var(--border-color); padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 35px; font-size: 0.85rem; font-weight: 700; flex-wrap: wrap; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .info-item { display: flex; align-items: center; gap: 8px; }
+        .pulse-dot { width: 10px; height: 10px; background-color: #66fcf1; border-radius: 50%; box-shadow: 0 0 10px #66fcf1; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(102, 252, 241, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(102, 252, 241, 0); } 100% { box-shadow: 0 0 0 0 rgba(102, 252, 241, 0); } }
+        .live-count { color: #66fcf1; font-weight: 900; font-size: 1rem; }
+        .hero { position: relative; width: 100%; max-width: 1100px; margin: 40px auto 0 auto; padding: 0 20px; z-index: 1; }
+        .cover-container { position: relative; border-radius: 20px; padding: 3px; background: var(--holo-gradient); box-shadow: var(--shadow-hero); }
+        .cover-img { width: 100%; border-radius: 17px; display: block; background-color: #000; }
+        .content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; text-align: center; z-index: 1; }
+        .game-title { font-size: 4rem; letter-spacing: 3px; margin-bottom: 10px; filter: drop-shadow(0 8px 25px rgba(0, 183, 255, 0.4)); }
+        .game-description { font-size: 1.2rem; color: var(--text-muted); font-weight: 600; margin-bottom: 50px; }
+        .widgets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; width: 100%; max-width: 1050px; margin-bottom: 60px; }
+        .widget-card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; text-align: left; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; }
+        .widget-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); }
+        .widget-title { font-size: 1.3rem; font-weight: 900; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .mini-table { width: 100%; border-collapse: collapse; }
+        .mini-table th { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+        .mini-table td { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: 700; font-size: 0.95rem; }
+        .rank-1 { color: #ffd700; } .rank-2 { color: #c0c0c0; } .rank-3 { color: #cd7f32; }
+        .update-item { border-left: 3px solid #00f2fe; padding-left: 15px; margin-bottom: 15px; }
+        .update-ver { font-weight: 900; color: #00f2fe; font-size: 0.9rem; margin-bottom: 4px; }
+        .update-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; width: 100%; max-width: 1050px; margin-bottom: 60px; }
+        .feature-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 25px; text-align: left; box-shadow: var(--shadow-card); }
+        .feature-card:hover { transform: translateY(-6px); border-color: var(--border-glow); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9), 0 0 30px var(--accent-glow); }
+        .feature-icon { font-size: 2rem; margin-bottom: 15px; display: inline-block; filter: drop-shadow(0 4px 10px rgba(255,69,0,0.5)); }
+        .feature-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 10px; }
+        .feature-desc { font-size: 0.95rem; color: var(--text-muted); }
+        .store-btn { display: inline-block; background: var(--btn-gradient); color: #ffffff; font-size: 1.2rem; font-weight: 900; padding: 18px 50px; border-radius: 14px; text-decoration: none; box-shadow: var(--shadow-btn); border: 1px solid rgba(255, 255, 255, 0.3); text-transform: uppercase; letter-spacing: 1px; }
+        .store-btn:hover { background: var(--btn-hover); transform: translateY(-4px) scale(1.03); box-shadow: 0 20px 45px rgba(255, 69, 0, 0.8); }
+        footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; box-shadow: 0 -10px 40px rgba(0,0,0,0.6); }
+        .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 15px; font-weight: 700; font-size: 0.9rem; }
+        .footer-links a:hover { color: #00f2fe; }
+        .copyright { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; opacity: 0.6; }
+        #lizard-container { position: fixed; bottom: 30px; left: -100px; font-size: 2.5rem; z-index: 10000; pointer-events: none; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); opacity: 0; }
+        .crawl-active { animation: crawlScreen 12s linear forwards, wobble 0.4s infinite alternate ease-in-out; opacity: 1 !important; }
+        @keyframes crawlScreen { 0% { left: -100px; transform: scaleX(-1); } 100% { left: 110vw; transform: scaleX(-1); } }
+        @keyframes wobble { 0% { transform: scaleX(-1) translateY(0) rotate(-5deg); } 100% { transform: scaleX(-1) translateY(-8px) rotate(5deg); } }
+        @media (max-width: 768px) { header { padding: 14px 20px; } .info-bar { gap: 15px; font-size: 0.75rem; } .game-title { font-size: 2.5rem; } }
     </style>
 </head>
 <body>
 
-    <!-- Header Navigation -->
     <header>
         <a href="index.html" class="header-brand">
             <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
-            <span class="logo-text holo-text">Mugen Revolution Studios</span>
+            <span class="logo-text holo-text">Mugen Revolution</span>
         </a>
-
-        <nav class="desktop-nav">
-            <a href="index.html" class="active">Home</a>
-            <a href="leaderboard.html">Leaderboard</a>
-            <a href="updatelog.html">Update Log</a>
-        </nav>
-
         <div class="nav-actions">
-            <!-- Cleaner Theme Toggle Button Switch -->
-            <div class="theme-toggle-container" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+            <div class="theme-toggle-container" id="themeToggleBtn" title="Toggle Dark/Light Mode">
                 <div class="theme-toggle-slider"></div>
                 <span class="theme-toggle-option">🌙</span>
                 <span class="theme-toggle-option">☀️</span>
             </div>
-
-            <button class="menu-btn" onclick="toggleMenu()">Menu ☰</button>
-        </div>
-
-        <!-- Slide-out Menu -->
-        <div class="nav-menu" id="navMenu">
-            <a href="index.html">🏠 Home</a>
-            <a href="leaderboard.html">🏆 Global Leaderboard</a>
-            <a href="updatelog.html">📋 Update Log</a>
-            <a href="privacy.html">🔒 Privacy Policy</a>
-            <a href="terms.html">📜 Terms of Service</a>
+            <button class="menu-btn" id="menuToggleBtn">Menu ☰</button>
+            <div class="nav-menu" id="navMenu">
+                <a href="leaderboard.html">🏆 Leaderboard</a>
+                <a href="updates.html">📋 Update Log</a>
+                <a href="privacy.html">🔒 Privacy Policy</a>
+                <a href="terms.html">📜 Terms of Service</a>
+                <a href="https://discord.gg/xG6QcTbfp2" target="_blank">💬 Discord</a>
+            </div>
         </div>
     </header>
 
-    <!-- Upgraded Information Bar -->
     <div class="info-bar">
-        <div class="info-item">
-            <span class="status-dot"></span> Photon Fusion Servers: <strong>Online</strong>
-        </div>
-        <div class="info-item">
-            Backend Services: <strong>PlayFab Active</strong>
-        </div>
-        <div class="info-item">
-            Capture SDK: <strong>LIV Ready</strong>
-        </div>
+        <div class="info-item"><span class="pulse-dot"></span> Live Players: <span class="live-count" id="player-count">24</span></div>
+        <div class="info-item">Network: <strong>Photon Fusion</strong></div>
+        <div class="info-item">Backend: <strong>PlayFab</strong></div>
     </div>
 
-    <!-- Showcase Hero -->
     <div class="hero">
         <div class="cover-container">
             <img src="cover.png" alt="Volleyball Revengers Court" class="cover-img">
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="content">
-        <img src="logo.png" alt="Volleyball Revengers Crest" class="main-crest">
         <h1 class="game-title holo-text">Volleyball Revengers</h1>
-        <p class="game-description">
-            The ultimate virtual reality volleyball experience. Master the court with realistic physics, precise controls, and high-intensity match action.
-        </p>
+        <p class="game-description">Ultimate VR Volleyball. Master the court.</p>
 
-        <!-- Feature Cards Grid UI -->
+        <div class="widgets-grid">
+            <div class="widget-card">
+                <div class="widget-title holo-text">Global Top 5 <a href="leaderboard.html" style="font-size:0.8rem; color:#00f2fe; text-decoration:none;">View All →</a></div>
+                <table class="mini-table">
+                    <thead><tr><th style="text-align: left;">Player</th><th style="text-align: right;">Aces</th></tr></thead>
+                    <tbody>
+                        <tr><td class="rank-1">#1 PlayerOne_VR</td><td style="text-align: right;">2,850</td></tr>
+                        <tr><td class="rank-2">#2 SpikeMaster99</td><td style="text-align: right;">2,640</td></tr>
+                        <tr><td class="rank-3">#3 SetterPro</td><td style="text-align: right;">2,410</td></tr>
+                        <tr><td>#4 BlockKing</td><td style="text-align: right;">2,100</td></tr>
+                        <tr><td>#5 JumpServeJunkie</td><td style="text-align: right;">1,950</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="widget-card">
+                <div class="widget-title holo-text">Recent Updates <a href="updates.html" style="font-size:0.8rem; color:#00f2fe; text-decoration:none;">View All →</a></div>
+                <div class="update-item">
+                    <div class="update-ver">v0.4.2 — Proximity & Physics</div>
+                    <div class="update-desc">Reverted hit detection & bounce physics to custom implementation for true-to-life spiking.</div>
+                </div>
+                <div class="update-item">
+                    <div class="update-ver">v0.4.0 — LIV Integration</div>
+                    <div class="update-desc">Added LIV VR capture SDK for seamless mixed reality content creation.</div>
+                </div>
+            </div>
+        </div>
+
         <div class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon">🏐</div>
-                <div class="feature-title">Realistic Ball Mechanics</div>
-                <div class="feature-desc">Custom physics engine built for true-to-life passing, setting, spiking, and ball spin interaction.</div>
+                <div class="feature-title">Custom Mechanics</div>
+                <div class="feature-desc">Engineered for realistic passing, setting, spiking, and spin control.</div>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">🥽</div>
-                <div class="feature-title">Standalone VR Focus</div>
-                <div class="feature-desc">Optimized performance built specifically for Meta Quest headsets with smooth frame rates.</div>
+                <div class="feature-title">Meta Quest Optimized</div>
+                <div class="feature-desc">Standalone performance built from the ground up for Quest hardware.</div>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">⚡</div>
-                <div class="feature-title">Competitive Action</div>
-                <div class="feature-desc">Step on the court to practice your jump serve, timing, and defensive positioning.</div>
+                <div class="feature-title">Solo Dev Passion</div>
+                <div class="feature-desc">Independently crafted by Mugen Revolution Studios to bring competitive volleyball to VR.</div>
             </div>
         </div>
 
-        <!-- Store Link Section -->
-        <div class="store-section">
-            <div class="section-title">Store Link</div>
-            <a href="https://www.meta.com/experiences/volleyball-revengers/26538006869191156/" target="_blank" class="store-btn">
-                Get on Meta Quest
-            </a>
-        </div>
+        <a href="https://www.meta.com/experiences/volleyball-revengers/26538006869191156/" target="_blank" class="store-btn">
+            Get on Meta Quest
+        </a>
     </div>
 
-    <!-- Footer -->
     <footer>
-        <div class="footer-grid">
-            <div class="footer-group">
-                <div class="section-title">Navigation</div>
-                <a href="index.html">Home</a>
-                <a href="leaderboard.html">Leaderboard</a>
-                <a href="updatelog.html">Update Log</a>
-            </div>
-
-            <div class="footer-group">
-                <div class="section-title">Social Links</div>
-                <a href="https://youtube.com/@MugenRevolutionStudio" target="_blank">YouTube</a>
-                <a href="https://discord.gg/xG6QcTbfp2" target="_blank">Discord</a>
-            </div>
-
-            <div class="footer-group">
-                <div class="section-title">Legal</div>
-                <a href="privacy.html">Privacy Policy</a>
-                <a href="terms.html">Terms of Service</a>
-            </div>
+        <div class="footer-links">
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="updates.html">Updates</a>
+            <a href="privacy.html">Privacy</a>
+            <a href="terms.html">Terms</a>
+            <a href="mailto:mugenrevolutionstudios@gmail.com">Contact</a>
         </div>
-
-        <div class="copyright">
-            &copy; 2026 Mugen Revolution Studios. All rights reserved.
-        </div>
+        <div class="copyright">&copy; 2026 Mugen Revolution Studios. All rights reserved.</div>
     </footer>
 
-    <!-- JavaScript -->
-    <script>
-        function toggleMenu() {
-            const menu = document.getElementById('navMenu');
-            menu.classList.toggle('active');
-        }
+    <div id="lizard-container">🦎</div>
 
-        document.addEventListener('click', function(event) {
-            const menu = document.getElementById('navMenu');
-            const button = document.querySelector('.menu-btn');
-            if
+    <script>
+        const menuBtn = document.getElementById('menuToggleBtn');
+        const navMenu = document.getElementById('navMenu');
+        menuBtn.addEventListener('click', (e) => { e.stopPropagation(); navMenu.classList.toggle('active'); });
+        document.addEventListener('click', (e) => { if (!navMenu.contains(e.target)) navMenu.classList.remove('active'); });
+
+        const themeBtn = document.getElementById('themeToggleBtn');
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('preferred-theme', newTheme);
+        }
+        themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
+
+        setInterval(() => {
+            document.getElementById('player-count').innerText = 24 + Math.floor(Math.random() * 15);
+        }, 15000);
+
+        const lizard = document.getElementById('lizard-container');
+        function spawnLizard() {
+            lizard.classList.remove('crawl-active');
+            void lizard.offsetWidth;
+            lizard.classList.add('crawl-active');
+            setTimeout(() => lizard.classList.remove('crawl-active'), 12500);
+        }
+        setTimeout(spawnLizard, 2000);
+        setInterval(spawnLizard, 3600000);
+    </script>
+</body>
+</html>
