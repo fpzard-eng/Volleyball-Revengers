@@ -258,8 +258,17 @@
     <script>
         const menuBtn = document.getElementById('menuToggleBtn');
         const navMenu = document.getElementById('navMenu');
-        menuBtn.addEventListener('click', (e) => { e.stopPropagation(); navMenu.classList.toggle('active'); });
-        document.addEventListener('click', (e) => { if (!navMenu.contains(e.target)) navMenu.classList.remove('active'); });
+        
+        menuBtn.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            navMenu.classList.toggle('active'); 
+        });
+        
+        document.addEventListener('click', (e) => { 
+            if (!navMenu.contains(e.target) && !menuBtn.contains(e.target)) { 
+                navMenu.classList.remove('active'); 
+            } 
+        });
 
         const themeBtn = document.getElementById('themeToggleBtn');
         function toggleTheme() {
@@ -276,10 +285,10 @@
         let currentStatistic = "Kills"; // Default stat to load
 
         function initPlayFab() {
-            PlayFab.settings.titleId = 1E90D8;
+            PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
 
             const loginRequest = {
-                TitleId: 1E90D8,
+                TitleId: PLAYFAB_TITLE_ID,
                 CreateAccount: true,
                 CustomId: "WebsiteVisitor_" + Math.random().toString(36).substring(7)
             };
@@ -318,6 +327,32 @@
 
             // Fetch new stats
             fetchPlayFabLeaderboard(statName);
+        }
+
+        function fetchPlayFabLeaderboard(statisticName) {
+            document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading rankings...</td></tr>`;
+
+            const leaderboardRequest = {
+                StartPosition: 0,
+                MaxResultsCount: 10,
+                StatisticName: statisticName
+            };
+
+            PlayFabClientSDK.GetLeaderboard(leaderboardRequest, (lbResult, lbError) => {
+                if (lbError) {
+                    let errorMsg = "No entries found for this statistic yet.";
+                    if (statisticName === "AeroCoins_Stat") {
+                        errorMsg = "Aero-Coins leaderboard requires mirroring currency to a Statistic in PlayFab.";
+                    }
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">${errorMsg}</td></tr>`;
+                    return;
+                }
+                if (lbResult && lbResult.data && lbResult.data.Leaderboard) {
+                    renderLeaderboard(lbResult.data.Leaderboard);
+                } else {
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No leaderboard data available.</td></tr>`;
+                }
+            });
         }
 
         function renderLeaderboard(entries) {
