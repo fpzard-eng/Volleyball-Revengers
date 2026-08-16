@@ -175,51 +175,50 @@
         </div>
         <h1 class="game-title holo-text">Volleyball Revengers</h1>
         <p class="game-description">Premier VR Volleyball Experience.</p>
-
-        <div class="widgets-grid">
+        
+            <div class="widgets-grid">
             <!-- PlayFab Leaderboard Widget -->
-            <a href="leaderboard" class="widget-card" style="text-decoration: none; color: inherit; display: block; cursor: pointer;">
-    <div class="controls">
-        <div class="tab-buttons">
-            <button class="tab-btn active" onclick="event.preventDefault(); switchLeaderboard('Kills', this)">Most Kills</button>
-            <button class="tab-btn" onclick="event.preventDefault(); switchLeaderboard('PlayerElo', this)">Most Elo</button>
-            <button class="tab-btn" onclick="event.preventDefault(); switchLeaderboard('MVP', this)">Most MVPs</button>
-            <button class="tab-btn" onclick="event.preventDefault(); switchLeaderboard('Wins', this)">Most Wins</button>
-            <button class="tab-btn" onclick="event.preventDefault(); switchLeaderboard('Assists', this)">Most Assists</button>
-            <button class="tab-btn" onclick="event.preventDefault(); switchLeaderboard('Blocks', this)">Most Blocks</button>
-            <button class="tab-btn" onclick="event.preventDefault(); switchLeaderboard('AeroCoins_Stat', this)">Most Aero-Coins</button>
-        </div>
-        <span class="status-badge" id="sync-status">Live Sync Active</span>
-    </div>
-    <div class="table-responsive" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-        <table style="width: 100%; white-space: nowrap;">
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Player</th>
-                    <th id="stat-header">Kills</th>
-                </tr>
-            </thead>
-            <tbody id="leaderboard-body">
-                <tr>
-                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;">Connecting to PlayFab...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-            </a>
-            
+            <div class="widget-card">
+                <div class="controls">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchLeaderboard('Kills', this)">Most Kills</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('PlayerElo', this)">Most Elo</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('MVP', this)">Most MVPs</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Wins', this)">Most Wins</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Assists', this)">Most Assists</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Blocks', this)">Most Blocks</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('AeroCoins_Stat', this)">Most Aero-Coins</button>
+                    </div>
+                    <span class="status-badge" id="sync-status">Live Sync Active</span>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th id="stat-header">Kills</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;">Connecting to PlayFab...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Update Log Widget (Empty till open beta release) -->
-            <a href="updates" class="widget-card" style="justify-content: center; text-decoration: none; display: flex; flex-direction: column; cursor: pointer; max-width: 100%; box-sizing: border-box; overflow-x: hidden;">
-    <div class="widget-title holo-text" style="margin-bottom: 10px;">Update Log</div>
-    <div class="empty-log-card" style="max-width: 100%; box-sizing: border-box;">
-        <div class="empty-icon">🚀</div>
-        <div class="empty-title holo-text">No Update Logs Yet</div>
-        <div class="empty-desc">Patch notes and build logs will be published here leading up to the upcoming Open Beta release. Check back soon!</div>
-    </div>
-</a>
-
-
+            <div class="widget-card" style="justify-content: center;">
+                <div class="widget-title holo-text" style="margin-bottom: 10px;">Update Log</div>
+                <div class="empty-log-card">
+                    <div class="empty-icon">🚀</div>
+                    <div class="empty-title holo-text">No Update Logs Yet</div>
+                    <div class="empty-desc">Patch notes and build logs will be published here leading up to the upcoming Open Beta release. Check back soon!</div>
+                </div>
+            </div>
+            </div>
 
         <div class="features-grid">
             <div class="feature-card">
