@@ -267,4 +267,104 @@
 
         // Eye Blink & Website Viewer Counter Logic
         const eyeIcon = document.getElementById('eye-icon');
-        const viewerCountElement = d
+        const viewerCountElement = document.getElementById('viewer-count');
+
+        // Simulate viewer count (random initial number between 12 and 28)
+        let viewers = Math.floor(Math.random() * 17) + 12;
+        viewerCountElement.textContent = viewers;
+
+        // Periodic random viewer fluctuations
+        setInterval(() => {
+            const change = Math.random() > 0.5 ? 1 : -1;
+            viewers = Math.max(1, viewers + change);
+            viewerCountElement.textContent = viewers;
+        }, 7000);
+
+        // Blinking eye loop
+        function triggerEyeBlink() {
+            eyeIcon.classList.add('eye-blink');
+            setTimeout(() => {
+                eyeIcon.classList.remove('eye-blink');
+            }, 350);
+            
+            // Random next blink between 2 to 6 seconds
+            const nextBlinkTime = Math.random() * 4000 + 2000;
+            setTimeout(triggerEyeBlink, nextBlinkTime);
+        }
+        setTimeout(triggerEyeBlink, 3000);
+
+        // PlayFab Integration
+        // Replace with your actual PlayFab Title ID
+        PlayFab.settings.TitleId = "YOUR_PLAYFAB_TITLE_ID";
+
+        function loadLeaderboard(statisticName) {
+            const tbody = document.getElementById('leaderboard-body');
+            const statHeader = document.getElementById('stat-header');
+            
+            statHeader.textContent = statisticName;
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;">Loading ${statisticName} leaderboard...</td></tr>`;
+
+            PlayFabClientApi.GetLeaderboard({
+                StatisticName: statisticName,
+                StartPosition: 0,
+                MaxResultsCount: 10
+            }, (result, error) => {
+                if (error) {
+                    console.error("PlayFab Error:", error);
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff5555; padding: 30px;">Failed to load leaderboard data.</td></tr>`;
+                    return;
+                }
+
+                const lb = result.data.Leaderboard;
+                if (!lb || lb.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;">No entries found for ${statisticName}.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                lb.forEach(entry => {
+                    let rankClass = '';
+                    if (entry.Position === 0) rankClass = 'rank-1';
+                    else if (entry.Position === 1) rankClass = 'rank-2';
+                    else if (entry.Position === 2) rankClass = 'rank-3';
+
+                    const displayName = entry.DisplayName || entry.PlayFabId.substring(0, 8) + '...';
+
+                    html += `
+                        <tr>
+                            <td class="${rankClass}">#${entry.Position + 1}</td>
+                            <td>${displayName}</td>
+                            <td>${entry.StatValue.toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            });
+        }
+
+        function switchLeaderboard(statName, btnElement) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+            loadLeaderboard(statName);
+        }
+
+        // Initialize default leaderboard on load
+        loadLeaderboard('Kills');
+
+        // Easter Egg: Lizard Crawler
+        const lizardContainer = document.getElementById('lizard-container');
+        function triggerLizardCrawl() {
+            lizardContainer.classList.add('crawl-active');
+            setTimeout(() => {
+                lizardContainer.classList.remove('crawl-active');
+            }, 12000);
+            
+            // Schedule next crawl randomly between 45 to 90 seconds
+            const nextCrawlTime = Math.random() * 45000 + 45000;
+            setTimeout(triggerLizardCrawl, nextCrawlTime);
+        }
+        setTimeout(triggerLizardCrawl, 20000);
+    </script>
+</body>
+</html>
+        
