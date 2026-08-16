@@ -67,14 +67,19 @@
         .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--btn-gradient); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         [data-theme="light"] .theme-toggle-slider { transform: translateX(36px); }
         
-        .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.9rem; font-weight: 800; border-radius: 8px; cursor: pointer; outline: none; box-shadow: var(--shadow-card); z-index: 10000; }
+        .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.95rem; font-weight: 800; border-radius: 10px; cursor: pointer; outline: none; box-shadow: var(--shadow-card); z-index: 10000; display: flex; align-items: center; gap: 6px; }
         .menu-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
         
-        .nav-menu { display: none; position: absolute; top: 120%; right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-widget); width: 200px; padding: 10px 0; flex-direction: column; z-index: 9998; }
-        .nav-menu.active { display: flex; animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-menu a { color: var(--text-muted); padding: 12px 20px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-        .nav-menu a:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-main); padding-left: 25px; }
+        /* Upgraded Navigation Menu */
+        .nav-menu { display: none; position: absolute; top: calc(100% + 14px); right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: var(--shadow-widget); width: 240px; padding: 12px; flex-direction: column; gap: 6px; z-index: 9998; transform-origin: top right; }
+        .nav-menu.active { display: flex; animation: menuDropdownFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes menuDropdownFade { from { opacity: 0; transform: scale(0.95) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        
+        .nav-menu-header { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); padding: 6px 12px 4px 12px; font-weight: 800; opacity: 0.7; }
+        .nav-menu a { color: var(--text-muted); padding: 10px 14px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 12px; border-radius: 10px; transition: all 0.2s ease; }
+        .nav-menu a span.menu-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+        .nav-menu a:hover { background: var(--badge-bg); color: var(--text-main); border-color: var(--border-glow); transform: translateX(4px); }
+        .nav-menu hr { border: none; border-top: 1px solid var(--border-color); margin: 6px 4px; }
         
         .hero { position: relative; width: 100%; max-width: 1100px; margin: 40px auto 0 auto; padding: 0 20px; z-index: 1; }
         .cover-container { position: relative; border-radius: 20px; padding: 3px; background: var(--holo-gradient); box-shadow: var(--shadow-hero); }
@@ -154,13 +159,21 @@
                 <span class="theme-toggle-option">🌙</span>
                 <span class="theme-toggle-option">☀️</span>
             </div>
-            <button class="menu-btn" id="menuToggleBtn">☰</button>
+            <button class="menu-btn" id="menuToggleBtn">
+                <span>Menu</span>
+                <span style="font-size: 1.1rem;">☰</span>
+            </button>
             <div class="nav-menu" id="navMenu">
-                <a href="leaderboard">Global Leaderboard</a>
-                <a href="updates">Update Log</a>
-                <a href="privacy">Privacy Policy</a>
-                <a href="terms">Terms of Service</a>
-                <a href="https://discord.gg/xG6QcTbfp2" target="_blank">Discord</a>
+                <div class="nav-menu-header">Navigation</div>
+                <a href="leaderboard"><span class="menu-icon">🏆</span> Global Leaderboard</a>
+                <a href="updates"><span class="menu-icon">🚀</span> Update Log</a>
+                <hr>
+                <div class="nav-menu-header">Community</div>
+                <a href="https://discord.gg/xG6QcTbfp2" target="_blank"><span class="menu-icon">💬</span> Discord Community</a>
+                <hr>
+                <div class="nav-menu-header">Legal & Info</div>
+                <a href="privacy"><span class="menu-icon">🛡️</span> Privacy Policy</a>
+                <a href="terms"><span class="menu-icon">📄</span> Terms of Service</a>
             </div>
         </div>
     </header>
@@ -178,12 +191,12 @@
         <h1 class="game-title holo-text">Volleyball Revengers</h1>
         <p class="game-description">Premier VR Volleyball Experience.</p>
         
-            <div class="widgets-grid">
+        <div class="widgets-grid">
             <!-- PlayFab Leaderboard Widget -->
             <div class="widget-card">
                 <a href="leaderboard" style="text-decoration: none; color: inherit;">
-    <div class="widget-title holo-text" style="margin-bottom: 10px; cursor: pointer;">Leaderboard</div>
-</a>
+                    <div class="widget-title holo-text" style="margin-bottom: 10px; cursor: pointer;">Leaderboard</div>
+                </a>
                 <div class="controls">
                     <div class="tab-buttons">
                         <button class="tab-btn active" onclick="switchLeaderboard('Kills', this)">Most Kills</button>
@@ -213,18 +226,18 @@
                 </div>
             </div>
 
-            <!-- Update Log Widget (Empty till open beta release) -->
+            <!-- Update Log Widget -->
             <div class="widget-card" style="justify-content: center;">
                 <a href="updates" style="text-decoration: none; color: inherit;">
-    <div class="widget-title holo-text" style="margin-bottom: 10px; cursor: pointer;">Update Log</div>
-</a>
-        <div class="empty-log-card">
+                    <div class="widget-title holo-text" style="margin-bottom: 10px; cursor: pointer;">Update Log</div>
+                </a>
+                <div class="empty-log-card">
                     <div class="empty-icon">🚀</div>
                     <div class="empty-title holo-text">No Update Logs Yet</div>
                     <div class="empty-desc">Patch notes and build logs will be published here leading up to the upcoming Open Beta release. Check back soon!</div>
                 </div>
             </div>
-            </div>
+        </div>
 
         <div class="features-grid">
             <div class="feature-card">
@@ -312,7 +325,7 @@
                 }
                 fetchPlayFabLeaderboard(currentStatistic);
             });
-        }
+         }
 
         function switchLeaderboard(statName, btnElement) {
             currentStatistic = statName;
