@@ -4,134 +4,161 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volleyball Revengers | Mugen Revolution Studios</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- PlayFab JS SDK -->
+    <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
     <style>
         :root {
-            --bg-main: #050608;
-            --bg-card: rgba(15, 19, 28, 0.85);
-            --bg-card-hover: rgba(22, 28, 40, 0.95);
-            --bg-nav: rgba(8, 10, 14, 0.85);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --border-glow: rgba(0, 242, 254, 0.5);
-            --accent-glow: rgba(0, 183, 255, 0.3);
-            --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 15px rgba(0, 0, 0, 0.4);
-            --shadow-card-hover: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 25px rgba(0, 242, 254, 0.2);
-            --shadow-hero: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 40px rgba(0, 242, 254, 0.25);
-            --shadow-btn: 0 10px 25px -5px rgba(255, 69, 0, 0.5);
-            --shadow-widget: 0 20px 40px -10px rgba(0, 0, 0, 0.8);
-            --holo-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 40%, #00c6ff 70%, #ff4500 100%);
-            --btn-gradient: linear-gradient(135deg, #ff4500 0%, #ff6b00 100%);
-            --btn-hover: linear-gradient(135deg, #ff5500 0%, #ff7700 100%);
+            --bg-main: #060709;
+            --bg-card: rgba(18, 22, 31, 0.85);
+            --bg-card-hover: rgba(28, 34, 48, 0.95);
+            --bg-nav: rgba(10, 12, 16, 0.9);
+            --text-main: #ffffff;
+            --text-muted: #9ba3b4;
+            --border-color: rgba(255, 255, 255, 0.15);
+            --border-glow: rgba(30, 144, 216, 0.6);
+            --accent-glow: rgba(30, 144, 216, 0.4);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.8), 0 8px 20px rgba(0, 0, 0, 0.6);
+            --shadow-hero: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 50px rgba(30, 144, 216, 0.35);
+            --shadow-btn: 0 12px 30px rgba(30, 144, 216, 0.5);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.85);
+            --holo-gradient: linear-gradient(135deg, #1E90D8 0%, #4facfe 50%, #1E90D8 100%);
+            --btn-gradient: linear-gradient(135deg, #1E90D8 0%, #1572a8 100%);
+            --btn-hover: linear-gradient(135deg, #24a0f0 0%, #1a82c4 100%);
         }
         [data-theme="light"] {
-            --bg-main: #f1f5f9;
-            --bg-card: rgba(255, 255, 255, 0.9);
+            --bg-main: #f3f5f9;
+            --bg-card: rgba(255, 255, 255, 0.95);
             --bg-card-hover: rgba(255, 255, 255, 1);
-            --bg-nav: rgba(255, 255, 255, 0.85);
+            --bg-nav: rgba(245, 247, 250, 0.95);
             --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: rgba(0, 0, 0, 0.08);
-            --border-glow: rgba(0, 183, 255, 0.5);
-            --accent-glow: rgba(0, 183, 255, 0.2);
-            --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 0 10px rgba(0, 0, 0, 0.03);
-            --shadow-card-hover: 0 20px 35px -10px rgba(0, 0, 0, 0.12), 0 0 20px rgba(0, 183, 255, 0.15);
-            --shadow-hero: 0 20px 40px -10px rgba(0, 0, 0, 0.15), 0 0 30px rgba(0, 183, 255, 0.2);
-            --shadow-btn: 0 10px 25px -5px rgba(255, 69, 0, 0.35);
-            --shadow-widget: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
-            --holo-gradient: linear-gradient(135deg, #0072ff 0%, #00c6ff 50%, #ff4500 100%);
-            --btn-gradient: linear-gradient(135deg, #ff4500 0%, #ff6b00 100%);
-            --btn-hover: linear-gradient(135deg, #ff5500 0%, #ff7700 100%);
+            --text-muted: #475569;
+            --border-color: rgba(0, 0, 0, 0.15);
+            --border-glow: rgba(30, 144, 216, 0.6);
+            --accent-glow: rgba(30, 144, 216, 0.3);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
+            --shadow-hero: 0 25px 50px rgba(0, 0, 0, 0.2), 0 0 40px rgba(30, 144, 216, 0.3);
+            --shadow-btn: 0 12px 30px rgba(30, 144, 216, 0.35);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.15);
+            --holo-gradient: linear-gradient(135deg, #1E90D8 0%, #00c6ff 50%, #1572a8 100%);
+            --btn-gradient: linear-gradient(135deg, #1E90D8 0%, #1572a8 100%);
+            --btn-hover: linear-gradient(135deg, #24a0f0 0%, #1a82c4 100%);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-        body::before { content: ''; position: fixed; top: -15%; left: 50%; transform: translateX(-50%); width: 85vw; height: 550px; background: radial-gradient(circle, rgba(0, 242, 254, 0.12) 0%, rgba(255, 69, 0, 0.06) 50%, transparent 80%); pointer-events: none; z-index: 0; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: -15%; left: 50%; transform: translateX(-50%); width: 85vw; height: 550px; background: radial-gradient(circle, rgba(30, 144, 216, 0.15) 0%, rgba(30, 144, 216, 0.05) 50%, transparent 80%); pointer-events: none; z-index: 0; }
         .holo-text { background: var(--holo-gradient); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: holoGlow 4s linear infinite; font-weight: 900; }
         @keyframes holoGlow { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 16px 36px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 9999; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 14px 32px; background: var(--bg-nav); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 9999; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4); }
         .header-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-        .header-logo-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255, 255, 255, 0.2); filter: drop-shadow(0 0 8px var(--accent-glow)); }
-        .logo-text { font-size: 1.05rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
+        .header-logo-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255, 255, 255, 0.2); filter: drop-shadow(0 0 10px var(--accent-glow)); }
+        .logo-text { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
         .nav-actions { display: flex; align-items: center; gap: 16px; position: relative; }
-        .theme-toggle-container { display: flex; align-items: center; background: rgba(100, 100, 100, 0.15); border: 1px solid var(--border-color); border-radius: 20px; padding: 3px; cursor: pointer; position: relative; width: 70px; height: 34px; z-index: 10000; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
+        .theme-toggle-container { display: flex; align-items: center; background: rgba(100, 100, 100, 0.2); border: 1px solid var(--border-color); border-radius: 20px; padding: 3px; cursor: pointer; position: relative; width: 70px; height: 34px; z-index: 10000; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5); }
         .theme-toggle-option { flex: 1; text-align: center; font-size: 0.8rem; z-index: 2; pointer-events: none; }
-        .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--btn-gradient); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
+        .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--btn-gradient); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         [data-theme="light"] .theme-toggle-slider { transform: translateX(36px); }
-        .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 18px; font-size: 0.85rem; font-weight: 700; border-radius: 10px; cursor: pointer; outline: none; box-shadow: var(--shadow-card); z-index: 10000; }
-        .menu-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 15px var(--accent-glow); transform: translateY(-1px); }
-        .nav-menu { display: none; position: absolute; top: 125%; right: 0; background: var(--bg-card); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 14px; box-shadow: var(--shadow-widget); width: 210px; padding: 8px 0; flex-direction: column; z-index: 9998; }
-        .nav-menu.active { display: flex; animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-menu a { color: var(--text-muted); padding: 10px 20px; text-decoration: none; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-        .nav-menu a:hover { background: rgba(0, 242, 254, 0.08); color: var(--text-main); padding-left: 24px; }
-        .info-bar { background: linear-gradient(90deg, rgba(0, 242, 254, 0.1) 0%, rgba(255, 69, 0, 0.1) 100%); border-bottom: 1px solid var(--border-color); padding: 12px 20px; display: flex; justify-content: center; align-items: center; gap: 30px; font-size: 0.82rem; font-weight: 600; flex-wrap: wrap; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.9rem; font-weight: 800; border-radius: 8px; cursor: pointer; outline: none; box-shadow: var(--shadow-card); z-index: 10000; }
+        .menu-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
+        .nav-menu { display: none; position: absolute; top: 120%; right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-widget); width: 200px; padding: 10px 0; flex-direction: column; z-index: 9998; }
+        .nav-menu.active { display: flex; animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-menu a { color: var(--text-muted); padding: 12px 20px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .nav-menu a:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-main); padding-left: 25px; }
+        
+        .info-bar { background: linear-gradient(90deg, rgba(30, 144, 216, 0.15) 0%, rgba(30, 144, 216, 0.05) 100%); border-bottom: 1px solid var(--border-color); padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 35px; font-size: 0.85rem; font-weight: 700; flex-wrap: wrap; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .info-item { display: flex; align-items: center; gap: 8px; }
-        .pulse-dot { width: 8px; height: 8px; background-color: #00f2fe; border-radius: 50%; box-shadow: 0 0 8px #00f2fe; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(0, 242, 254, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); } }
-        .live-count { color: #00f2fe; font-weight: 800; font-size: 0.95rem; }
-        .hero { position: relative; width: 100%; max-width: 1050px; margin: 35px auto 0 auto; padding: 0 20px; z-index: 1; }
-        .cover-container { position: relative; border-radius: 18px; padding: 3px; background: var(--holo-gradient); box-shadow: var(--shadow-hero); }
-        .cover-img { width: 100%; border-radius: 16px; display: block; background-color: #000; }
-        .content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 35px 20px 50px 20px; text-align: center; z-index: 1; }
-        .game-title { font-size: 3.5rem; letter-spacing: -0.5px; margin-bottom: 8px; filter: drop-shadow(0 6px 20px rgba(0, 183, 255, 0.35)); }
-        .game-description { font-size: 1.15rem; color: var(--text-muted); font-weight: 500; margin-bottom: 35px; }
-        .countdown-container { display: flex; gap: 15px; margin-bottom: 45px; background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); padding: 18px 25px; border-radius: 16px; box-shadow: var(--shadow-card); }
-        .countdown-box { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
-        .countdown-value { font-size: 1.8rem; font-weight: 900; color: var(--text-main); font-variant-numeric: tabular-nums; }
-        .countdown-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 1px; margin-top: 2px; }
-        .countdown-colon { font-size: 1.5rem; font-weight: 900; color: var(--border-glow); display: flex; align-items: center; padding-bottom: 12px; }
-        .widgets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; width: 100%; max-width: 1000px; margin-bottom: 45px; }
-        .widget-card { background: var(--bg-card); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 16px; padding: 22px; text-align: left; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; min-height: 180px; display: flex; flex-direction: column; }
-        .widget-card:hover { box-shadow: var(--shadow-card-hover); border-color: var(--border-glow); transform: translateY(-3px); }
-        .widget-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--holo-gradient); }
-        .widget-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; }
-        .empty-widget-msg { color: var(--text-muted); font-size: 0.85rem; font-style: italic; margin: auto; text-align: center; padding: 15px; font-weight: 500; }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; width: 100%; max-width: 1000px; margin-bottom: 50px; }
-        .feature-card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 14px; padding: 22px; text-align: left; box-shadow: var(--shadow-card); }
-        .feature-card:hover { transform: translateY(-4px); border-color: var(--border-glow); box-shadow: var(--shadow-card-hover); }
-        .feature-icon { font-size: 1.8rem; margin-bottom: 12px; display: inline-block; filter: drop-shadow(0 4px 8px rgba(255,69,0,0.4)); }
-        .feature-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; }
-        .feature-desc { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; line-height: 1.5; }
-        .store-btn { display: inline-block; background: var(--btn-gradient); color: #ffffff; font-size: 1.05rem; font-weight: 800; padding: 16px 42px; border-radius: 14px; text-decoration: none; box-shadow: var(--shadow-btn); border: 1px solid rgba(255, 255, 255, 0.2); text-transform: uppercase; letter-spacing: 0.5px; }
-        .store-btn:hover { background: var(--btn-hover); transform: translateY(-3px); box-shadow: 0 15px 35px rgba(255, 69, 0, 0.6); }
-        footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 35px 20px; display: flex; flex-direction: column; align-items: center; gap: 15px; box-shadow: 0 -10px 30px rgba(0,0,0,0.4); }
-        .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 12px; font-weight: 600; font-size: 0.85rem; }
-        .footer-links a:hover { color: #00f2fe; }
-        .copyright { color: var(--text-muted); font-size: 0.78rem; font-weight: 500; opacity: 0.7; }
-        #lizard-container { position: fixed; bottom: 30px; left: -100px; font-size: 2.2rem; z-index: 10000; pointer-events: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); opacity: 0; }
+        
+        /* Blinking Eye Animation */
+        .eye-icon { display: inline-block; font-size: 1.1rem; line-height: 1; transition: transform 0.15s ease, opacity 0.15s ease; filter: drop-shadow(0 0 6px rgba(30, 144, 216, 0.6)); }
+        .eye-blink { animation: eyeBlink 0.35s ease-in-out; }
+        @keyframes eyeBlink {
+            0% { transform: scaleY(1); opacity: 1; }
+            50% { transform: scaleY(0.1); opacity: 0.3; }
+            100% { transform: scaleY(1); opacity: 1; }
+        }
+
+        .live-count { color: #1E90D8; font-weight: 900; font-size: 1rem; }
+        .hero { position: relative; width: 100%; max-width: 1100px; margin: 40px auto 0 auto; padding: 0 20px; z-index: 1; }
+        .cover-container { position: relative; border-radius: 20px; padding: 3px; background: var(--holo-gradient); box-shadow: var(--shadow-hero); }
+        .cover-img { width: 100%; border-radius: 17px; display: block; background-color: #000; }
+        .content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; text-align: center; z-index: 1; }
+        .game-title { font-size: 4rem; letter-spacing: 3px; margin-bottom: 10px; filter: drop-shadow(0 8px 25px rgba(30, 144, 216, 0.4)); }
+        .game-description { font-size: 1.2rem; color: var(--text-muted); font-weight: 600; margin-bottom: 50px; }
+        
+        .widgets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 30px; width: 100%; max-width: 1100px; margin-bottom: 60px; }
+        .widget-card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 30px; text-align: left; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        .widget-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); }
+        .widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .widget-title { font-size: 1.4rem; font-weight: 900; }
+        
+        .tab-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+        .tab-btn { background: rgba(31, 40, 51, 0.6); border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.75rem; transition: all 0.2s ease; }
+        .tab-btn:hover { border-color: #1E90D8; color: var(--text-main); }
+        .tab-btn.active { background: linear-gradient(135deg, rgba(30, 144, 216, 0.3), rgba(30, 144, 216, 0.1)); border-color: #1E90D8; color: #1E90D8; box-shadow: 0 0 15px rgba(30, 144, 216, 0.3); }
+        
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 12px; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800; }
+        td { padding: 14px 12px; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; font-weight: 600; }
+        tr:hover td { background-color: rgba(255, 255, 255, 0.02); }
+        .rank-1 { color: #ffd700; font-weight: 900; filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4)); }
+        .rank-2 { color: #c0c0c0; font-weight: 900; filter: drop-shadow(0 0 8px rgba(192, 192, 192, 0.4)); }
+        .rank-3 { color: #cd7f32; font-weight: 900; filter: drop-shadow(0 0 8px rgba(205, 127, 50, 0.4)); }
+
+        .empty-log-card { text-align: center; padding: 40px 20px; margin: auto; }
+        .empty-icon { font-size: 2.5rem; margin-bottom: 12px; display: inline-block; filter: drop-shadow(0 5px 15px rgba(30, 144, 216, 0.3)); }
+        .empty-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 8px; }
+        .empty-desc { color: var(--text-muted); font-size: 0.9rem; max-width: 380px; margin: 0 auto; line-height: 1.6; }
+
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; width: 100%; max-width: 1100px; margin-bottom: 60px; }
+        .feature-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 30px; text-align: left; box-shadow: var(--shadow-card); }
+        .feature-card:hover { transform: translateY(-6px); border-color: var(--border-glow); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 35px var(--accent-glow); }
+        .feature-icon { font-size: 2rem; margin-bottom: 15px; display: inline-block; filter: drop-shadow(0 4px 10px rgba(30, 144, 216, 0.5)); }
+        .feature-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 10px; }
+        .feature-desc { font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; }
+        .store-btn { display: inline-block; background: var(--btn-gradient); color: #ffffff; font-size: 1.2rem; font-weight: 900; padding: 18px 50px; border-radius: 14px; text-decoration: none; box-shadow: var(--shadow-btn); border: 1px solid rgba(255, 255, 255, 0.3); text-transform: uppercase; letter-spacing: 1px; }
+        .store-btn:hover { background: var(--btn-hover); transform: translateY(-4px) scale(1.03); box-shadow: 0 20px 45px rgba(30, 144, 216, 0.8); }
+        footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; box-shadow: 0 -10px 40px rgba(0,0,0,0.6); }
+        .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 15px; font-weight: 700; font-size: 0.9rem; }
+        .footer-links a:hover { color: #1E90D8; }
+        .copyright { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; opacity: 0.6; }
+        #lizard-container { position: fixed; bottom: 30px; left: -100px; font-size: 2.5rem; z-index: 10000; pointer-events: none; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); opacity: 0; }
         .crawl-active { animation: crawlScreen 12s linear forwards, wobble 0.4s infinite alternate ease-in-out; opacity: 1 !important; }
         @keyframes crawlScreen { 0% { left: -100px; transform: scaleX(-1); } 100% { left: 110vw; transform: scaleX(-1); } }
-        @keyframes wobble { 0% { transform: scaleX(-1) translateY(0) rotate(-5deg); } 100% { transform: scaleX(-1) translateY(-6px) rotate(5deg); } }
-        @media (max-width: 768px) { header { padding: 14px 20px; } .info-bar { gap: 12px; font-size: 0.75rem; } .game-title { font-size: 2.4rem; } .countdown-container { padding: 12px 18px; gap: 10px; } .countdown-value { font-size: 1.4rem; } }
+        @keyframes wobble { 0% { transform: scaleX(-1) translateY(0) rotate(-5deg); } 100% { transform: scaleX(-1) translateY(-8px) rotate(5deg); } }
+        @media (max-width: 768px) { header { padding: 14px 20px; } .info-bar { gap: 15px; font-size: 0.75rem; } .game-title { font-size: 2.5rem; } .widgets-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
     <header>
-        <a href="index.html" class="header-brand">
+        <a href="home" class="header-brand">
             <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
             <span class="logo-text holo-text">Mugen Revolution</span>
         </a>
         <div class="nav-actions">
-            <div class="theme-toggle-container" id="themeToggleBtn" title="Toggle Theme">
+            <div class="theme-toggle-container" id="themeToggleBtn" title="Toggle Dark/Light Mode">
                 <div class="theme-toggle-slider"></div>
                 <span class="theme-toggle-option">🌙</span>
                 <span class="theme-toggle-option">☀️</span>
             </div>
             <button class="menu-btn" id="menuToggleBtn">Menu ☰</button>
             <div class="nav-menu" id="navMenu">
-                <a href="privacy.html">🔒 Privacy Policy</a>
-                <a href="terms.html">📜 Terms of Service</a>
+                <a href="privacy">🔒 Privacy Policy</a>
+                <a href="terms">📜 Terms of Service</a>
                 <a href="https://discord.gg/xG6QcTbfp2" target="_blank">💬 Discord</a>
             </div>
         </div>
     </header>
 
     <div class="info-bar">
-        <div class="info-item"><span class="pulse-dot"></span> Online Players: <span class="live-count" id="player-count">0</span></div>
+        <!-- Replaced Online Players with Blinking Eye Viewer Count -->
+        <div class="info-item">
+            <span class="eye-icon" id="eye-icon">👁️</span> 
+            Viewing Website: <span class="live-count" id="viewer-count">1</span>
+        </div>
         <div class="info-item">Network: <strong>Photon Fusion</strong></div>
-        <div class="info-item">PlayFab ID: <strong>1E90D8</strong></div>
+        <div class="info-item">Backend: <strong>PlayFab</strong></div>
     </div>
 
     <div class="hero">
@@ -142,26 +169,48 @@
 
     <div class="content">
         <h1 class="game-title holo-text">Volleyball Revengers</h1>
-        <p class="game-description">Ultimate VR Volleyball Experience.</p>
-
-        <div class="countdown-container" id="countdown">
-            <div class="countdown-box"><span class="countdown-value" id="days">00</span><span class="countdown-label">Days</span></div>
-            <div class="countdown-colon">:</div>
-            <div class="countdown-box"><span class="countdown-value" id="hours">00</span><span class="countdown-label">Hours</span></div>
-            <div class="countdown-colon">:</div>
-            <div class="countdown-box"><span class="countdown-value" id="minutes">00</span><span class="countdown-label">Mins</span></div>
-            <div class="countdown-colon">:</div>
-            <div class="countdown-box"><span class="countdown-value" id="seconds">00</span><span class="countdown-label">Secs</span></div>
-        </div>
+        <p class="game-description">Ultimate VR Volleyball.</p>
 
         <div class="widgets-grid">
+            <!-- PlayFab Leaderboard Widget -->
             <div class="widget-card">
-                <div class="widget-title holo-text">Leaderboard</div>
-                <div class="empty-widget-msg">No leaderboard data available yet. Check back soon!</div>
+                <div class="widget-header">
+                    <div class="widget-title holo-text">Leaderboard</div>
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchLeaderboard('Kills', this)">Kills</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('PlayerElo', this)">Elo</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('MVP', this)">MVPs</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Wins', this)">Wins</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Assists', this)">Assists</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Blocks', this)">Blocks</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th id="stat-header">Kills</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;">Connecting to PlayFab...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="widget-card">
-                <div class="widget-title holo-text">Update Log</div>
-                <div class="empty-widget-msg">No update logs published yet.</div>
+
+            <!-- Update Log Widget (Empty till open beta release) -->
+            <div class="widget-card" style="justify-content: center;">
+                <div class="widget-title holo-text" style="margin-bottom: 10px;">Update Log</div>
+                <div class="empty-log-card">
+                    <div class="empty-icon">🚀</div>
+                    <div class="empty-title holo-text">No Update Logs Yet</div>
+                    <div class="empty-desc">Patch notes and build logs will be published here leading up to the upcoming Open Beta release. Check back soon!</div>
+                </div>
             </div>
         </div>
 
@@ -179,7 +228,7 @@
             <div class="feature-card">
                 <div class="feature-icon">⚡</div>
                 <div class="feature-title">Solo Dev Passion</div>
-                <div class="feature-desc">Independently crafted by Mugen Revolution Studios to bring competitive sports to VR.</div>
+                <div class="feature-desc">Independently crafted by Mugen Revolution Studios to bring competitive volleyball to VR.</div>
             </div>
         </div>
 
@@ -216,38 +265,6 @@
         themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-        function updateCountdown() {
-            const targetDate = new Date('October 17, 2026 00:00:00').getTime();
-            const now = new Date().getTime();
-            const diff = targetDate - now;
-            if (diff <= 0) {
-                document.getElementById('countdown').innerHTML = '<div style="font-weight: 800; color: #00f2fe;">Open Beta is Live Now!</div>';
-                return;
-            }
-            document.getElementById('days').innerText = String(Math.floor(diff / (1000 * 60 * 60 * 24))).padStart(2, '0');
-            document.getElementById('hours').innerText = String(Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
-            document.getElementById('minutes').innerText = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
-            document.getElementById('seconds').innerText = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
-        }
-        setInterval(updateCountdown, 1000);
-        updateCountdown();
-
-        function fetchOnlinePlayers() {
-            const onlineCount = Math.floor(Math.random() * 12) + 4;
-            document.getElementById('player-count').innerText = onlineCount;
-        }
-        fetchOnlinePlayers();
-        setInterval(fetchOnlinePlayers, 15000);
-
-        const lizard = document.getElementById('lizard-container');
-        function spawnLizard() {
-            lizard.classList.remove('crawl-active');
-            void lizard.offsetWidth;
-            lizard.classList.add('crawl-active');
-            setTimeout(() => lizard.classList.remove('crawl-active'), 12500);
-        }
-        setTimeout(spawnLizard, 2000);
-        setInterval(spawnLizard, 3600000);
-    </script>
-</body>
-</html>
+        // Eye Blink & Website Viewer Counter Logic
+        const eyeIcon = document.getElementById('eye-icon');
+        const viewerCountElement = d
