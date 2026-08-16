@@ -13,27 +13,40 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0d0d0d;
+            background-color: #0b0c10;
             color: #ffffff;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
         }
 
-        /* --- Header & Navigation --- */
+        /* --- Header Navigation --- */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 30px;
-            background-color: #141414;
-            border-bottom: 1px solid #262626;
+            padding: 15px 30px;
+            background-color: #121317;
+            border-bottom: 1px solid #1f242d;
             position: relative;
             z-index: 100;
         }
 
-        .logo {
-            font-size: 1.2rem;
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .logo-text {
+            font-size: 1.1rem;
             font-weight: bold;
             color: #ff4500;
             text-transform: uppercase;
@@ -41,9 +54,9 @@
         }
 
         .menu-btn {
-            background-color: #222222;
+            background-color: #1f242d;
             color: #ffffff;
-            border: 1px solid #444444;
+            border: 1px solid #343a46;
             padding: 10px 18px;
             font-size: 0.95rem;
             font-weight: bold;
@@ -55,19 +68,18 @@
         .menu-btn:hover {
             background-color: #ff4500;
             border-color: #ff4500;
-            color: #ffffff;
         }
 
-        /* Slide-out Menu */
+        /* Slide-out Navigation */
         .nav-menu {
             display: none;
             position: absolute;
             top: 100%;
             right: 30px;
-            background-color: #1a1a1a;
-            border: 1px solid #333333;
+            background-color: #121317;
+            border: 1px solid #1f242d;
             border-radius: 8px;
-            box-shadow: 0px 8px 20px rgba(0,0,0,0.6);
+            box-shadow: 0px 8px 20px rgba(0,0,0,0.8);
             width: 220px;
             padding: 10px 0;
             flex-direction: column;
@@ -83,29 +95,52 @@
             padding: 12px 20px;
             text-decoration: none;
             font-size: 0.95rem;
-            text-align: left;
             transition: background 0.2s, color 0.2s;
         }
 
         .nav-menu a:hover {
-            background-color: #262626;
+            background-color: #1f242d;
             color: #ff4500;
         }
 
-        /* --- Main Content --- */
+        /* --- Hero Showcase Banner --- */
+        .hero {
+            position: relative;
+            width: 100%;
+            max-width: 1100px;
+            margin: 30px auto 0 auto;
+            padding: 0 20px;
+        }
+
+        .cover-img {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid #2a2f3a;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            display: block;
+        }
+
+        /* --- Content Area --- */
         .content {
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 60px 20px;
+            padding: 40px 20px;
             text-align: center;
+        }
+
+        .main-crest {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 15px rgba(0, 150, 255, 0.4));
         }
 
         .game-title {
             color: #ff4500;
-            font-size: 3.8rem;
+            font-size: 3.2rem;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -114,11 +149,11 @@
         }
 
         .game-description {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             color: #bbbbbb;
             max-width: 650px;
             line-height: 1.6;
-            margin-bottom: 40px;
+            margin-bottom: 35px;
         }
 
         /* Store Link Section */
@@ -141,11 +176,11 @@
             color: #ffffff;
             font-size: 1.1rem;
             font-weight: bold;
-            padding: 15px 32px;
+            padding: 16px 36px;
             border-radius: 8px;
             text-decoration: none;
             transition: transform 0.2s, background-color 0.2s;
-            box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
+            box-shadow: 0 4px 20px rgba(255, 69, 0, 0.4);
         }
 
         .store-btn:hover {
@@ -155,8 +190,8 @@
 
         /* --- Footer --- */
         footer {
-            background-color: #121212;
-            border-top: 1px solid #222222;
+            background-color: #08090b;
+            border-top: 1px solid #1a1d24;
             padding: 40px 20px 30px 20px;
             display: flex;
             flex-direction: column;
@@ -194,15 +229,17 @@
         .copyright {
             color: #555555;
             font-size: 0.85rem;
-            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Top Header Navigation -->
+    <!-- Header Navigation -->
     <header>
-        <div class="logo">Mugen Revolution Studios</div>
+        <div class="header-brand">
+            <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
+            <div class="logo-text">Mugen Revolution Studios</div>
+        </div>
         <button class="menu-btn" onclick="toggleMenu()">Menu ☰</button>
         <div class="nav-menu" id="navMenu">
             <a href="index.html">Home</a>
@@ -211,8 +248,14 @@
         </div>
     </header>
 
+    <!-- Cover Image Banner -->
+    <div class="hero">
+        <img src="cover.png" alt="Volleyball Revengers Open Beta Court" class="cover-img">
+    </div>
+
     <!-- Main Content -->
     <div class="content">
+        <img src="logo.png" alt="Volleyball Revengers Crest" class="main-crest">
         <h1 class="game-title">Volleyball Revengers</h1>
         <p class="game-description">
             The ultimate virtual reality volleyball experience. Master the court with realistic physics, precise controls, and high-intensity match action.
@@ -230,14 +273,14 @@
     <!-- Footer -->
     <footer>
         <div class="footer-grid">
-            <!-- Social Links Section -->
+            <!-- Social Links -->
             <div class="footer-group">
                 <div class="section-title">Social Links</div>
                 <a href="https://youtube.com/@MugenRevolutionStudio" target="_blank">YouTube</a>
                 <a href="https://discord.gg/xG6QcTbfp2" target="_blank">Discord</a>
             </div>
 
-            <!-- Legal Section -->
+            <!-- Legal -->
             <div class="footer-group">
                 <div class="section-title">Legal</div>
                 <a href="privacy.html">Privacy Policy</a>
@@ -250,14 +293,13 @@
         </div>
     </footer>
 
-    <!-- JavaScript for Menu Toggle -->
+    <!-- JavaScript for Dropdown Menu -->
     <script>
         function toggleMenu() {
             const menu = document.getElementById('navMenu');
             menu.classList.toggle('active');
         }
 
-        // Close menu if clicking outside
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('navMenu');
             const button = document.querySelector('.menu-btn');
