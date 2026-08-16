@@ -5,28 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy - Volleyball Revengers</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
-        h1, h2 { color: #ff4500; }
-        a { color: #ff4500; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #0b0c10; 
+            color: #c5c6c7; 
+            padding: 30px 20px; 
+            line-height: 1.7; 
+            max-width: 850px; 
+            margin: 0 auto; 
+        }
+
+        /* Holographic Text Style */
+        .holo-text {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 25%, #00c6ff 50%, #0072ff 75%, #00f2fe 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: holoGlow 4s linear infinite;
+            display: inline-block;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes holoGlow {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        h1 { font-size: 2.2rem; margin-bottom: 5px; }
+        h2 { font-size: 1.3rem; margin-top: 35px; margin-bottom: 12px; border-bottom: 1px solid #1f2833; padding-bottom: 5px; }
+
+        a { color: #66fcf1; text-decoration: none; transition: color 0.2s ease; }
+        a:hover { color: #45a29e; text-decoration: underline; }
+
         .nav { margin-bottom: 30px; }
+        .last-updated { font-size: 0.9rem; color: #8892b0; margin-bottom: 30px; }
+        ul { margin-top: 8px; padding-left: 20px; }
+        li { margin-bottom: 6px; }
+        
+        .contact-box {
+            background-color: #1f2833;
+            border-left: 4px solid #66fcf1;
+            padding: 15px 20px;
+            margin-top: 15px;
+            border-radius: 0 4px 4px 0;
+        }
     </style>
 </head>
 <body>
     <div class="nav"><a href="index.html">← Back to Home</a></div>
-    <h1>Privacy Policy</h1>
-    <p>Last updated: August 2026</p>
     
-    <h2>1. Information We Collect</h2>
-    <p>Volleyball Revengers is a virtual reality video game developed by Mugen Revolution Studios. We collect minimal data necessary to provide online multiplayer features, account management, and player statistics (such as high scores or player profiles).</p>
-    
-    <h2>2. How We Use Data</h2>
-    <p>Data collected is strictly used for game functionality, backend player authentication, and improving overall gameplay experience. We do not sell or share personal data with third-party advertisers.</p>
-    
-    <h2>3. Third-Party Services</h2>
-    <p>The game may use backend service providers (such as PlayFab) to handle cloud saves, leaderboards, and account authorization securely.</p>
+    <h1 class="holo-text">Privacy Policy</h1>
+    <div class="last-updated">Last Updated: August 16, 2026</div>
 
-    <h2>4. Contact</h2>
-    <p>If you have questions regarding this privacy policy, you can reach out via Mugen Revolution Studios support channels.</p>
+    <p>This Privacy Policy outlines how <strong>Mugen Revolution Studios</strong> ("we," "our," or "us") collects, uses, and safeguards information when you play <strong>Volleyball Revengers</strong> ("the Game") on Meta Quest and related platforms.</p>
+
+    <h2 class="holo-text">1. Information We Collect</h2>
+    <p>To deliver a secure, performant multiplayer virtual reality experience, we process limited technical and account data:</p>
+    <ul>
+        <li><strong>Account Identifiers:</strong> Meta platform IDs, internal account tokens, and display names used to identify players and manage authentication.</li>
+        <li><strong>Game & Gameplay Data:</strong> In-game statistics, matchmaking parameters, match histories, and leaderboard rankings.</li>
+        <li><strong>Network & Performance Data:</strong> IP addresses, latency, and basic telemetry data to ensure server stability, synchronize multiplayer states, and troubleshoot connectivity issues.</li>
+    </ul>
+
+    <h2 class="holo-text">2. How We Use Information</h2>
+    <p>Collected data is strictly utilized to operate and enhance the core functionality of the Game, specifically for:</p>
+    <ul>
+        <li>Authenticating player identity and saving progression state in cloud storage.</li>
+        <li>Managing low-latency peer-to-peer and server networking for real-time physics and multiplayer synchronization.</li>
+        <li>Providing mixed reality and virtual camera composition integration during gameplay capture.</li>
+        <li>Maintaining service integrity, enforcing fair play, and preventing exploit attempts.</li>
+    </ul>
+
+    <h2 class="holo-text">3. Third-Party Service Providers</h2>
+    <p>We partner with industry-standard third-party service providers to handle backend execution, networking, and content capture. These providers handle data in accordance with their respective privacy standards:</p>
+    <ul>
+        <li><strong>Microsoft PlayFab:</strong> Used for secure cloud save management, player profile storage, leaderboards, and title backend authentication.</li>
+        <li><strong>Photon Fusion (Exit Games):</strong> Powers networking infrastructure, state synchronization, and low-latency multiplayer session management.</li>
+        <li><strong>LIV Inc.:</strong> Utilized to support avatar integration, mixed-reality capture, and external virtual camera mechanics.</li>
+    </ul>
+    <p>We do not sell, rent, or trade player data to third-party advertisers or commercial entities.</p>
+
+    <h2 class="holo-text">4. Data Retention & Security</h2>
+    <p>We apply reasonable technical and organizational precautions to protect player information against unauthorized access, alteration, or disclosure. Gameplay data and account records are retained only for as long as necessary to maintain active service operations for Volleyball Revengers.</p>
+
+    <h2 class="holo-text">5. Contact Us</h2>
+    <p>If you have questions, concerns, or requests regarding this Privacy Policy or data processing practices, please reach out to us at:</p>
+    <div class="contact-box">
+        <strong>Mugen Revolution Studios</strong><br>
+        Email: <a href="mailto:mugenrevolutionstudios@gmail.com">mugenrevolutionstudios@gmail.com</a>
+    </div>
 </body>
 </html>
