@@ -13,7 +13,7 @@
             color: #c5c6c7; 
             padding: 30px 20px; 
             line-height: 1.7; 
-            max-width: 850px; 
+            max-width: 900px; 
             margin: 0 auto; 
         }
 
@@ -61,18 +61,19 @@
 
         .tab-buttons {
             display: flex;
-            gap: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .tab-btn {
             background-color: #1f2833;
             border: 1px solid #283648;
             color: #c5c6c7;
-            padding: 8px 16px;
+            padding: 8px 14px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             transition: all 0.2s ease;
         }
 
@@ -143,9 +144,12 @@
     <div class="leaderboard-card">
         <div class="controls">
             <div class="tab-buttons">
-                <!-- Updated parameters to match PlayFab Statistic names exactly -->
                 <button class="tab-btn active" onclick="switchLeaderboard('Kills', this)">Most Kills</button>
                 <button class="tab-btn" onclick="switchLeaderboard('PlayerElo', this)">Most Elo</button>
+                <button class="tab-btn" onclick="switchLeaderboard('MVP', this)">Most MVPs</button>
+                <button class="tab-btn" onclick="switchLeaderboard('Wins', this)">Most Wins</button>
+                <button class="tab-btn" onclick="switchLeaderboard('Assists', this)">Most Assists</button>
+                <button class="tab-btn" onclick="switchLeaderboard('Blocks', this)">Most Blocks</button>
                 <button class="tab-btn" onclick="switchLeaderboard('AeroCoins_Stat', this)">Most Aero-Coins</button>
             </div>
             <span class="status-badge" id="sync-status">Live Sync Active</span>
@@ -203,9 +207,13 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
 
-            // Update column header text
+            // Update column header text dynamically based on selected statistic
             let headerText = "Kills";
             if (statName === "PlayerElo") headerText = "Elo Rating";
+            if (statName === "MVP") headerText = "MVPs";
+            if (statName === "Wins") headerText = "Wins";
+            if (statName === "Assists") headerText = "Assists";
+            if (statName === "Blocks") headerText = "Blocks";
             if (statName === "AeroCoins_Stat") headerText = "Aero-Coins";
             document.getElementById("stat-header").innerText = headerText;
 
