@@ -143,9 +143,10 @@
     <div class="leaderboard-card">
         <div class="controls">
             <div class="tab-buttons">
-                <button class="tab-btn active" onclick="switchLeaderboard('MostKills', this)">Most Kills</button>
-                <button class="tab-btn" onclick="switchLeaderboard('MostElo', this)">Most Elo</button>
-                <button class="tab-btn" onclick="switchLeaderboard('MostAeroCoins', this)">Most Aero-Coins</button>
+                <!-- Updated parameters to match PlayFab Statistic names exactly -->
+                <button class="tab-btn active" onclick="switchLeaderboard('Kills', this)">Most Kills</button>
+                <button class="tab-btn" onclick="switchLeaderboard('PlayerElo', this)">Most Elo</button>
+                <button class="tab-btn" onclick="switchLeaderboard('AeroCoins_Stat', this)">Most Aero-Coins</button>
             </div>
             <span class="status-badge" id="sync-status">Live Sync Active</span>
         </div>
@@ -155,7 +156,7 @@
                 <tr>
                     <th>Rank</th>
                     <th>Player</th>
-                    <th id="stat-header">Most Kills</th>
+                    <th id="stat-header">Kills</th>
                 </tr>
             </thead>
             <tbody id="leaderboard-body">
@@ -172,7 +173,7 @@
 
     <script>
         const PLAYFAB_TITLE_ID = "1E90D8";
-        let currentStatistic = "MostKills";
+        let currentStatistic = "Kills"; // Default stat to load
 
         function initPlayFab() {
             PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
@@ -203,9 +204,9 @@
             btnElement.classList.add('active');
 
             // Update column header text
-            let headerText = "Most Kills";
-            if (statName === "MostElo") headerText = "Elo Rating";
-            if (statName === "MostAeroCoins") headerText = "Aero-Coins";
+            let headerText = "Kills";
+            if (statName === "PlayerElo") headerText = "Elo Rating";
+            if (statName === "AeroCoins_Stat") headerText = "Aero-Coins";
             document.getElementById("stat-header").innerText = headerText;
 
             // Fetch new stats
@@ -223,7 +224,11 @@
 
             PlayFabClientSDK.GetLeaderboard(leaderboardRequest, (lbResult, lbError) => {
                 if (lbError) {
-                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #8892b0; padding: 20px;">No entries found for this statistic yet.</td></tr>`;
+                    let errorMsg = "No entries found for this statistic yet.";
+                    if (statisticName === "AeroCoins_Stat") {
+                        errorMsg = "Aero-Coins leaderboard requires mirroring currency to a Statistic (e.g., 'AeroCoins_Stat') in PlayFab.";
+                    }
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #8892b0; padding: 20px;">${errorMsg}</td></tr>`;
                     return;
                 }
                 if (lbResult && lbResult.data && lbResult.data.Leaderboard) {
@@ -250,6 +255,7 @@
                 if (rank === 2) rankClass = "rank-2";
                 if (rank === 3) rankClass = "rank-3";
 
+                // Fallback to PlayFabId if DisplayName is not set
                 const displayName = entry.DisplayName || entry.PlayFabId;
                 
                 const tr = document.createElement("tr");
