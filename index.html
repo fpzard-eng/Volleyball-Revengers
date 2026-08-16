@@ -7,37 +7,39 @@
     <style>
         :root {
             /* Dark Mode Variables (Default) */
-            --bg-main: #0a0b0e;
-            --bg-card: #12141a;
-            --bg-nav: rgba(18, 20, 26, 0.85);
+            --bg-main: #07080a;
+            --bg-card: rgba(18, 22, 31, 0.65);
+            --bg-nav: rgba(10, 12, 16, 0.75);
             --text-main: #ffffff;
-            --text-muted: #a0a5b5;
-            --border-color: #1f2430;
-            --accent-color: #ff4500;
-            --accent-hover: #e03d00;
-            --accent-glow: rgba(255, 69, 0, 0.35);
-            --shadow-color: rgba(0, 0, 0, 0.5);
+            --text-muted: #9ba3b4;
+            --border-color: rgba(255, 255, 255, 0.12);
+            --accent-glow: rgba(0, 183, 255, 0.3);
+            --shadow-color: rgba(0, 0, 0, 0.6);
+            --holo-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 35%, #00c6ff 70%, #ff4500 100%);
+            --btn-gradient: linear-gradient(135deg, #ff4500 0%, #ff6b00 100%);
+            --btn-hover: linear-gradient(135deg, #ff5500 0%, #ff7700 100%);
         }
 
         [data-theme="light"] {
             /* Light Mode Variables */
-            --bg-main: #f5f7fa;
-            --bg-card: #ffffff;
-            --bg-nav: rgba(255, 255, 255, 0.85);
-            --text-main: #111827;
-            --text-muted: #4b5563;
-            --border-color: #e5e7eb;
-            --accent-color: #ff4500;
-            --accent-hover: #d93b00;
-            --accent-glow: rgba(255, 69, 0, 0.2);
+            --bg-main: #f3f5f9;
+            --bg-card: rgba(255, 255, 255, 0.8);
+            --bg-nav: rgba(245, 247, 250, 0.85);
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --accent-glow: rgba(0, 183, 255, 0.25);
             --shadow-color: rgba(0, 0, 0, 0.08);
+            --holo-gradient: linear-gradient(135deg, #0072ff 0%, #00c6ff 50%, #ff4500 100%);
+            --btn-gradient: linear-gradient(135deg, #ff4500 0%, #ff6b00 100%);
+            --btn-hover: linear-gradient(135deg, #ff5500 0%, #ff7700 100%);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         body {
@@ -47,17 +49,32 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* --- Glassmorphism Navigation --- */
+        /* Ambient Glow Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80vw;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 183, 255, 0.12) 0%, rgba(255, 69, 0, 0.08) 50%, transparent 80%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* --- Header Navigation --- */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 30px;
-            background-color: var(--bg-nav);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            padding: 16px 32px;
+            background: var(--bg-nav);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
@@ -75,14 +92,19 @@
             height: 38px;
             border-radius: 50%;
             object-fit: cover;
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 10px var(--accent-glow);
         }
 
+        /* Holographic Text Effect */
         .logo-text {
             font-size: 1.05rem;
             font-weight: 800;
-            color: var(--accent-color);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
+            background: var(--holo-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .nav-actions {
@@ -91,45 +113,37 @@
             gap: 12px;
         }
 
-        .theme-select {
-            background-color: var(--bg-card);
+        .theme-select, .menu-btn {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
             color: var(--text-main);
             border: 1px solid var(--border-color);
-            padding: 8px 12px;
+            padding: 8px 14px;
             font-size: 0.85rem;
-            font-weight: 600;
-            border-radius: 6px;
+            font-weight: 700;
+            border-radius: 8px;
             cursor: pointer;
             outline: none;
         }
 
-        .menu-btn {
-            background-color: var(--bg-card);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            border-radius: 6px;
-            cursor: pointer;
+        .theme-select:hover, .menu-btn:hover {
+            border-color: rgba(0, 183, 255, 0.5);
+            box-shadow: 0 0 12px var(--accent-glow);
         }
 
-        .menu-btn:hover {
-            border-color: var(--accent-color);
-            color: var(--accent-color);
-        }
-
-        /* Slide-out Dropdown */
+        /* Slide-out Menu */
         .nav-menu {
             display: none;
             position: absolute;
             top: 100%;
-            right: 30px;
-            background-color: var(--bg-card);
+            right: 32px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-shadow: 0px 10px 25px var(--shadow-color);
-            width: 200px;
+            border-radius: 12px;
+            box-shadow: 0px 12px 30px var(--shadow-color);
+            width: 210px;
             padding: 8px 0;
             flex-direction: column;
             z-index: 1000;
@@ -141,15 +155,15 @@
 
         .nav-menu a {
             color: var(--text-muted);
-            padding: 10px 18px;
+            padding: 12px 20px;
             text-decoration: none;
             font-size: 0.9rem;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .nav-menu a:hover {
-            background-color: var(--bg-main);
-            color: var(--accent-color);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
         }
 
         /* --- Hero Showcase --- */
@@ -159,14 +173,22 @@
             max-width: 1050px;
             margin: 35px auto 0 auto;
             padding: 0 20px;
+            z-index: 1;
+        }
+
+        .cover-container {
+            position: relative;
+            border-radius: 20px;
+            padding: 2px;
+            background: var(--holo-gradient);
+            box-shadow: 0 20px 40px var(--shadow-color);
         }
 
         .cover-img {
             width: 100%;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 15px 35px var(--shadow-color);
+            border-radius: 18px;
             display: block;
+            background-color: #000;
         }
 
         /* --- Content Container --- */
@@ -178,22 +200,27 @@
             justify-content: center;
             padding: 40px 20px;
             text-align: center;
+            z-index: 1;
         }
 
         .main-crest {
             width: 110px;
             height: 110px;
-            margin-bottom: 20px;
-            filter: drop-shadow(0 0 20px var(--accent-glow));
+            margin-bottom: 24px;
+            filter: drop-shadow(0 0 20px rgba(0, 183, 255, 0.4));
         }
 
+        /* Title with Holographic Gradient Accent */
         .game-title {
-            color: var(--accent-color);
-            font-size: 3.2rem;
+            font-size: 3.4rem;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
+            background: var(--holo-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 4px 15px rgba(0, 183, 255, 0.2));
         }
 
         .game-description {
@@ -204,46 +231,51 @@
             margin-bottom: 35px;
         }
 
-        /* Store Link Section */
+        /* Store Link Button with Gradient */
         .store-section {
             margin-bottom: 20px;
         }
 
         .section-title {
             font-size: 0.8rem;
-            font-weight: 700;
+            font-weight: 800;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;
             margin-bottom: 12px;
         }
 
         .store-btn {
             display: inline-block;
-            background-color: var(--accent-color);
+            background: var(--btn-gradient);
             color: #ffffff;
             font-size: 1.05rem;
             font-weight: 800;
-            padding: 16px 36px;
-            border-radius: 10px;
+            padding: 16px 40px;
+            border-radius: 12px;
             text-decoration: none;
-            box-shadow: 0 6px 20px var(--accent-glow);
+            box-shadow: 0 8px 25px rgba(255, 69, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .store-btn:hover {
-            background-color: var(--accent-hover);
-            transform: translateY(-2px);
+            background: var(--btn-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(255, 69, 0, 0.5);
         }
 
         /* --- Footer --- */
         footer {
-            background-color: var(--bg-card);
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border-top: 1px solid var(--border-color);
             padding: 40px 20px 30px 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 30px;
+            z-index: 1;
         }
 
         .footer-grid {
@@ -270,26 +302,25 @@
         }
 
         .footer-group a:hover {
-            color: var(--accent-color);
+            color: #00c6ff;
         }
 
         .copyright {
             color: var(--text-muted);
             font-size: 0.85rem;
-            opacity: 0.8;
+            opacity: 0.7;
         }
     </style>
 </head>
 <body>
 
-    <!-- Glassmorphism Header -->
+    <!-- Header Navigation -->
     <header>
         <div class="header-brand">
             <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
             <div class="logo-text">Mugen Revolution Studios</div>
         </div>
         <div class="nav-actions">
-            <!-- Theme Toggle Selector -->
             <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
                 <option value="auto">Auto 🌓</option>
                 <option value="dark">Dark 🌙</option>
@@ -304,9 +335,11 @@
         </div>
     </header>
 
-    <!-- Showcase Hero -->
+    <!-- Showcase Hero with Holographic Border -->
     <div class="hero">
-        <img src="cover.png" alt="Volleyball Revengers Court" class="cover-img">
+        <div class="cover-container">
+            <img src="cover.png" alt="Volleyball Revengers Court" class="cover-img">
+        </div>
     </div>
 
     <!-- Main Content -->
@@ -349,7 +382,6 @@
 
     <!-- Theme & Menu JavaScript -->
     <script>
-        // Menu Toggle
         function toggleMenu() {
             const menu = document.getElementById('navMenu');
             menu.classList.toggle('active');
@@ -363,7 +395,6 @@
             }
         });
 
-        // Theme Switcher Logic
         function changeTheme(mode) {
             localStorage.setItem('preferred-theme', mode);
             applyTheme(mode);
@@ -379,12 +410,10 @@
             }
         }
 
-        // Initialize saved theme on load
         const savedTheme = localStorage.getItem('preferred-theme') || 'auto';
         document.getElementById('themeSelect').value = savedTheme;
         applyTheme(savedTheme);
 
-        // Listen for OS system theme changes if in auto mode
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             if (localStorage.getItem('preferred-theme') === 'auto') {
                 applyTheme('auto');
