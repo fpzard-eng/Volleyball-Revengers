@@ -6,15 +6,19 @@
     <title>Volleyball Revengers | Mugen Revolution Studios</title>
     <style>
         :root {
-            /* Dark Mode Variables (Default) */
-            --bg-main: #07080a;
+            /* Dark Mode Variables */
+            --bg-main: #060709;
             --bg-card: rgba(18, 22, 31, 0.65);
-            --bg-nav: rgba(10, 12, 16, 0.75);
+            --bg-card-hover: rgba(28, 34, 48, 0.85);
+            --bg-nav: rgba(10, 12, 16, 0.8);
             --text-main: #ffffff;
             --text-muted: #9ba3b4;
             --border-color: rgba(255, 255, 255, 0.12);
+            --border-glow: rgba(0, 183, 255, 0.4);
             --accent-glow: rgba(0, 183, 255, 0.3);
-            --shadow-color: rgba(0, 0, 0, 0.6);
+            --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 0, 0, 0.4);
+            --shadow-hero: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 183, 255, 0.2);
+            --shadow-btn: 0 8px 25px rgba(255, 69, 0, 0.5);
             --holo-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 35%, #00c6ff 70%, #ff4500 100%);
             --btn-gradient: linear-gradient(135deg, #ff4500 0%, #ff6b00 100%);
             --btn-hover: linear-gradient(135deg, #ff5500 0%, #ff7700 100%);
@@ -23,13 +27,17 @@
         [data-theme="light"] {
             /* Light Mode Variables */
             --bg-main: #f3f5f9;
-            --bg-card: rgba(255, 255, 255, 0.8);
-            --bg-nav: rgba(245, 247, 250, 0.85);
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --bg-card-hover: rgba(255, 255, 255, 0.98);
+            --bg-nav: rgba(245, 247, 250, 0.88);
             --text-main: #0f172a;
             --text-muted: #475569;
-            --border-color: rgba(0, 0, 0, 0.1);
-            --accent-glow: rgba(0, 183, 255, 0.25);
-            --shadow-color: rgba(0, 0, 0, 0.08);
+            --border-color: rgba(0, 0, 0, 0.08);
+            --border-glow: rgba(0, 183, 255, 0.3);
+            --accent-glow: rgba(0, 183, 255, 0.2);
+            --shadow-card: 0 10px 25px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-hero: 0 15px 35px rgba(0, 0, 0, 0.12), 0 0 20px rgba(0, 183, 255, 0.15);
+            --shadow-btn: 0 8px 20px rgba(255, 69, 0, 0.35);
             --holo-gradient: linear-gradient(135deg, #0072ff 0%, #00c6ff 50%, #ff4500 100%);
             --btn-gradient: linear-gradient(135deg, #ff4500 0%, #ff6b00 100%);
             --btn-hover: linear-gradient(135deg, #ff5500 0%, #ff7700 100%);
@@ -39,7 +47,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
         }
 
         body {
@@ -52,21 +60,21 @@
             overflow-x: hidden;
         }
 
-        /* Ambient Glow Background */
+        /* Ambient Glow Effect */
         body::before {
             content: '';
             position: fixed;
-            top: -10%;
+            top: -15%;
             left: 50%;
             transform: translateX(-50%);
-            width: 80vw;
-            height: 500px;
-            background: radial-gradient(circle, rgba(0, 183, 255, 0.12) 0%, rgba(255, 69, 0, 0.08) 50%, transparent 80%);
+            width: 85vw;
+            height: 550px;
+            background: radial-gradient(circle, rgba(0, 183, 255, 0.15) 0%, rgba(255, 69, 0, 0.08) 50%, transparent 80%);
             pointer-events: none;
             z-index: 0;
         }
 
-        /* --- Header Navigation --- */
+        /* --- Glassmorphism Navigation --- */
         header {
             display: flex;
             justify-content: space-between;
@@ -79,6 +87,7 @@
             position: sticky;
             top: 0;
             z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
 
         .header-brand {
@@ -93,10 +102,9 @@
             border-radius: 50%;
             object-fit: cover;
             border: 1.5px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 10px var(--accent-glow);
+            filter: drop-shadow(0 0 8px var(--accent-glow));
         }
 
-        /* Holographic Text Effect */
         .logo-text {
             font-size: 1.05rem;
             font-weight: 800;
@@ -124,14 +132,16 @@
             border-radius: 8px;
             cursor: pointer;
             outline: none;
+            box-shadow: 0 2px 8px var(--shadow-card);
         }
 
         .theme-select:hover, .menu-btn:hover {
-            border-color: rgba(0, 183, 255, 0.5);
-            box-shadow: 0 0 12px var(--accent-glow);
+            border-color: var(--border-glow);
+            box-shadow: 0 0 15px var(--accent-glow);
+            transform: translateY(-1px);
         }
 
-        /* Slide-out Menu */
+        /* Slide-out Dropdown */
         .nav-menu {
             display: none;
             position: absolute;
@@ -142,7 +152,7 @@
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            box-shadow: 0px 12px 30px var(--shadow-color);
+            box-shadow: var(--shadow-card);
             width: 210px;
             padding: 8px 0;
             flex-direction: column;
@@ -166,7 +176,7 @@
             color: var(--text-main);
         }
 
-        /* --- Hero Showcase --- */
+        /* --- Hero Showcase with Dynamic Drop Shadow --- */
         .hero {
             position: relative;
             width: 100%;
@@ -181,7 +191,13 @@
             border-radius: 20px;
             padding: 2px;
             background: var(--holo-gradient);
-            box-shadow: 0 20px 40px var(--shadow-color);
+            box-shadow: var(--shadow-hero);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .cover-container:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 45px rgba(0, 183, 255, 0.35);
         }
 
         .cover-img {
@@ -191,14 +207,14 @@
             background-color: #000;
         }
 
-        /* --- Content Container --- */
+        /* --- Main Content --- */
         .content {
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 40px 20px 20px 20px;
             text-align: center;
             z-index: 1;
         }
@@ -207,10 +223,14 @@
             width: 110px;
             height: 110px;
             margin-bottom: 24px;
-            filter: drop-shadow(0 0 20px rgba(0, 183, 255, 0.4));
+            filter: drop-shadow(0 0 25px rgba(0, 183, 255, 0.45));
+            transition: transform 0.3s ease;
         }
 
-        /* Title with Holographic Gradient Accent */
+        .main-crest:hover {
+            transform: scale(1.05) rotate(2deg);
+        }
+
         .game-title {
             font-size: 3.4rem;
             font-weight: 900;
@@ -220,7 +240,7 @@
             background: var(--holo-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 4px 15px rgba(0, 183, 255, 0.2));
+            filter: drop-shadow(0 4px 20px rgba(0, 183, 255, 0.25));
         }
 
         .game-description {
@@ -231,9 +251,59 @@
             margin-bottom: 35px;
         }
 
-        /* Store Link Button with Gradient */
+        /* --- NEW FEATURE CARDS GRID UI --- */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 45px;
+            padding: 0 10px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px 20px;
+            text-align: left;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-glow);
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
+        }
+
+        .feature-icon {
+            font-size: 1.8rem;
+            margin-bottom: 12px;
+            display: inline-block;
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .feature-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* --- Store Button with Shadow & Hover Effect --- */
         .store-section {
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
 
         .section-title {
@@ -242,7 +312,7 @@
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
 
         .store-btn {
@@ -251,17 +321,19 @@
             color: #ffffff;
             font-size: 1.05rem;
             font-weight: 800;
-            padding: 16px 40px;
+            padding: 16px 42px;
             border-radius: 12px;
             text-decoration: none;
-            box-shadow: 0 8px 25px rgba(255, 69, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: var(--shadow-btn);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            position: relative;
+            overflow: hidden;
         }
 
         .store-btn:hover {
             background: var(--btn-hover);
-            transform: translateY(-3px);
-            box-shadow: 0 12px 30px rgba(255, 69, 0, 0.5);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(255, 69, 0, 0.65);
         }
 
         /* --- Footer --- */
@@ -276,6 +348,7 @@
             align-items: center;
             gap: 30px;
             z-index: 1;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
         }
 
         .footer-grid {
@@ -303,6 +376,7 @@
 
         .footer-group a:hover {
             color: #00c6ff;
+            transform: translateX(2px);
         }
 
         .copyright {
@@ -335,7 +409,7 @@
         </div>
     </header>
 
-    <!-- Showcase Hero with Holographic Border -->
+    <!-- Showcase Hero -->
     <div class="hero">
         <div class="cover-container">
             <img src="cover.png" alt="Volleyball Revengers Court" class="cover-img">
@@ -349,6 +423,25 @@
         <p class="game-description">
             The ultimate virtual reality volleyball experience. Master the court with realistic physics, precise controls, and high-intensity match action.
         </p>
+
+        <!-- Feature Cards Grid UI -->
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🏐</div>
+                <div class="feature-title">Realistic Ball Mechanics</div>
+                <div class="feature-desc">Custom physics engine built for true-to-life passing, setting, spiking, and ball spin interaction.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🥽</div>
+                <div class="feature-title">Standalone VR Focus</div>
+                <div class="feature-desc">Optimized performance built specifically for Meta Quest headsets with smooth frame rates.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Competitive Action</div>
+                <div class="feature-desc">Step on the court to practice your jump serve, timing, and defensive positioning.</div>
+            </div>
+        </div>
 
         <!-- Store Link Section -->
         <div class="store-section">
@@ -380,7 +473,7 @@
         </div>
     </footer>
 
-    <!-- Theme & Menu JavaScript -->
+    <!-- JavaScript -->
     <script>
         function toggleMenu() {
             const menu = document.getElementById('navMenu');
