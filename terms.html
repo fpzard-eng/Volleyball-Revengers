@@ -5,28 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terms of Service - Volleyball Revengers</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
-        h1, h2 { color: #ff4500; }
-        a { color: #ff4500; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #0b0c10; 
+            color: #c5c6c7; 
+            padding: 30px 20px; 
+            line-height: 1.7; 
+            max-width: 850px; 
+            margin: 0 auto; 
+        }
+
+        /* Holographic Text Style */
+        .holo-text {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 25%, #00c6ff 50%, #0072ff 75%, #00f2fe 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: holoGlow 4s linear infinite;
+            display: inline-block;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes holoGlow {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        h1 { font-size: 2.2rem; margin-bottom: 5px; }
+        h2 { font-size: 1.3rem; margin-top: 35px; margin-bottom: 12px; border-bottom: 1px solid #1f2833; padding-bottom: 5px; }
+
+        a { color: #66fcf1; text-decoration: none; transition: color 0.2s ease; }
+        a:hover { color: #45a29e; text-decoration: underline; }
+
         .nav { margin-bottom: 30px; }
+        .last-updated { font-size: 0.9rem; color: #8892b0; margin-bottom: 30px; }
+        ul { margin-top: 8px; padding-left: 20px; }
+        li { margin-bottom: 6px; }
+        
+        .contact-box {
+            background-color: #1f2833;
+            border-left: 4px solid #66fcf1;
+            padding: 15px 20px;
+            margin-top: 15px;
+            border-radius: 0 4px 4px 0;
+        }
     </style>
 </head>
 <body>
     <div class="nav"><a href="index.html">← Back to Home</a></div>
-    <h1>Terms of Service</h1>
-    <p>Last updated: August 2026</p>
     
-    <h2>1. Acceptance of Terms</h2>
-    <p>By accessing or playing Volleyball Revengers, created by Mugen Revolution Studios, you agree to abide by these Terms of Service.</p>
-    
-    <h2>2. Player Conduct</h2>
-    <p>Players must treat others with respect during online interactions. Cheating, exploiting software bugs, toxic behavior, or attempting to compromise backend servers will result in account bans.</p>
-    
-    <h2>3. Intellectual Property</h2>
-    <p>All game assets, code, logos, and branding related to Volleyball Revengers belong exclusively to Mugen Revolution Studios.</p>
+    <h1 class="holo-text">Terms of Service</h1>
+    <div class="last-updated">Last Updated: August 16, 2026</div>
 
-    <h2>4. Disclaimer</h2>
-    <p>The game is provided "as is" without warranty of any kind. Mugen Revolution Studios is not liable for any issues arising from software use.</p>
+    <p>These Terms of Service ("Terms") govern your access to and use of <strong>Volleyball Revengers</strong> ("the Game"), developed and operated by <strong>Mugen Revolution Studios</strong> ("we," "our," or "us"). By downloading, installing, or playing the Game, you agree to be bound by these Terms.</p>
+
+    <h2 class="holo-text">1. Acceptance of Terms & Services</h2>
+    <p>By accessing the Game or utilizing associated network services provided via Microsoft PlayFab, Photon Fusion, and LIV integrations, you confirm that you accept these Terms and agree to comply with them. If you do not agree, you must not access or play the Game.</p>
+
+    <h2 class="holo-text">2. Account & Network Connectivity</h2>
+    <p>Online multiplayer state synchronization, leaderboards, player profiles, and mixed reality capabilities rely on third-party backend systems. You are responsible for maintaining the security of your platform credentials (e.g., Meta Quest account). We reserve the right to suspend or terminate backend access to any user who interferes with server operations or network protocols.</p>
+
+    <h2 class="holo-text">3. Code of Conduct & Fair Play</h2>
+    <p>To ensure a safe, fair, and competitive environment, you agree not to engage in any of the following prohibited behaviors:</p>
+    <ul>
+        <li><strong>Cheating & Exploitation:</strong> Modifying game code, utilizing external automation scripts, or intentionally abusing network latency/bugs to gain an unfair advantage.</li>
+        <li><strong>Server Interference:</strong> Attempting to intercept, disrupt, or reverse-engineer PlayFab backend API endpoints or Photon Fusion multiplayer sessions.</li>
+        <li><strong>Abusive Behavior:</strong> Harassing, threatening, or engaging in toxic conduct toward other players in multiplayer matches or community channels.</li>
+    </ul>
+
+    <h2 class="holo-text">4. Intellectual Property Rights</h2>
+    <p>All title, ownership rights, and intellectual property rights in and to <strong>Volleyball Revengers</strong>—including but not limited to custom C# source code, physics systems, game assets, logos, character models, animations, and branding—are owned exclusively by Mugen Revolution Studios.</p>
+
+    <h2 class="holo-text">5. Limitation of Liability & Warranty Disclaimer</h2>
+    <p>The Game is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind, either express or implied. Mugen Revolution Studios does not warrant that multiplayer services will be uninterrupted, error-free, or completely secure. To the maximum extent permitted by applicable law, Mugen Revolution Studios shall not be liable for any indirect, incidental, or consequential damages resulting from your use or inability to use the Game.</p>
+
+    <h2 class="holo-text">6. Physical Safety Notice</h2>
+    <p>Volleyball Revengers is an active virtual reality title. Players are solely responsible for establishing a safe play space clear of physical objects, pets, walls, and other hazards prior to initiating gameplay. Always adhere to Meta Quest safety guidelines.</p>
+
+    <h2 class="holo-text">7. Contact Information</h2>
+    <p>For questions or concerns regarding these Terms of Service, please contact us at:</p>
+    <div class="contact-box">
+        <strong>Mugen Revolution Studios</strong><br>
+        Email: <a href="mailto:mugenrevolutionstudios@gmail.com">mugenrevolutionstudios@gmail.com</a>
+    </div>
 </body>
 </html>
