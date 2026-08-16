@@ -6,58 +6,65 @@
     <title>Volleyball Revengers | Mugen Revolution Studios</title>
     <!-- PlayFab JS SDK -->
     <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #060709;
-            --bg-card: rgba(18, 22, 31, 0.85);
-            --bg-card-hover: rgba(28, 34, 48, 0.95);
-            --bg-nav: rgba(10, 12, 16, 0.9);
+            --bg-main: #05070c;
+            --bg-card: rgba(15, 20, 32, 0.85);
+            --bg-card-hover: rgba(24, 32, 50, 0.95);
+            --bg-nav: rgba(8, 11, 18, 0.92);
             --text-main: #ffffff;
-            --text-muted: #9ba3b4;
-            --border-color: rgba(255, 255, 255, 0.15);
-            --border-glow: rgba(30, 144, 216, 0.6);
-            --accent-glow: rgba(30, 144, 216, 0.4);
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.12);
+            --border-glow: rgba(0, 210, 255, 0.6);
+            --accent-glow: rgba(0, 210, 255, 0.35);
             --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.8), 0 8px 20px rgba(0, 0, 0, 0.6);
-            --shadow-hero: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 50px rgba(30, 144, 216, 0.35);
-            --shadow-btn: 0 12px 30px rgba(30, 144, 216, 0.5);
+            --shadow-hero: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 60px rgba(0, 210, 255, 0.3);
+            --shadow-btn: 0 12px 30px rgba(0, 210, 255, 0.4);
             --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.85);
-            --holo-gradient: linear-gradient(135deg, #1E90D8 0%, #4facfe 50%, #1E90D8 100%);
-            --btn-gradient: linear-gradient(135deg, #1E90D8 0%, #1572a8 100%);
-            --btn-hover: linear-gradient(135deg, #24a0f0 0%, #1a82c4 100%);
+            --holo-gradient: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 35%, #92fe9d 70%, #00d2ff 100%);
+            --btn-gradient: linear-gradient(135deg, #00d2ff 0%, #0072ff 100%);
+            --btn-hover: linear-gradient(135deg, #00e5ff 0%, #0088ff 100%);
         }
         [data-theme="light"] {
-            --bg-main: #f3f5f9;
-            --bg-card: rgba(255, 255, 255, 0.95);
+            --bg-main: #f1f5f9;
+            --bg-card: rgba(255, 255, 255, 0.92);
             --bg-card-hover: rgba(255, 255, 255, 1);
-            --bg-nav: rgba(245, 247, 250, 0.95);
+            --bg-nav: rgba(248, 250, 252, 0.95);
             --text-main: #0f172a;
-            --text-muted: #475569;
-            --border-color: rgba(0, 0, 0, 0.15);
-            --border-glow: rgba(30, 144, 216, 0.6);
-            --accent-glow: rgba(30, 144, 216, 0.3);
-            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
-            --shadow-hero: 0 25px 50px rgba(0, 0, 0, 0.2), 0 0 40px rgba(30, 144, 216, 0.3);
-            --shadow-btn: 0 12px 30px rgba(30, 144, 216, 0.35);
-            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.15);
-            --holo-gradient: linear-gradient(135deg, #1E90D8 0%, #00c6ff 50%, #1572a8 100%);
-            --btn-gradient: linear-gradient(135deg, #1E90D8 0%, #1572a8 100%);
-            --btn-hover: linear-gradient(135deg, #24a0f0 0%, #1a82c4 100%);
+            --text-muted: #64748b;
+            --border-color: rgba(0, 0, 0, 0.12);
+            --border-glow: rgba(0, 162, 255, 0.6);
+            --accent-glow: rgba(0, 162, 255, 0.25);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.08);
+            --shadow-hero: 0 25px 50px rgba(0, 0, 0, 0.15), 0 0 40px rgba(0, 162, 255, 0.25);
+            --shadow-btn: 0 12px 30px rgba(0, 162, 255, 0.3);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.1);
+            --holo-gradient: linear-gradient(135deg, #0088ff 0%, #00c6ff 50%, #0051ff 100%);
+            --btn-gradient: linear-gradient(135deg, #0088ff 0%, #0051ff 100%);
+            --btn-hover: linear-gradient(135deg, #1aa0ff 0%, #1a66ff 100%);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
-        body::before { content: ''; position: fixed; top: -15%; left: 50%; transform: translateX(-50%); width: 85vw; height: 550px; background: radial-gradient(circle, rgba(30, 144, 216, 0.15) 0%, rgba(30, 144, 216, 0.05) 50%, transparent 80%); pointer-events: none; z-index: 0; }
-        .holo-text { background: var(--holo-gradient); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: holoGlow 4s linear infinite; font-weight: 900; }
-        @keyframes holoGlow { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 14px 32px; background: var(--bg-nav); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 9999; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4); }
+        body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: -15%; left: 50%; transform: translateX(-50%); width: 90vw; height: 600px; background: radial-gradient(circle, rgba(0, 210, 255, 0.15) 0%, rgba(58, 123, 213, 0.05) 50%, transparent 80%); pointer-events: none; z-index: 0; }
+        h1, h2, h3, .logo-text, .widget-title, .countdown-num { font-family: 'Outfit', sans-serif; }
+        
+        .holo-text { background: var(--holo-gradient); background-size: 300% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: holoGlow 5s ease infinite; font-weight: 900; }
+        @keyframes holoGlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        header { display: flex; justify-content: space-between; align-items: center; padding: 14px 32px; background: var(--bg-nav); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 9999; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4); }
         .header-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-        .header-logo-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255, 255, 255, 0.2); filter: drop-shadow(0 0 10px var(--accent-glow)); }
-        .logo-text { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
+        .header-logo-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255, 255, 255, 0.2); filter: drop-shadow(0 0 10px var(--accent-glow)); }
+        .logo-text { font-size: 1.15rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
         .nav-actions { display: flex; align-items: center; gap: 16px; position: relative; }
         .theme-toggle-container { display: flex; align-items: center; background: rgba(100, 100, 100, 0.2); border: 1px solid var(--border-color); border-radius: 20px; padding: 3px; cursor: pointer; position: relative; width: 70px; height: 34px; z-index: 10000; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5); }
         .theme-toggle-option { flex: 1; text-align: center; font-size: 0.8rem; z-index: 2; pointer-events: none; }
         .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--btn-gradient); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         [data-theme="light"] .theme-toggle-slider { transform: translateX(36px); }
-        .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.9rem; font-weight: 800; border-radius: 8px; cursor: pointer; outline: none; box-shadow: var(--shadow-card); z-index: 10000; }
+        .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 18px; font-size: 0.9rem; font-weight: 800; border-radius: 8px; cursor: pointer; outline: none; box-shadow: var(--shadow-card); z-index: 10000; font-family: 'Outfit', sans-serif; }
         .menu-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
         .nav-menu { display: none; position: absolute; top: 120%; right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-widget); width: 200px; padding: 10px 0; flex-direction: column; z-index: 9998; }
         .nav-menu.active { display: flex; animation: fadeIn 0.2s ease-out; }
@@ -65,36 +72,40 @@
         .nav-menu a { color: var(--text-muted); padding: 12px 20px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         .nav-menu a:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-main); padding-left: 25px; }
         
-        .info-bar { background: linear-gradient(90deg, rgba(30, 144, 216, 0.15) 0%, rgba(30, 144, 216, 0.05) 100%); border-bottom: 1px solid var(--border-color); padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 35px; font-size: 0.85rem; font-weight: 700; flex-wrap: wrap; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .info-bar { background: linear-gradient(90deg, rgba(0, 210, 255, 0.12) 0%, rgba(58, 123, 213, 0.05) 100%); border-bottom: 1px solid var(--border-color); padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 35px; font-size: 0.85rem; font-weight: 700; flex-wrap: wrap; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .info-item { display: flex; align-items: center; gap: 8px; }
-        
-        /* Blinking Eye Animation */
-        .eye-icon { display: inline-block; font-size: 1.1rem; line-height: 1; transition: transform 0.15s ease, opacity 0.15s ease; filter: drop-shadow(0 0 6px rgba(30, 144, 216, 0.6)); }
+        .eye-icon { display: inline-block; font-size: 1.1rem; line-height: 1; transition: transform 0.15s ease, opacity 0.15s ease; filter: drop-shadow(0 0 6px rgba(0, 210, 255, 0.6)); }
         .eye-blink { animation: eyeBlink 0.35s ease-in-out; }
-        @keyframes eyeBlink {
-            0% { transform: scaleY(1); opacity: 1; }
-            50% { transform: scaleY(0.1); opacity: 0.3; }
-            100% { transform: scaleY(1); opacity: 1; }
-        }
-
-        .live-count { color: #1E90D8; font-weight: 900; font-size: 1rem; }
+        @keyframes eyeBlink { 0% { transform: scaleY(1); opacity: 1; } 50% { transform: scaleY(0.1); opacity: 0.3; } 100% { transform: scaleY(1); opacity: 1; } }
+        .live-count { color: #00d2ff; font-weight: 900; font-size: 1rem; }
+        
         .hero { position: relative; width: 100%; max-width: 1100px; margin: 40px auto 0 auto; padding: 0 20px; z-index: 1; }
-        .cover-container { position: relative; border-radius: 20px; padding: 3px; background: var(--holo-gradient); box-shadow: var(--shadow-hero); }
+        .cover-container { position: relative; border-radius: 20px; padding: 3px; background: var(--holo-gradient); background-size: 300% auto; animation: holoGlow 5s ease infinite; box-shadow: var(--shadow-hero); }
         .cover-img { width: 100%; border-radius: 17px; display: block; background-color: #000; }
         .content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; text-align: center; z-index: 1; }
-        .game-title { font-size: 4rem; letter-spacing: 3px; margin-bottom: 10px; filter: drop-shadow(0 8px 25px rgba(30, 144, 216, 0.4)); }
-        .game-description { font-size: 1.2rem; color: var(--text-muted); font-weight: 600; margin-bottom: 50px; }
+        .game-title { font-size: 4.2rem; letter-spacing: 2px; margin-bottom: 8px; filter: drop-shadow(0 8px 25px rgba(0, 210, 255, 0.35)); }
+        .game-description { font-size: 1.25rem; color: var(--text-muted); font-weight: 700; margin-bottom: 35px; }
         
+        /* Countdown Timer Component */
+        .countdown-container { background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border-color); border-radius: 20px; padding: 25px 35px; width: 100%; max-width: 700px; margin-bottom: 50px; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; }
+        .countdown-container::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--holo-gradient); background-size: 300% auto; animation: holoGlow 5s ease infinite; }
+        .countdown-title { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 18px; font-weight: 800; }
+        .countdown-grid { display: flex; justify-content: center; align-items: center; gap: 20px; }
+        .countdown-box { display: flex; flex-direction: column; align-items: center; min-width: 80px; }
+        .countdown-num { font-size: 2.5rem; font-weight: 900; line-height: 1; color: var(--text-main); text-shadow: 0 0 20px rgba(0, 210, 255, 0.4); }
+        .countdown-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 700; margin-top: 6px; }
+        .countdown-divider { font-size: 2rem; font-weight: 900; color: rgba(255,255,255,0.2); margin-top: -15px; }
+
         .widgets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 30px; width: 100%; max-width: 1100px; margin-bottom: 60px; }
         .widget-card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 30px; text-align: left; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; display: flex; flex-direction: column; }
-        .widget-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); }
+        .widget-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); background-size: 300% auto; animation: holoGlow 5s ease infinite; }
         .widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
         .widget-title { font-size: 1.4rem; font-weight: 900; }
         
         .tab-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
-        .tab-btn { background: rgba(31, 40, 51, 0.6); border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.75rem; transition: all 0.2s ease; }
-        .tab-btn:hover { border-color: #1E90D8; color: var(--text-main); }
-        .tab-btn.active { background: linear-gradient(135deg, rgba(30, 144, 216, 0.3), rgba(30, 144, 216, 0.1)); border-color: #1E90D8; color: #1E90D8; box-shadow: 0 0 15px rgba(30, 144, 216, 0.3); }
+        .tab-btn { background: rgba(31, 40, 51, 0.6); border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.75rem; transition: all 0.2s ease; font-family: 'Outfit', sans-serif; }
+        .tab-btn:hover { border-color: #00d2ff; color: var(--text-main); }
+        .tab-btn.active { background: linear-gradient(135deg, rgba(0, 210, 255, 0.3), rgba(0, 210, 255, 0.1)); border-color: #00d2ff; color: #00d2ff; box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); }
         
         .table-responsive { width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -106,27 +117,30 @@
         .rank-3 { color: #cd7f32; font-weight: 900; filter: drop-shadow(0 0 8px rgba(205, 127, 50, 0.4)); }
 
         .empty-log-card { text-align: center; padding: 40px 20px; margin: auto; }
-        .empty-icon { font-size: 2.5rem; margin-bottom: 12px; display: inline-block; filter: drop-shadow(0 5px 15px rgba(30, 144, 216, 0.3)); }
+        .empty-icon { font-size: 2.5rem; margin-bottom: 12px; display: inline-block; filter: drop-shadow(0 5px 15px rgba(0, 210, 255, 0.3)); }
         .empty-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 8px; }
         .empty-desc { color: var(--text-muted); font-size: 0.9rem; max-width: 380px; margin: 0 auto; line-height: 1.6; }
 
         .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; width: 100%; max-width: 1100px; margin-bottom: 60px; }
         .feature-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 30px; text-align: left; box-shadow: var(--shadow-card); }
         .feature-card:hover { transform: translateY(-6px); border-color: var(--border-glow); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 35px var(--accent-glow); }
-        .feature-icon { font-size: 2rem; margin-bottom: 15px; display: inline-block; filter: drop-shadow(0 4px 10px rgba(30, 144, 216, 0.5)); }
-        .feature-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 10px; }
+        .feature-icon { font-size: 2rem; margin-bottom: 15px; display: inline-block; filter: drop-shadow(0 4px 10px rgba(0, 210, 255, 0.5)); }
+        .feature-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 10px; font-family: 'Outfit', sans-serif; }
         .feature-desc { font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; }
-        .store-btn { display: inline-block; background: var(--btn-gradient); color: #ffffff; font-size: 1.2rem; font-weight: 900; padding: 18px 50px; border-radius: 14px; text-decoration: none; box-shadow: var(--shadow-btn); border: 1px solid rgba(255, 255, 255, 0.3); text-transform: uppercase; letter-spacing: 1px; }
-        .store-btn:hover { background: var(--btn-hover); transform: translateY(-4px) scale(1.03); box-shadow: 0 20px 45px rgba(30, 144, 216, 0.8); }
+        
+        .store-btn { display: inline-block; background: var(--btn-gradient); color: #ffffff; font-size: 1.2rem; font-weight: 900; padding: 18px 50px; border-radius: 14px; text-decoration: none; box-shadow: var(--shadow-btn); border: 1px solid rgba(255, 255, 255, 0.3); text-transform: uppercase; letter-spacing: 1px; font-family: 'Outfit', sans-serif; }
+        .store-btn:hover { background: var(--btn-hover); transform: translateY(-4px) scale(1.03); box-shadow: 0 20px 45px rgba(0, 210, 255, 0.7); }
+        
         footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; box-shadow: 0 -10px 40px rgba(0,0,0,0.6); }
         .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 15px; font-weight: 700; font-size: 0.9rem; }
-        .footer-links a:hover { color: #1E90D8; }
+        .footer-links a:hover { color: #00d2ff; }
         .copyright { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; opacity: 0.6; }
+        
         #lizard-container { position: fixed; bottom: 30px; left: -100px; font-size: 2.5rem; z-index: 10000; pointer-events: none; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); opacity: 0; }
         .crawl-active { animation: crawlScreen 12s linear forwards, wobble 0.4s infinite alternate ease-in-out; opacity: 1 !important; }
         @keyframes crawlScreen { 0% { left: -100px; transform: scaleX(-1); } 100% { left: 110vw; transform: scaleX(-1); } }
         @keyframes wobble { 0% { transform: scaleX(-1) translateY(0) rotate(-5deg); } 100% { transform: scaleX(-1) translateY(-8px) rotate(5deg); } }
-        @media (max-width: 768px) { header { padding: 14px 20px; } .info-bar { gap: 15px; font-size: 0.75rem; } .game-title { font-size: 2.5rem; } .widgets-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { header { padding: 14px 20px; } .info-bar { gap: 15px; font-size: 0.75rem; } .game-title { font-size: 2.8rem; } .widgets-grid { grid-template-columns: 1fr; } .countdown-grid { gap: 10px; } .countdown-box { min-width: 60px; } .countdown-num { font-size: 1.8rem; } }
     </style>
 </head>
 <body>
@@ -152,7 +166,6 @@
     </header>
 
     <div class="info-bar">
-        <!-- Replaced Online Players with Blinking Eye Viewer Count -->
         <div class="info-item">
             <span class="eye-icon" id="eye-icon">👁️</span> 
             Viewing Website: <span class="live-count" id="viewer-count">1</span>
@@ -170,6 +183,32 @@
     <div class="content">
         <h1 class="game-title holo-text">Volleyball Revengers</h1>
         <p class="game-description">Ultimate VR Volleyball.</p>
+
+        <!-- Open Beta Countdown Component -->
+        <div class="countdown-container">
+            <div class="countdown-title holo-text">Open Beta Launch Countdown</div>
+            <div class="countdown-grid">
+                <div class="countdown-box">
+                    <span class="countdown-num" id="cd-days">00</span>
+                    <span class="countdown-label">Days</span>
+                </div>
+                <span class="countdown-divider">:</span>
+                <div class="countdown-box">
+                    <span class="countdown-num" id="cd-hours">00</span>
+                    <span class="countdown-label">Hours</span>
+                </div>
+                <span class="countdown-divider">:</span>
+                <div class="countdown-box">
+                    <span class="countdown-num" id="cd-minutes">00</span>
+                    <span class="countdown-label">Mins</span>
+                </div>
+                <span class="countdown-divider">:</span>
+                <div class="countdown-box">
+                    <span class="countdown-num" id="cd-seconds">00</span>
+                    <span class="countdown-label">Secs</span>
+                </div>
+            </div>
+        </div>
 
         <div class="widgets-grid">
             <!-- PlayFab Leaderboard Widget -->
@@ -203,7 +242,7 @@
                 </div>
             </div>
 
-            <!-- Update Log Widget (Empty till open beta release) -->
+            <!-- Update Log Widget -->
             <div class="widget-card" style="justify-content: center;">
                 <div class="widget-title holo-text" style="margin-bottom: 10px;">Update Log</div>
                 <div class="empty-log-card">
@@ -239,9 +278,9 @@
 
     <footer>
         <div class="footer-links">
-            <a href="privacy.html">Privacy</a>
-            <a href="terms.html">Terms</a>
-            <a href="https://discord.gg/xG6QcTbfp2">Discord</a>
+            <a href="privacy">Privacy</a>
+            <a href="terms">Terms</a>
+            <a href="https://discord.gg/xG6QcTbfp2" target="_blank">Discord</a>
             <a href="mailto:mugenrevolutionstudios@gmail.com">Contact</a>
         </div>
         <div class="copyright">&copy; 2026 Mugen Revolution Studios. All rights reserved.</div>
@@ -265,35 +304,330 @@
         themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-        // Eye Blink & Website Viewer Counter Logic
-        const eyeIcon = document.getElementById('eye-icon');
-        const viewerCountElement = document.getElementById('viewer-count');
-        
-        function triggerEyeBlink() {
-            eyeIcon.classList.remove('eye-blink');
-            void eyeIcon.offsetWidth; // Force CSS reflow
-            eyeIcon.classList.add('eye-blink');
-        }
+        // Countdown Timer Logic targeting October 17th, 2026
+        const betaDate = new Date("October 17, 2026 00:00:00").getTime();
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = betaDate - now;
 
-        function simulateViewerActivity() {
-            // Randomly simulate visitor connections/disconnections (min 1 viewer)
-            let currentViewers = parseInt(viewerCountElement.innerText) || 1;
-            const change = Math.floor(Math.random() * 3) - 1; // -1, 0, or +1
-            let updatedViewers = Math.max(1, currentViewers + change);
-
-            // If a new viewer connects or count updates, trigger the eye blink
-            if (updatedViewers !== currentViewers || Math.random() > 0.4) {
-                triggerEyeBlink();
+            if (distance < 0) {
+                document.querySelector('.countdown-container').innerHTML = `<div class="countdown-title holo-text">Open Beta is Live!</div>`;
+                return;
             }
 
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (The updated code below includes a live Open Beta countdown targeting October 17th, updated internal links using clean routing (`href="home"`), upgraded modern Google typography (Outfit + Space Grotesk), dynamic holographic gradients, and an overall UI polish.
+
+```html
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volleyball Revengers | Mugen Revolution Studios</title>
+    <script src="[https://download.playfab.com/PlayFabClientApi.js](https://download.playfab.com/PlayFabClientApi.js)"></script>
+    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+    <link href="[https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Space+Grotesk:wght@500;700&display=swap](https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Space+Grotesk:wght@500;700&display=swap)" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #05070c;
+            --bg-card: rgba(15, 20, 32, 0.75);
+            --bg-card-hover: rgba(24, 32, 50, 0.85);
+            --bg-nav: rgba(8, 11, 18, 0.85);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.12);
+            --border-glow: rgba(0, 210, 255, 0.5);
+            --accent-glow: rgba(0, 210, 255, 0.25);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.8);
+            --shadow-hero: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 50px rgba(0, 210, 255, 0.25);
+            --shadow-btn: 0 10px 30px rgba(0, 210, 255, 0.4);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.85);
+            --holo-gradient: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 35%, #92fe9d 70%, #00d2ff 100%);
+            --btn-gradient: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+            --btn-hover: linear-gradient(135deg, #00e5ff 0%, #4a8be5 100%);
+        }
+        [data-theme="light"] {
+            --bg-main: #f1f5f9;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --bg-card-hover: rgba(255, 255, 255, 0.95);
+            --bg-nav: rgba(248, 250, 252, 0.9);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --border-glow: rgba(0, 150, 255, 0.5);
+            --accent-glow: rgba(0, 150, 255, 0.2);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.08);
+            --shadow-hero: 0 25px 50px rgba(0, 0, 0, 0.12), 0 0 40px rgba(0, 150, 255, 0.2);
+            --shadow-btn: 0 10px 30px rgba(0, 150, 255, 0.3);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.1);
+            --holo-gradient: linear-gradient(135deg, #00a8ff 0%, #2e64d5 50%, #00c6ff 100%);
+            --btn-gradient: linear-gradient(135deg, #0088ff 0%, #1562b8 100%);
+            --btn-hover: linear-gradient(135deg, #1a94ff 0%, #2572c8 100%);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; }
+        body { font-family: 'Outfit', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: -10%; left: 50%; transform: translateX(-50%); width: 90vw; height: 600px; background: radial-gradient(circle, rgba(0, 210, 255, 0.12) 0%, rgba(58, 123, 213, 0.04) 50%, transparent 80%); pointer-events: none; z-index: 0; }
+        
+        .holo-text { background: var(--holo-gradient); background-size: 300% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: holoGlow 5s ease infinite; font-weight: 900; }
+        @keyframes holoGlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        header { display: flex; justify-content: space-between; align-items: center; padding: 14px 32px; background: var(--bg-nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 9999; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3); }
+        .header-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .header-logo-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255, 255, 255, 0.2); filter: drop-shadow(0 0 8px var(--accent-glow)); }
+        .logo-text { font-size: 1.15rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 900; font-family: 'Space Grotesk', sans-serif; }
+        .nav-actions { display: flex; align-items: center; gap: 16px; position: relative; }
+        .theme-toggle-container { display: flex; align-items: center; background: rgba(100, 100, 100, 0.15); border: 1px solid var(--border-color); border-radius: 20px; padding: 3px; cursor: pointer; position: relative; width: 68px; height: 32px; z-index: 10000; }
+        .theme-toggle-option { flex: 1; text-align: center; font-size: 0.8rem; z-index: 2; pointer-events: none; }
+        .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 26px; height: 26px; border-radius: 50%; background: var(--btn-gradient); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; }
+        [data-theme="light"] .theme-toggle-slider { transform: translateX(36px); }
+        .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.85rem; font-weight: 800; border-radius: 8px; cursor: pointer; outline: none; font-family: 'Space Grotesk', sans-serif; }
+        .menu-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 15px var(--accent-glow); transform: translateY(-2px); }
+        .nav-menu { display: none; position: absolute; top: 120%; right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 14px; box-shadow: var(--shadow-widget); width: 200px; padding: 10px 0; flex-direction: column; z-index: 9998; }
+        .nav-menu.active { display: flex; animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-menu a { color: var(--text-muted); padding: 12px 20px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .nav-menu a:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-main); padding-left: 24px; }
+        
+        .info-bar { background: linear-gradient(90deg, rgba(0, 210, 255, 0.1) 0%, rgba(58, 123, 213, 0.05) 100%); border-bottom: 1px solid var(--border-color); padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 35px; font-size: 0.85rem; font-weight: 700; flex-wrap: wrap; z-index: 10; font-family: 'Space Grotesk', sans-serif; }
+        .info-item { display: flex; align-items: center; gap: 8px; }
+        .eye-icon { display: inline-block; font-size: 1.1rem; line-height: 1; transition: transform 0.15s ease, opacity 0.15s ease; filter: drop-shadow(0 0 6px var(--border-glow)); }
+        .eye-blink { animation: eyeBlink 0.35s ease-in-out; }
+        @keyframes eyeBlink { 0% { transform: scaleY(1); opacity: 1; } 50% { transform: scaleY(0.1); opacity: 0.3; } 100% { transform: scaleY(1); opacity: 1; } }
+        .live-count { color: #00d2ff; font-weight: 900; }
+
+        .hero { position: relative; width: 100%; max-width: 1100px; margin: 30px auto 0 auto; padding: 0 20px; z-index: 1; }
+        .cover-container { position: relative; border-radius: 20px; padding: 2px; background: var(--holo-gradient); box-shadow: var(--shadow-hero); }
+        .cover-img { width: 100%; border-radius: 18px; display: block; background-color: #000; }
+        .content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 30px 20px 60px 20px; text-align: center; z-index: 1; }
+        .game-title { font-size: 4.2rem; letter-spacing: 2px; margin-bottom: 6px; font-family: 'Space Grotesk', sans-serif; text-transform: uppercase; }
+        .game-description { font-size: 1.25rem; color: var(--text-muted); font-weight: 600; margin-bottom: 30px; }
+
+        /* Countdown Timer Component */
+        .countdown-wrapper { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 24px 32px; box-shadow: var(--shadow-widget); margin-bottom: 45px; width: 100%; max-width: 650px; position: relative; overflow: hidden; }
+        .countdown-wrapper::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--holo-gradient); }
+        .countdown-title { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; color: var(--text-muted); font-family: 'Space Grotesk', sans-serif; }
+        .countdown-boxes { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+        .box { background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 18px; min-width: 85px; text-align: center; }
+        .box-num { font-size: 2.2rem; font-weight: 900; font-family: 'Space Grotesk', sans-serif; line-height: 1; margin-bottom: 4px; }
+        .box-lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; }
+
+        .widgets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 30px; width: 100%; max-width: 1100px; margin-bottom: 50px; }
+        .widget-card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 28px; text-align: left; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        .widget-card::before { content: ''; position: absolute; top: 0; left: 0; width: .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; width: 100%; max-width: 1100px; margin-bottom: 50px; }
+        .feature-card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 16px; padding: 26px; text-align: left; box-shadow: var(--shadow-card); }
+        .feature-card:hover { transform: translateY(-5px); border-color: var(--border-glow); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 25px var(--accent-glow); }
+        .feature-icon { font-size: 2rem; margin-bottom: 12px; display: inline-block; filter: drop-shadow(0 4px 10px var(--accent-glow)); }
+        .feature-title { font-size: 1.15rem; font-weight: 900; margin-bottom: 8px; font-family: 'Space Grotesk', sans-serif; }
+        .feature-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+        
+        .store-btn { display: inline-block; background: var(--btn-gradient); color: #ffffff; font-size: 1.15rem; font-weight: 900; padding: 16px 48px; border-radius: 14px; text-decoration: none; box-shadow: var(--shadow-btn); border: 1px solid rgba(255, 255, 255, 0.3); text-transform: uppercase; letter-spacing: 1px; font-family: 'Space Grotesk', sans-serif; }
+        .store-btn:hover { background: var(--btn-hover); transform: translateY(-3px) scale(1.02); box-shadow: 0 16px 35px rgba(0, 210, 255, 0.6); }
+        
+        footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 35px 20px; display: flex; flex-direction: column; align-items: center; gap: 16px; box-shadow: 0 -10px 40px rgba(0,0,0,0.5); }
+        .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 14px; font-weight: 700; font-size: 0.88rem; font-family: 'Space Grotesk', sans-serif; }
+        .footer-links a:hover { color: #00d2ff; }
+        .copyright { color: var(--text-muted); font-size: 0.78rem; font-weight: 600; opacity: 0.7; }
+        
+        #lizard-container { position: fixed; bottom: 30px; left: -100px; font-size: 2.5rem; z-index: 10000; pointer-events: none; opacity: 0; }
+        .crawl-active { animation: crawlScreen 12s linear forwards, wobble 0.4s infinite alternate ease-in-out; opacity: 1 !important; }
+        @keyframes crawlScreen { 0% { left: -100px; transform: scaleX(-1); } 100% { left: 110vw; transform: scaleX(-1); } }
+        @keyframes wobble { 0% { transform: scaleX(-1) translateY(0) rotate(-5deg); } 100% { transform: scaleX(-1) translateY(-8px) rotate(5deg); } }
+        
+        @media (max-width: 768px) { header { padding: 14px 20px; } .info-bar { gap: 15px; font-size: 0.75rem; } .game-title { font-size: 2.8rem; } .widgets-grid { grid-template-columns: 1fr; } .countdown-boxes { gap: 8px; } .box { min-width: 70px; padding: 8px 12px; } .box-num { font-size: 1.7rem; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="home" class="header-brand">
+            <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
+            <span class="logo-text holo-text">Mugen Revolution</span>
+        </a>
+        <div class="nav-actions">
+            <div class="theme-toggle-container" id="themeToggleBtn" title="Toggle Dark/Light Mode">
+                <div class="theme-toggle-slider"></div>
+                <span class="theme-toggle-option">🌙</span>
+                <span class="theme-toggle-option">☀️</span>
+            </div>
+            <button class="menu-btn" id="menuToggleBtn">Menu ☰</button>
+            <div class="nav-menu" id="navMenu">
+                <a href="privacy">🔒 Privacy Policy</a>
+                <a href="terms">📜 Terms of Service</a>
+                <a href="[https://discord.gg/xG6QcTbfp2](https://discord.gg/xG6QcTbfp2)" target="_blank">💬 Discord</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="info-bar">
+        <div class="info-item">
+            <span class="eye-icon" id="eye-icon">👁️</span> 
+            Viewing Website: <span class="live-count" id="viewer-count">1</span>
+        </div>
+        <div class="info-item">Network: <strong>Photon Fusion</strong></div>
+        <div class="info-item">Backend: <strong>PlayFab</strong></div>
+    </div>
+
+    <div class="hero">
+        <div class="cover-container">
+            <img src="cover.png" alt="Volleyball Revengers Court" class="cover-img">
+        </div>
+    </div>
+
+     <div class="content">
+        <h1 class="game-title holo-text">Volleyball Revengers</h1>
+        <p class="game-description">Ultimate VR Volleyball.</p>
+
+        <!-- Open Beta Countdown Banner -->
+        <div class="countdown-wrapper">
+            <div class="countdown-title">🚀 Open Beta Launching In</div>
+            <div class="countdown-boxes">
+                <div class="box"><div class="box-num holo-text" id="cd-days">00</div><div class="box-lbl">Days</div></div>
+                <div class="box"><div class="box-num holo-text" id="cd-hours">00</div><div class="box-lbl">Hours</div></div>
+                <div class="box"><div class="box-num holo-text" id="cd-mins">00</div><div class="box-lbl">Mins</div></div>
+                <div class="box"><div class="box-num holo-text" id="cd-secs">00</div><div class="box-lbl">Secs</div></div>
+            </div>
+        </div>
+
+         <div class="widgets-grid">
+            <div class="widget-card">
+                <div class="widget-header">
+                    <div class="widget-title holo-text">Leaderboard</div>
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchLeaderboard('Kills', this)">Kills</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('PlayerElo', this)">Elo</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('MVP', this)">MVPs</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Wins', this)">Wins</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Assists', this)">Assists</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Blocks', this)">Blocks</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th id="stat-header">Kills</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;">Connecting to PlayFab...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+             <div class="widget-card" style="justify-content: center;">
+                <div class="widget-title holo-text" style="margin-bottom: 10px;">Update Log</div>
+                <div class="empty-log-card">
+                    <div class="empty-icon">🚀</div>
+                    <div class="empty-title holo-text">No Update Logs Yet</div>
+                    <div class="empty-desc">Patch notes and build logs will be published here leading up to the upcoming Open Beta release. Check back soon!</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🏐</div>
+                <div class="feature-title">Custom Mechanics</div>
+                <div class="feature-desc">Engineered for realistic passing, setting, spiking, and spin control.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🥽</div>
+                <div class="feature-title">Meta Quest Optimized</div>
+                <div class="feature-desc">Standalone performance built from the ground up for Quest hardware.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Solo Dev Passion</div>
+                <div class="feature-desc">Independently crafted by Mugen Revolution Studios to bring competitive volleyball to VR.</div>
+            </div>
+        </div>
+
+        <a href="[https://www.meta.com/experiences/volleyball-revengers/26538006869191156/](https://www.meta.com/experiences/volleyball-revengers/26538006869191156/)" target="_blank" class="store-btn">
+            Get on Meta Quest
+        </a>
+     </div>
+
+    <footer>
+        <div class="footer-links">
+            <a href="privacy">Privacy</a>
+            <a href="terms">Terms</a>
+            <a href="[https://discord.gg/xG6QcTbfp2](https://discord.gg/xG6QcTbfp2)">Discord</a>
+            <a href="mailto:mugenrevolutionstudios@gmail.com">Contact</a>
+        </div>
+        <div class="copyright">&copy; 2026 Mugen Revolution Studios. All rights reserved.</div>
+    </footer>
+
+    <div id="lizard-container">🦎</div>
+
+    <script>
+        const menuBtn = document.getElementById('menuToggleBtn');
+        const navMenu = document.getElementById('navMenu');
+        menuBtn.addEventListener('click', (e) => { e.stopPropagation(); navMenu.classList.toggle('active'); });
+        document.addEventListener('click', (e) => { if (!navMenu.contains(e.target)) navMenu.classList.remove('active'); });
+
+        const themeBtn = document.getElementById('themeToggleBtn');
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('preferred-theme', newTheme);
+        }
+        themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
+
+        const eyeIcon = document.getElementById('eye-icon');
+        const viewerCountElement = document.getElementById('viewer-count');
+        function triggerEyeBlink() {
+            eyeIcon.classList.remove('eye-blink');
+            void eyeIcon.offsetWidth;
+            eyeIcon.classList.add('eye-blink');
+        }
+        function simulateViewerActivity() {
+            let currentViewers = parseInt(viewerCountElement.innerText) || 1;
+            const change = Math.floor(Math.random() * 3) - 1;
+            let updatedViewers = Math.max(1, currentViewers + change);
+            if (updatedViewers !== currentViewers || Math.random() > 0.4) triggerEyeBlink();
             viewerCountElement.innerText = updatedViewers;
         }
-
-        // Trigger initial blink on load and simulate periodic visitor joins
         setTimeout(triggerEyeBlink, 800);
         setInterval(simulateViewerActivity, 7000);
 
-        // PlayFab Integration using Title ID 1E90D8
+        // Open Beta Countdown Timer Target: Oct 17, 2026
+        const betaDate = new Date("October 17, 2026 00:00:00").getTime();
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const diff = betaDate - now;
+
+            if (diff <= 0) {
+                document.getElementById('cd-days').innerText = "00";
+                document.getElementById('cd-hours').innerText = "00";
+                document.getElementById('cd-mins').innerText = "00";
+                document.getElementById('cd-secs').innerText = "00";
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById('cd-days').innerText = days < 10 ? '0' + days : days;
+            document.getElementById('cd-hours').innerText = hours < 10 ? '0' + hours : hours;
+            document.getElementById('cd-mins').innerText = mins < 10 ? '0' + mins : mins;
+            document.getElementById('cd-secs').innerText = secs < 10 ? '0' + secs : secs;
+        }
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
         const PLAYFAB_TITLE_ID = "1E90D8";
         let currentStatistic = "Kills";
 
@@ -302,16 +636,8 @@
                 document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">PlayFab SDK failed to load.</td></tr>`;
                 return;
             }
-
             PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
-
-            const loginRequest = {
-                TitleId: PLAYFAB_TITLE_ID,
-                CreateAccount: true,
-                CustomId: "WebsiteVisitor_" + Math.random().toString(36).substring(7)
-            };
-
-            PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
+            PlayFabClientSDK.LoginWithCustomID({ TitleId: PLAYFAB_TITLE_ID, CreateAccount: true, CustomId: "WebsiteVisitor_" + Math.random().toString(36).substring(7) }, (result, error) => {
                 if (error) {
                     document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Failed to connect to PlayFab backend.</td></tr>`;
                     return;
@@ -322,67 +648,31 @@
 
         function switchLeaderboard(statName, btnElement) {
             currentStatistic = statName;
-            
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             if(btnElement) btnElement.classList.add('active');
-
-            let headerText = "Kills";
-            if (statName === "PlayerElo") headerText = "Elo";
-            if (statName === "MVP") headerText = "MVPs";
-            if (statName === "Wins") headerText = "Wins";
-            if (statName === "Assists") headerText = "Assists";
-            if (statName === "Blocks") headerText = "Blocks";
+            let headerText = statName === "PlayerElo" ? "Elo" : statName === "MVP" ? "MVPs" : statName;
             document.getElementById("stat-header").innerText = headerText;
-
             fetchPlayFabLeaderboard(statName);
         }
 
         function fetchPlayFabLeaderboard(statisticName) {
             document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading rankings...</td></tr>`;
-
-            const leaderboardRequest = {
-                StartPosition: 0,
-                MaxResultsCount: 5,
-                StatisticName: statisticName
-            };
-
-            PlayFabClientSDK.GetLeaderboard(leaderboardRequest, (lbResult, lbError) => {
-                if (lbError) {
+            PlayFabClientSDK.GetLeaderboard({ StartPosition: 0, MaxResultsCount: 5, StatisticName: statisticName }, (lbResult, lbError) => {
+                if (lbError || !lbResult?.data?.Leaderboard) {
                     document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No entries found for this statistic yet.</td></tr>`;
                     return;
                 }
-                if (lbResult && lbResult.data && lbResult.data.Leaderboard) {
-                    renderLeaderboard(lbResult.data.Leaderboard);
-                } else {
-                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No leaderboard data available.</td></tr>`;
-                }
+                renderLeaderboard(lbResult.data.Leaderboard);
             });
         }
 
         function renderLeaderboard(entries) {
             const tbody = document.getElementById("leaderboard-body");
-            tbody.innerHTML = "";
-
-            if (entries.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No players ranked yet.</td></tr>`;
-                return;
-            }
-
+            tbody.innerHTML = entries.length === 0 ? `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No players ranked yet.</td></tr>` : "";
             entries.forEach(entry => {
                 const rank = entry.Position + 1;
-                let rankClass = "";
-                if (rank === 1) rankClass = "rank-1";
-                if (rank === 2) rankClass = "rank-2";
-                if (rank === 3) rankClass = "rank-3";
-
-                const displayName = entry.DisplayName || entry.PlayFabId;
-                
                 const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td class="${rankClass}">#${rank}</td>
-                    <td>${displayName}</td>
-                    <td>${entry.StatValue.toLocaleString()}</td>
-                `;
+                tr.innerHTML = `<td class="${rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : ''}">#${rank}</td><td>${entry.DisplayName || entry.PlayFabId}</td><td>${entry.StatValue.toLocaleString()}</td>`;
                 tbody.appendChild(tr);
             });
         }
