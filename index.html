@@ -3,60 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volleyball Revengers</title>
+    <title>Volleyball Revengers | Mugen Revolution Studios</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0d0d0d;
             color: #ffffff;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            margin: 0;
-            text-align: center;
         }
+
+        /* --- Header & Navigation --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background-color: #141414;
+            border-bottom: 1px solid #262626;
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ff4500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .menu-btn {
+            background-color: #222222;
+            color: #ffffff;
+            border: 1px solid #444444;
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .menu-btn:hover {
+            background-color: #ff4500;
+            border-color: #ff4500;
+            color: #ffffff;
+        }
+
+        /* Slide-out Menu */
+        .nav-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 30px;
+            background-color: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 8px;
+            box-shadow: 0px 8px 20px rgba(0,0,0,0.6);
+            width: 220px;
+            padding: 10px 0;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .nav-menu.active {
+            display: flex;
+        }
+
+        .nav-menu a {
+            color: #cccccc;
+            padding: 12px 20px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            text-align: left;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .nav-menu a:hover {
+            background-color: #262626;
+            color: #ff4500;
+        }
+
+        /* --- Main Content --- */
         .content {
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 60px 20px;
+            text-align: center;
         }
-        h1 {
+
+        .game-title {
             color: #ff4500;
-            font-size: 3.5rem;
-            margin-bottom: 10px;
+            font-size: 3.8rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            text-shadow: 0px 4px 15px rgba(255, 69, 0, 0.3);
         }
-        p {
-            font-size: 1.2rem;
-            color: #cccccc;
-            max-width: 600px;
+
+        .game-description {
+            font-size: 1.25rem;
+            color: #bbbbbb;
+            max-width: 650px;
+            line-height: 1.6;
+            margin-bottom: 40px;
         }
-        footer {
-            padding: 20px;
-            background-color: #1a1a1a;
-            border-top: 1px solid #333;
+
+        /* Store Link Section */
+        .store-section {
+            margin-bottom: 20px;
         }
-        footer a {
+
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: bold;
             color: #888888;
-            margin: 0 15px;
-            text-decoration: none;
-            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
         }
-        footer a:hover {
+
+        .store-btn {
+            display: inline-block;
+            background-color: #ff4500;
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 15px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
+        }
+
+        .store-btn:hover {
+            background-color: #e03d00;
+            transform: translateY(-2px);
+        }
+
+        /* --- Footer --- */
+        footer {
+            background-color: #121212;
+            border-top: 1px solid #222222;
+            padding: 40px 20px 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .footer-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 50px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .footer-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .footer-group a {
+            color: #aaaaaa;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .footer-group a:hover {
             color: #ff4500;
+        }
+
+        .copyright {
+            color: #555555;
+            font-size: 0.85rem;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
+
+    <!-- Top Header Navigation -->
+    <header>
+        <div class="logo">Mugen Revolution Studios</div>
+        <button class="menu-btn" onclick="toggleMenu()">Menu ☰</button>
+        <div class="nav-menu" id="navMenu">
+            <a href="index.html">Home</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
     <div class="content">
-        <h1>Volleyball Revengers</h1>
-        <p>The ultimate virtual reality volleyball experience. Developed by Mugen Revolution Studios.</p>
+        <h1 class="game-title">Volleyball Revengers</h1>
+        <p class="game-description">
+            The ultimate virtual reality volleyball experience. Master the court with realistic physics, precise controls, and high-intensity match action.
+        </p>
+
+        <!-- Store Section -->
+        <div class="store-section">
+            <div class="section-title">Store Link</div>
+            <a href="https://www.meta.com/experiences/volleyball-revengers/26538006869191156/" target="_blank" class="store-btn">
+                Get on Meta Quest
+            </a>
+        </div>
     </div>
+
+    <!-- Footer -->
     <footer>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
+        <div class="footer-grid">
+            <!-- Social Links Section -->
+            <div class="footer-group">
+                <div class="section-title">Social Links</div>
+                <a href="https://youtube.com/@MugenRevolutionStudio" target="_blank">YouTube</a>
+                <a href="https://discord.gg/xG6QcTbfp2" target="_blank">Discord</a>
+            </div>
+
+            <!-- Legal Section -->
+            <div class="footer-group">
+                <div class="section-title">Legal</div>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+            </div>
+        </div>
+
+        <div class="copyright">
+            &copy; 2026 Mugen Revolution Studios. All rights reserved.
+        </div>
     </footer>
+
+    <!-- JavaScript for Menu Toggle -->
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+
+        // Close menu if clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('navMenu');
+            const button = document.querySelector('.menu-btn');
+            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                menu.classList.remove('active');
+            }
+        });
+    </script>
+
 </body>
 </html>
