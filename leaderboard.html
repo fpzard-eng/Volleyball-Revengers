@@ -17,7 +17,6 @@
             margin: 0 auto; 
         }
 
-        /* Holographic Text Style */
         .holo-text {
             background: linear-gradient(135deg, #00f2fe 0%, #4facfe 25%, #00c6ff 50%, #0072ff 75%, #00f2fe 100%);
             background-size: 200% auto;
@@ -42,7 +41,6 @@
 
         .nav { margin-bottom: 30px; }
         
-        /* Leaderboard Table Styles */
         .leaderboard-card {
             background-color: #12141c;
             border: 1px solid #1f2833;
@@ -58,7 +56,36 @@
             align-items: center;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .tab-buttons {
+            display: flex;
             gap: 10px;
+        }
+
+        .tab-btn {
+            background-color: #1f2833;
+            border: 1px solid #283648;
+            color: #c5c6c7;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            border-color: #66fcf1;
+            color: #66fcf1;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(0, 114, 255, 0.2));
+            border-color: #00f2fe;
+            color: #66fcf1;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
         }
 
         .status-badge {
@@ -110,13 +137,17 @@
 <body>
     <div class="nav"><a href="index.html">← Back to Home</a></div>
     
-    <h1 class="holo-text">Global Leaderboard</h1>
+    <h1 class="holo-text">Global Leaderboards</h1>
     <p>Live rankings updated directly from PlayFab backend services for <strong>Volleyball Revengers</strong>.</p>
 
     <div class="leaderboard-card">
         <div class="controls">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchLeaderboard('MostKills', this)">Most Kills</button>
+                <button class="tab-btn" onclick="switchLeaderboard('MostElo', this)">Most Elo</button>
+                <button class="tab-btn" onclick="switchLeaderboard('MostAeroCoins', this)">Most Aero-Coins</button>
+            </div>
             <span class="status-badge" id="sync-status">Live Sync Active</span>
-            <span style="font-size: 0.85rem; color: #8892b0;">Top 10 Players</span>
         </div>
 
         <table>
@@ -124,25 +155,12 @@
                 <tr>
                     <th>Rank</th>
                     <th>Player</th>
-                    <th>Statistic / Score</th>
+                    <th id="stat-header">Most Kills</th>
                 </tr>
             </thead>
             <tbody id="leaderboard-body">
-                <!-- Initial Mockup / Fallback Rows -->
                 <tr>
-                    <td class="rank-1">#1</td>
-                    <td>PlayerOne_VR</td>
-                    <td>2,850</td>
-                </tr>
-                <tr>
-                    <td class="rank-2">#2</td>
-                    <td>SpikeMaster99</td>
-                    <td>2,640</td>
-                </tr>
-                <tr>
-                    <td class="rank-3">#3</td>
-                    <td>SetterPro</td>
-                    <td>2,410</td>
+                    <td colspan="3" style="text-align: center; color: #8892b0; padding: 30px;">Connecting to PlayFab...</td>
                 </tr>
             </tbody>
         </table>
@@ -153,20 +171,12 @@
     </div>
 
     <script>
-        // --- PlayFab Automatic Fetching Setup ---
-        // Replace with your PlayFab Title ID
-        const PLAYFAB_TITLE_ID = "YOUR_PLAYFAB_TITLE_ID"; 
-        const STATISTIC_NAME = "Aces"; // Replace with your PlayFab Statistic Name (e.g., HighScore, Aces, Wins)
+        const PLAYFAB_TITLE_ID = "1E90D8";
+        let currentStatistic = "MostKills";
 
-        function fetchPlayFabLeaderboard() {
-            if (PLAYFAB_TITLE_ID === "YOUR_PLAYFAB_TITLE_ID") {
-                console.log("PlayFab Title ID not configured. Displaying static mockup.");
-                return;
-            }
-
+        function initPlayFab() {
             PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
 
-            // Login anonymously to read global title leaderboard
             const loginRequest = {
                 TitleId: PLAYFAB_TITLE_ID,
                 CreateAccount: true,
@@ -178,27 +188,60 @@
                     document.getElementById("sync-status").innerText = "Sync Error";
                     document.getElementById("sync-status").style.borderColor = "#ff4500";
                     document.getElementById("sync-status").style.color = "#ff4500";
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff4500; padding: 20px;">Failed to connect to PlayFab backend.</td></tr>`;
                     return;
                 }
+                fetchPlayFabLeaderboard(currentStatistic);
+            });
+        }
 
-                // Fetch Leaderboard Top 10
-                const leaderboardRequest = {
-                    StartPosition: 0,
-                    MaxResultsCount: 10,
-                    StatisticName: STATISTIC_NAME
-                };
+        function switchLeaderboard(statName, btnElement) {
+            currentStatistic = statName;
+            
+            // Update active styles on tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
 
-                PlayFabClientSDK.GetLeaderboard(leaderboardRequest, (lbResult, lbError) => {
-                    if (lbResult && lbResult.data.Leaderboard) {
-                        renderLeaderboard(lbResult.data.Leaderboard);
-                    }
-                });
+            // Update column header text
+            let headerText = "Most Kills";
+            if (statName === "MostElo") headerText = "Elo Rating";
+            if (statName === "MostAeroCoins") headerText = "Aero-Coins";
+            document.getElementById("stat-header").innerText = headerText;
+
+            // Fetch new stats
+            fetchPlayFabLeaderboard(statName);
+        }
+
+        function fetchPlayFabLeaderboard(statisticName) {
+            document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #8892b0; padding: 20px;">Loading rankings...</td></tr>`;
+
+            const leaderboardRequest = {
+                StartPosition: 0,
+                MaxResultsCount: 10,
+                StatisticName: statisticName
+            };
+
+            PlayFabClientSDK.GetLeaderboard(leaderboardRequest, (lbResult, lbError) => {
+                if (lbError) {
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #8892b0; padding: 20px;">No entries found for this statistic yet.</td></tr>`;
+                    return;
+                }
+                if (lbResult && lbResult.data && lbResult.data.Leaderboard) {
+                    renderLeaderboard(lbResult.data.Leaderboard);
+                } else {
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #8892b0; padding: 20px;">No leaderboard data available.</td></tr>`;
+                }
             });
         }
 
         function renderLeaderboard(entries) {
             const tbody = document.getElementById("leaderboard-body");
             tbody.innerHTML = "";
+
+            if (entries.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #8892b0; padding: 20px;">No players ranked yet.</td></tr>`;
+                return;
+            }
 
             entries.forEach(entry => {
                 const rank = entry.Position + 1;
@@ -219,8 +262,7 @@
             });
         }
 
-        // Auto-run on load
-        window.onload = fetchPlayFabLeaderboard;
+        window.onload = initPlayFab;
     </script>
 </body>
 </html>
