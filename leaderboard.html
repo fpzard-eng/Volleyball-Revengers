@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Leaderboard - Volleyball Revengers</title>
+    <!-- PlayFab JS SDK -->
+    <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #0b0c10; 
+            color: #c5c6c7; 
+            padding: 30px 20px; 
+            line-height: 1.7; 
+            max-width: 850px; 
+            margin: 0 auto; 
+        }
+
+        /* Holographic Text Style */
+        .holo-text {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 25%, #00c6ff 50%, #0072ff 75%, #00f2fe 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: holoGlow 4s linear infinite;
+            display: inline-block;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes holoGlow {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        h1 { font-size: 2.2rem; margin-bottom: 5px; }
+
+        a { color: #66fcf1; text-decoration: none; transition: color 0.2s ease; }
+        a:hover { color: #45a29e; text-decoration: underline; }
+
+        .nav { margin-bottom: 30px; }
+        
+        /* Leaderboard Table Styles */
+        .leaderboard-card {
+            background-color: #12141c;
+            border: 1px solid #1f2833;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            margin-top: 20px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background-color: rgba(102, 252, 241, 0.1);
+            color: #66fcf1;
+            border: 1px solid #66fcf1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 12px;
+            border-bottom: 2px solid #1f2833;
+            color: #8892b0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #1f2833;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .rank-1 { color: #ffd700; font-weight: bold; }
+        .rank-2 { color: #c0c0c0; font-weight: bold; }
+        .rank-3 { color: #cd7f32; font-weight: bold; }
+
+        .contact-box {
+            background-color: #1f2833;
+            border-left: 4px solid #66fcf1;
+            padding: 15px 20px;
+            margin-top: 35px;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav"><a href="index.html">← Back to Home</a></div>
+    
+    <h1 class="holo-text">Global Leaderboard</h1>
+    <p>Live rankings updated directly from PlayFab backend services for <strong>Volleyball Revengers</strong>.</p>
+
+    <div class="leaderboard-card">
+        <div class="controls">
+            <span class="status-badge" id="sync-status">Live Sync Active</span>
+            <span style="font-size: 0.85rem; color: #8892b0;">Top 10 Players</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Player</th>
+                    <th>Statistic / Score</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                <!-- Initial Mockup / Fallback Rows -->
+                <tr>
+                    <td class="rank-1">#1</td>
+                    <td>PlayerOne_VR</td>
+                    <td>2,850</td>
+                </tr>
+                <tr>
+                    <td class="rank-2">#2</td>
+                    <td>SpikeMaster99</td>
+                    <td>2,640</td>
+                </tr>
+                <tr>
+                    <td class="rank-3">#3</td>
+                    <td>SetterPro</td>
+                    <td>2,410</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="contact-box">
+        Official player rankings powered by <strong>PlayFab Backend Services</strong>. Questions or dispute inquiries? Email <a href="mailto:mugenrevolutionstudios@gmail.com">mugenrevolutionstudios@gmail.com</a>.
+    </div>
+
+    <script>
+        // --- PlayFab Automatic Fetching Setup ---
+        // Replace with your PlayFab Title ID
+        const PLAYFAB_TITLE_ID = "YOUR_PLAYFAB_TITLE_ID"; 
+        const STATISTIC_NAME = "Aces"; // Replace with your PlayFab Statistic Name (e.g., HighScore, Aces, Wins)
+
+        function fetchPlayFabLeaderboard() {
+            if (PLAYFAB_TITLE_ID === "YOUR_PLAYFAB_TITLE_ID") {
+                console.log("PlayFab Title ID not configured. Displaying static mockup.");
+                return;
+            }
+
+            PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
+
+            // Login anonymously to read global title leaderboard
+            const loginRequest = {
+                TitleId: PLAYFAB_TITLE_ID,
+                CreateAccount: true,
+                CustomId: "WebsiteVisitor_" + Math.random().toString(36).substring(7)
+            };
+
+            PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
+                if (error) {
+                    document.getElementById("sync-status").innerText = "Sync Error";
+                    document.getElementById("sync-status").style.borderColor = "#ff4500";
+                    document.getElementById("sync-status").style.color = "#ff4500";
+                    return;
+                }
+
+                // Fetch Leaderboard Top 10
+                const leaderboardRequest = {
+                    StartPosition: 0,
+                    MaxResultsCount: 10,
+                    StatisticName: STATISTIC_NAME
+                };
+
+                PlayFabClientSDK.GetLeaderboard(leaderboardRequest, (lbResult, lbError) => {
+                    if (lbResult && lbResult.data.Leaderboard) {
+                        renderLeaderboard(lbResult.data.Leaderboard);
+                    }
+                });
+            });
+        }
+
+        function renderLeaderboard(entries) {
+            const tbody = document.getElementById("leaderboard-body");
+            tbody.innerHTML = "";
+
+            entries.forEach(entry => {
+                const rank = entry.Position + 1;
+                let rankClass = "";
+                if (rank === 1) rankClass = "rank-1";
+                if (rank === 2) rankClass = "rank-2";
+                if (rank === 3) rankClass = "rank-3";
+
+                const displayName = entry.DisplayName || entry.PlayFabId;
+                
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="${rankClass}">#${rank}</td>
+                    <td>${displayName}</td>
+                    <td>${entry.StatValue.toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Auto-run on load
+        window.onload = fetchPlayFabLeaderboard;
+    </script>
+</body>
+</html>
