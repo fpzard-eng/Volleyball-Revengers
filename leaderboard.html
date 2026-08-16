@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,26 +7,74 @@
     <!-- PlayFab JS SDK -->
     <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
     <style>
+        :root {
+            /* Dark Mode: Blue, White Gradient & Holographic */
+            --bg-main: #060709;
+            --bg-card: rgba(18, 22, 31, 0.85);
+            --bg-card-hover: rgba(28, 34, 48, 0.95);
+            --bg-nav: rgba(10, 12, 16, 0.9);
+            --text-main: #ffffff;
+            --text-muted: #9ba3b4;
+            --border-color: rgba(255, 255, 255, 0.15);
+            --border-glow: rgba(30, 144, 216, 0.6);
+            --accent-glow: rgba(30, 144, 216, 0.4);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.8), 0 8px 20px rgba(0, 0, 0, 0.6);
+            --shadow-hero: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 50px rgba(30, 144, 216, 0.35);
+            --shadow-btn: 0 12px 30px rgba(30, 144, 216, 0.5);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.85);
+            --holo-gradient: linear-gradient(135deg, #1E90D8 0%, #ffffff 50%, #1E90D8 100%);
+            --btn-gradient: linear-gradient(135deg, #1E90D8 0%, #1572a8 100%);
+            --btn-hover: linear-gradient(135deg, #24a0f0 0%, #1a82c4 100%);
+            --badge-bg: rgba(30, 144, 216, 0.15);
+            --badge-border: rgba(30, 144, 216, 0.4);
+        }
+        [data-theme="light"] {
+            /* Light Mode: Red, Black Gradient & Holographic */
+            --bg-main: #f9f3f3;
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --bg-card-hover: rgba(255, 255, 255, 1);
+            --bg-nav: rgba(250, 245, 245, 0.95);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: rgba(0, 0, 0, 0.15);
+            --border-glow: rgba(220, 38, 38, 0.6);
+            --accent-glow: rgba(220, 38, 38, 0.3);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.05);
+            --shadow-hero: 0 25px 50px rgba(0, 0, 0, 0.15), 0 0 40px rgba(220, 38, 38, 0.25);
+            --shadow-btn: 0 12px 30px rgba(220, 38, 38, 0.35);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.1);
+            --holo-gradient: linear-gradient(135deg, #dc2626 0%, #000000 50%, #dc2626 100%);
+            --btn-gradient: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            --btn-hover: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            --badge-bg: rgba(220, 38, 38, 0.1);
+            --badge-border: rgba(220, 38, 38, 0.3);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; }
+        
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #0b0c10; 
-            color: #c5c6c7; 
-            padding: 30px 20px; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background-color: var(--bg-main); 
+            color: var(--text-muted); 
+            padding: 40px 20px; 
             line-height: 1.7; 
             max-width: 900px; 
             margin: 0 auto; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
+        body::before { content: ''; position: fixed; top: -15%; left: 50%; transform: translateX(-50%); width: 85vw; height: 550px; background: radial-gradient(circle, var(--accent-glow) 0%, rgba(0,0,0,0) 70%); pointer-events: none; z-index: 0; }
 
         .holo-text {
-            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 25%, #00c6ff 50%, #0072ff 75%, #00f2fe 100%);
+            background: var(--holo-gradient);
             background-size: 200% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: holoGlow 4s linear infinite;
             display: inline-block;
-            font-weight: 700;
+            font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
         }
 
         @keyframes holoGlow {
@@ -34,27 +82,32 @@
             100% { background-position: 200% center; }
         }
 
-        h1 { font-size: 2.2rem; margin-bottom: 5px; }
+        h1 { font-size: 2.5rem; margin-bottom: 5px; color: var(--text-main); }
+        p { color: var(--text-muted); font-weight: 600; }
 
-        a { color: #66fcf1; text-decoration: none; transition: color 0.2s ease; }
-        a:hover { color: #45a29e; text-decoration: underline; }
+        a { color: var(--text-main); text-decoration: none; transition: color 0.2s ease; }
+        a:hover { color: var(--border-glow); text-decoration: underline; }
 
-        .nav { margin-bottom: 30px; }
+        .nav { margin-bottom: 30px; font-weight: 700; }
         
         .leaderboard-card {
-            background-color: #12141c;
-            border: 1px solid #1f2833;
-            border-radius: 8px;
-            padding: 24px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            background: var(--bg-card);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow-widget);
             margin-top: 20px;
+            position: relative;
+            overflow: hidden;
         }
+        .leaderboard-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); }
 
         .controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
             gap: 15px;
         }
@@ -66,38 +119,40 @@
         }
 
         .tab-btn {
-            background-color: #1f2833;
-            border: 1px solid #283648;
-            color: #c5c6c7;
+            background: rgba(31, 40, 51, 0.4);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
             padding: 8px 14px;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 0.8rem;
             transition: all 0.2s ease;
         }
 
         .tab-btn:hover {
-            border-color: #66fcf1;
-            color: #66fcf1;
+            border-color: var(--border-glow);
+            color: var(--text-main);
         }
 
         .tab-btn.active {
-            background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(0, 114, 255, 0.2));
-            border-color: #00f2fe;
-            color: #66fcf1;
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+            background: var(--badge-bg);
+            border-color: var(--border-glow);
+            color: var(--text-main);
+            box-shadow: 0 0 15px var(--accent-glow);
         }
 
         .status-badge {
             font-size: 0.8rem;
-            padding: 4px 10px;
-            border-radius: 4px;
-            background-color: rgba(102, 252, 241, 0.1);
-            color: #66fcf1;
-            border: 1px solid #66fcf1;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background-color: var(--badge-bg);
+            color: var(--text-main);
+            border: 1px solid var(--badge-border);
+            font-weight: 700;
         }
 
+        .table-responsive { width: 100%; overflow-x: auto; }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -106,40 +161,54 @@
 
         th {
             padding: 12px;
-            border-bottom: 2px solid #1f2833;
-            color: #8892b0;
-            font-size: 0.85rem;
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            font-weight: 800;
         }
 
         td {
             padding: 14px 12px;
-            border-bottom: 1px solid #1f2833;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            font-weight: 600;
         }
 
         tr:hover td {
             background-color: rgba(255, 255, 255, 0.02);
         }
 
-        .rank-1 { color: #ffd700; font-weight: bold; }
-        .rank-2 { color: #c0c0c0; font-weight: bold; }
-        .rank-3 { color: #cd7f32; font-weight: bold; }
+        .rank-1 { color: #ffd700; font-weight: 900; filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4)); }
+        .rank-2 { color: #c0c0c0; font-weight: 900; filter: drop-shadow(0 0 8px rgba(192, 192, 192, 0.4)); }
+        .rank-3 { color: #cd7f32; font-weight: 900; filter: drop-shadow(0 0 8px rgba(205, 127, 50, 0.4)); }
 
         .contact-box {
-            background-color: #1f2833;
-            border-left: 4px solid #66fcf1;
-            padding: 15px 20px;
+            background: var(--bg-card);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--border-glow);
+            padding: 20px;
             margin-top: 35px;
-            border-radius: 0 4px 4px 0;
+            border-radius: 0 12px 12px 0;
+            box-shadow: var(--shadow-card);
+            color: var(--text-muted);
+            font-weight: 600;
         }
+        .contact-box strong { color: var(--text-main); }
     </style>
 </head>
 <body>
+    <script>
+        const savedTheme = localStorage.getItem('preferred-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+
     <div class="nav"><a href="home.html">← Back to Home</a></div>
     
     <h1 class="holo-text">Global Leaderboards</h1>
-    <p>Live rankings updated directly from PlayFab backend services for <strong>Volleyball Revengers</strong>.</p>
+    <p style="margin-bottom: 20px;">Live rankings updated directly from PlayFab backend services for <strong>Volleyball Revengers</strong>.</p>
 
     <div class="leaderboard-card">
         <div class="controls">
@@ -155,20 +224,22 @@
             <span class="status-badge" id="sync-status">Live Sync Active</span>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Player</th>
-                    <th id="stat-header">Kills</th>
-                </tr>
-            </thead>
-            <tbody id="leaderboard-body">
-                <tr>
-                    <td colspan="3" style="text-align: center; color: #8892b0; padding: 30px;">Connecting to PlayFab...</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th id="stat-header">Kills</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;">Connecting to PlayFab...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="contact-box">
@@ -190,9 +261,12 @@
 
             PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
                 if (error) {
-                    document.getElementById("sync-status").innerText = "Sync Error";
-                    document.getElementById("sync-status").style.borderColor = "#ff4500";
-                    document.getElementById("sync-status").style.color = "#ff4500";
+                    const syncStatus = document.getElementById("sync-status");
+                    if (syncStatus) {
+                        syncStatus.innerText = "Sync Error";
+                        syncStatus.style.borderColor = "#ff4500";
+                        syncStatus.style.color = "#ff4500";
+                    }
                     document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff4500; padding: 20px;">Failed to connect to PlayFab backend.</td></tr>`;
                     return;
                 }
@@ -222,7 +296,7 @@
         }
 
         function fetchPlayFabLeaderboard(statisticName) {
-            document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #8892b0; padding: 20px;">Loading rankings...</td></tr>`;
+            document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading rankings...</td></tr>`;
 
             const leaderboardRequest = {
                 StartPosition: 0,
@@ -234,15 +308,15 @@
                 if (lbError) {
                     let errorMsg = "No entries found for this statistic yet.";
                     if (statisticName === "AeroCoins_Stat") {
-                        errorMsg = "Aero-Coins leaderboard requires mirroring currency to a Statistic (e.g., 'AeroCoins_Stat') in PlayFab.";
+                        errorMsg = "Aero-Coins leaderboard requires mirroring currency to a Statistic in PlayFab.";
                     }
-                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #8892b0; padding: 20px;">${errorMsg}</td></tr>`;
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">${errorMsg}</td></tr>`;
                     return;
                 }
                 if (lbResult && lbResult.data && lbResult.data.Leaderboard) {
                     renderLeaderboard(lbResult.data.Leaderboard);
                 } else {
-                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #8892b0; padding: 20px;">No leaderboard data available.</td></tr>`;
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No leaderboard data available.</td></tr>`;
                 }
             });
         }
@@ -252,7 +326,7 @@
             tbody.innerHTML = "";
 
             if (entries.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #8892b0; padding: 20px;">No players ranked yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No players ranked yet.</td></tr>`;
                 return;
             }
 
