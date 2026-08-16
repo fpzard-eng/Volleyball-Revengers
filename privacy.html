@@ -107,6 +107,11 @@
     </style>
 </head>
 <body>
+    <script>
+        const savedTheme = localStorage.getItem('preferred-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+
     <div class="nav"><a href="home.html">← Back to Home</a></div>
     
     <h1 class="holo-text">Privacy Policy</h1>
@@ -149,9 +154,5 @@
         <strong>Mugen Revolution Studios</strong><br>
         Email: <a href="mailto:mugenrevolutionstudios@gmail.com">mugenrevolutionstudios@gmail.com</a>
     </div>
-
-    <script>
-        document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
-    </script>
 </body>
 </html>
