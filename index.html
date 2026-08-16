@@ -1,35 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volleyball Revengers | Mugen Revolution Studios</title>
     <style>
+        :root {
+            /* Dark Mode Variables (Default) */
+            --bg-main: #0a0b0e;
+            --bg-card: #12141a;
+            --bg-nav: rgba(18, 20, 26, 0.85);
+            --text-main: #ffffff;
+            --text-muted: #a0a5b5;
+            --border-color: #1f2430;
+            --accent-color: #ff4500;
+            --accent-hover: #e03d00;
+            --accent-glow: rgba(255, 69, 0, 0.35);
+            --shadow-color: rgba(0, 0, 0, 0.5);
+        }
+
+        [data-theme="light"] {
+            /* Light Mode Variables */
+            --bg-main: #f5f7fa;
+            --bg-card: #ffffff;
+            --bg-nav: rgba(255, 255, 255, 0.85);
+            --text-main: #111827;
+            --text-muted: #4b5563;
+            --border-color: #e5e7eb;
+            --accent-color: #ff4500;
+            --accent-hover: #d93b00;
+            --accent-glow: rgba(255, 69, 0, 0.2);
+            --shadow-color: rgba(0, 0, 0, 0.08);
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0b0c10;
-            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
             display: flex;
             flex-direction: column;
             min-height: 100vh;
         }
 
-        /* --- Header Navigation --- */
+        /* --- Glassmorphism Navigation --- */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 15px 30px;
-            background-color: #121317;
-            border-bottom: 1px solid #1f242d;
-            position: relative;
-            z-index: 100;
+            background-color: var(--bg-nav);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
         .header-brand {
@@ -39,51 +71,68 @@
         }
 
         .header-logo-img {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             object-fit: cover;
         }
 
         .logo-text {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #ff4500;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--accent-color);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        .menu-btn {
-            background-color: #1f242d;
-            color: #ffffff;
-            border: 1px solid #343a46;
-            padding: 10px 18px;
-            font-size: 0.95rem;
-            font-weight: bold;
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .theme-select {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
             border-radius: 6px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .menu-btn {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
         }
 
         .menu-btn:hover {
-            background-color: #ff4500;
-            border-color: #ff4500;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
         }
 
-        /* Slide-out Navigation */
+        /* Slide-out Dropdown */
         .nav-menu {
             display: none;
             position: absolute;
             top: 100%;
             right: 30px;
-            background-color: #121317;
-            border: 1px solid #1f242d;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            box-shadow: 0px 8px 20px rgba(0,0,0,0.8);
-            width: 220px;
-            padding: 10px 0;
+            box-shadow: 0px 10px 25px var(--shadow-color);
+            width: 200px;
+            padding: 8px 0;
             flex-direction: column;
-            z-index: 100;
+            z-index: 1000;
         }
 
         .nav-menu.active {
@@ -91,36 +140,36 @@
         }
 
         .nav-menu a {
-            color: #cccccc;
-            padding: 12px 20px;
+            color: var(--text-muted);
+            padding: 10px 18px;
             text-decoration: none;
-            font-size: 0.95rem;
-            transition: background 0.2s, color 0.2s;
+            font-size: 0.9rem;
+            font-weight: 500;
         }
 
         .nav-menu a:hover {
-            background-color: #1f242d;
-            color: #ff4500;
+            background-color: var(--bg-main);
+            color: var(--accent-color);
         }
 
-        /* --- Hero Showcase Banner --- */
+        /* --- Hero Showcase --- */
         .hero {
             position: relative;
             width: 100%;
-            max-width: 1100px;
-            margin: 30px auto 0 auto;
+            max-width: 1050px;
+            margin: 35px auto 0 auto;
             padding: 0 20px;
         }
 
         .cover-img {
             width: 100%;
-            border-radius: 12px;
-            border: 1px solid #2a2f3a;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 15px 35px var(--shadow-color);
             display: block;
         }
 
-        /* --- Content Area --- */
+        /* --- Content Container --- */
         .content {
             flex: 1;
             display: flex;
@@ -132,26 +181,25 @@
         }
 
         .main-crest {
-            width: 120px;
-            height: 120px;
+            width: 110px;
+            height: 110px;
             margin-bottom: 20px;
-            filter: drop-shadow(0 0 15px rgba(0, 150, 255, 0.4));
+            filter: drop-shadow(0 0 20px var(--accent-glow));
         }
 
         .game-title {
-            color: #ff4500;
+            color: var(--accent-color);
             font-size: 3.2rem;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 15px;
-            text-shadow: 0px 4px 15px rgba(255, 69, 0, 0.3);
+            margin-bottom: 12px;
         }
 
         .game-description {
-            font-size: 1.2rem;
-            color: #bbbbbb;
-            max-width: 650px;
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            max-width: 620px;
             line-height: 1.6;
             margin-bottom: 35px;
         }
@@ -162,9 +210,9 @@
         }
 
         .section-title {
-            font-size: 0.85rem;
-            font-weight: bold;
-            color: #888888;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1.5px;
             margin-bottom: 12px;
@@ -172,26 +220,25 @@
 
         .store-btn {
             display: inline-block;
-            background-color: #ff4500;
+            background-color: var(--accent-color);
             color: #ffffff;
-            font-size: 1.1rem;
-            font-weight: bold;
+            font-size: 1.05rem;
+            font-weight: 800;
             padding: 16px 36px;
-            border-radius: 8px;
+            border-radius: 10px;
             text-decoration: none;
-            transition: transform 0.2s, background-color 0.2s;
-            box-shadow: 0 4px 20px rgba(255, 69, 0, 0.4);
+            box-shadow: 0 6px 20px var(--accent-glow);
         }
 
         .store-btn:hover {
-            background-color: #e03d00;
+            background-color: var(--accent-hover);
             transform: translateY(-2px);
         }
 
         /* --- Footer --- */
         footer {
-            background-color: #08090b;
-            border-top: 1px solid #1a1d24;
+            background-color: var(--bg-card);
+            border-top: 1px solid var(--border-color);
             padding: 40px 20px 30px 20px;
             display: flex;
             flex-direction: column;
@@ -203,7 +250,7 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 50px;
+            gap: 60px;
             max-width: 800px;
             width: 100%;
             text-align: center;
@@ -212,35 +259,44 @@
         .footer-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
 
         .footer-group a {
-            color: #aaaaaa;
+            color: var(--text-muted);
             text-decoration: none;
             font-size: 0.95rem;
-            transition: color 0.2s;
+            font-weight: 500;
         }
 
         .footer-group a:hover {
-            color: #ff4500;
+            color: var(--accent-color);
         }
 
         .copyright {
-            color: #555555;
+            color: var(--text-muted);
             font-size: 0.85rem;
+            opacity: 0.8;
         }
     </style>
 </head>
 <body>
 
-    <!-- Header Navigation -->
+    <!-- Glassmorphism Header -->
     <header>
         <div class="header-brand">
             <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
             <div class="logo-text">Mugen Revolution Studios</div>
         </div>
-        <button class="menu-btn" onclick="toggleMenu()">Menu ☰</button>
+        <div class="nav-actions">
+            <!-- Theme Toggle Selector -->
+            <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
+                <option value="auto">Auto 🌓</option>
+                <option value="dark">Dark 🌙</option>
+                <option value="light">Light ☀️</option>
+            </select>
+            <button class="menu-btn" onclick="toggleMenu()">Menu ☰</button>
+        </div>
         <div class="nav-menu" id="navMenu">
             <a href="index.html">Home</a>
             <a href="privacy.html">Privacy Policy</a>
@@ -248,9 +304,9 @@
         </div>
     </header>
 
-    <!-- Cover Image Banner -->
+    <!-- Showcase Hero -->
     <div class="hero">
-        <img src="cover.png" alt="Volleyball Revengers Open Beta Court" class="cover-img">
+        <img src="cover.png" alt="Volleyball Revengers Court" class="cover-img">
     </div>
 
     <!-- Main Content -->
@@ -261,7 +317,7 @@
             The ultimate virtual reality volleyball experience. Master the court with realistic physics, precise controls, and high-intensity match action.
         </p>
 
-        <!-- Store Section -->
+        <!-- Store Link Section -->
         <div class="store-section">
             <div class="section-title">Store Link</div>
             <a href="https://www.meta.com/experiences/volleyball-revengers/26538006869191156/" target="_blank" class="store-btn">
@@ -273,14 +329,12 @@
     <!-- Footer -->
     <footer>
         <div class="footer-grid">
-            <!-- Social Links -->
             <div class="footer-group">
                 <div class="section-title">Social Links</div>
                 <a href="https://youtube.com/@MugenRevolutionStudio" target="_blank">YouTube</a>
                 <a href="https://discord.gg/xG6QcTbfp2" target="_blank">Discord</a>
             </div>
 
-            <!-- Legal -->
             <div class="footer-group">
                 <div class="section-title">Legal</div>
                 <a href="privacy.html">Privacy Policy</a>
@@ -293,8 +347,9 @@
         </div>
     </footer>
 
-    <!-- JavaScript for Dropdown Menu -->
+    <!-- Theme & Menu JavaScript -->
     <script>
+        // Menu Toggle
         function toggleMenu() {
             const menu = document.getElementById('navMenu');
             menu.classList.toggle('active');
@@ -303,8 +358,36 @@
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('navMenu');
             const button = document.querySelector('.menu-btn');
-            if (!menu.contains(event.target) && !button.contains(event.target)) {
+            if (menu && button && !menu.contains(event.target) && !button.contains(event.target)) {
                 menu.classList.remove('active');
+            }
+        });
+
+        // Theme Switcher Logic
+        function changeTheme(mode) {
+            localStorage.setItem('preferred-theme', mode);
+            applyTheme(mode);
+        }
+
+        function applyTheme(mode) {
+            const html = document.documentElement;
+            if (mode === 'auto') {
+                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                html.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
+            } else {
+                html.setAttribute('data-theme', mode);
+            }
+        }
+
+        // Initialize saved theme on load
+        const savedTheme = localStorage.getItem('preferred-theme') || 'auto';
+        document.getElementById('themeSelect').value = savedTheme;
+        applyTheme(savedTheme);
+
+        // Listen for OS system theme changes if in auto mode
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (localStorage.getItem('preferred-theme') === 'auto') {
+                applyTheme('auto');
             }
         });
     </script>
