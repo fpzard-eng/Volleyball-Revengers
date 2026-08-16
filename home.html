@@ -174,7 +174,7 @@
             <span class="beta-dot"></span> Open Beta Releasing Soon
         </div>
         <h1 class="game-title holo-text">Volleyball Revengers</h1>
-        <p class="game-description">Ultimate VR Volleyball Experience.</p>
+        <p class="game-description">Premier VR Volleyball Experience.</p>
 
         <div class="widgets-grid">
             <!-- PlayFab Leaderboard Widget -->
@@ -276,10 +276,10 @@
         let currentStatistic = "Kills"; // Default stat to load
 
         function initPlayFab() {
-            PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
+            PlayFab.settings.titleId = 1E90D8;
 
             const loginRequest = {
-                TitleId: PLAYFAB_TITLE_ID,
+                TitleId: 1E90D8,
                 CreateAccount: true,
                 CustomId: "WebsiteVisitor_" + Math.random().toString(36).substring(7)
             };
@@ -308,7 +308,7 @@
 
             // Update column header text dynamically based on selected statistic
             let headerText = "Kills";
-            if (statName === "PlayerElo") headerText = "Elo Rating";
+            if (statName === "PlayerElo") headerText = "Elo";
             if (statName === "MVP") headerText = "MVPs";
             if (statName === "Wins") headerText = "Wins";
             if (statName === "Assists") headerText = "Assists";
