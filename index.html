@@ -7,47 +7,37 @@
     <style>
         :root {
             /* Dark Mode Variables (Default) */
-            --bg-main: #06070a;
-            --bg-card: rgba(18, 22, 32, 0.65);
-            --bg-card-hover: rgba(28, 34, 48, 0.85);
-            --bg-nav: rgba(10, 12, 18, 0.75);
+            --bg-main: #0a0b0e;
+            --bg-card: #12141a;
+            --bg-nav: rgba(18, 20, 26, 0.85);
             --text-main: #ffffff;
-            --text-muted: #94a3b8;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --border-glow: rgba(255, 69, 0, 0.4);
+            --text-muted: #a0a5b5;
+            --border-color: #1f2430;
             --accent-color: #ff4500;
-            --accent-gradient: linear-gradient(135deg, #ff4500, #ff7b00, #ff0055);
             --accent-hover: #e03d00;
             --accent-glow: rgba(255, 69, 0, 0.35);
-            --holo-gradient: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(0,212,255,0.15), rgba(255,0,128,0.15), rgba(255,255,255,0.15));
-            --shadow-color: rgba(0, 0, 0, 0.6);
-            --modal-bg: rgba(10, 12, 18, 0.85);
+            --shadow-color: rgba(0, 0, 0, 0.5);
         }
 
         [data-theme="light"] {
             /* Light Mode Variables */
-            --bg-main: #f0f4f8;
-            --bg-card: rgba(255, 255, 255, 0.75);
-            --bg-card-hover: rgba(255, 255, 255, 0.95);
-            --bg-nav: rgba(240, 244, 248, 0.8);
-            --text-main: #0f172a;
-            --text-muted: #475569;
-            --border-color: rgba(0, 0, 0, 0.08);
-            --border-glow: rgba(255, 69, 0, 0.3);
+            --bg-main: #f5f7fa;
+            --bg-card: #ffffff;
+            --bg-nav: rgba(255, 255, 255, 0.85);
+            --text-main: #111827;
+            --text-muted: #4b5563;
+            --border-color: #e5e7eb;
             --accent-color: #ff4500;
-            --accent-gradient: linear-gradient(135deg, #ff4500, #ff6b00, #e6004c);
             --accent-hover: #d93b00;
-            --accent-glow: rgba(255, 69, 0, 0.25);
-            --holo-gradient: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(0,180,216,0.2), rgba(247,37,133,0.2), rgba(255,255,255,0.4));
+            --accent-glow: rgba(255, 69, 0, 0.2);
             --shadow-color: rgba(0, 0, 0, 0.08);
-            --modal-bg: rgba(255, 255, 255, 0.9);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
         body {
@@ -57,32 +47,6 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* --- Ambient Background Glows --- */
-        .ambient-glow-1 {
-            position: absolute;
-            top: -150px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 800px;
-            height: 500px;
-            background: radial-gradient(circle, var(--accent-glow) 0%, rgba(0,0,0,0) 70%);
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        .ambient-glow-2 {
-            position: absolute;
-            top: 40%;
-            right: -200px;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(0, 180, 216, 0.15) 0%, rgba(0,0,0,0) 70%);
-            z-index: 0;
-            pointer-events: none;
         }
 
         /* --- Glassmorphism Navigation --- */
@@ -90,10 +54,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 36px;
-            background: var(--bg-nav);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            padding: 15px 30px;
+            background-color: var(--bg-nav);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
@@ -104,23 +68,19 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            text-decoration: none;
         }
 
         .header-logo-img {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             object-fit: cover;
-            border: 1px solid var(--border-color);
         }
 
         .logo-text {
             font-size: 1.05rem;
             font-weight: 800;
-            background: var(--accent-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--accent-color);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -132,57 +92,47 @@
         }
 
         .theme-select {
-            background: var(--bg-card);
+            background-color: var(--bg-card);
             color: var(--text-main);
             border: 1px solid var(--border-color);
-            backdrop-filter: blur(8px);
-            padding: 8px 14px;
+            padding: 8px 12px;
             font-size: 0.85rem;
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             outline: none;
         }
 
-        .theme-select:hover {
-            border-color: var(--accent-color);
-        }
-
         .menu-btn {
-            background: var(--bg-card);
+            background-color: var(--bg-card);
             color: var(--text-main);
             border: 1px solid var(--border-color);
-            backdrop-filter: blur(8px);
-            padding: 8px 18px;
+            padding: 8px 16px;
             font-size: 0.9rem;
             font-weight: 700;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
         }
 
         .menu-btn:hover {
             border-color: var(--accent-color);
             color: var(--accent-color);
-            box-shadow: 0 0 12px var(--accent-glow);
         }
 
-        /* Dropdown Menu */
+        /* Slide-out Dropdown */
         .nav-menu {
             display: none;
             position: absolute;
             top: 100%;
-            right: 36px;
-            background: var(--modal-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            right: 30px;
+            background-color: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: 0px 15px 35px var(--shadow-color);
-            width: 220px;
-            padding: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0px 10px 25px var(--shadow-color);
+            width: 200px;
+            padding: 8px 0;
             flex-direction: column;
             z-index: 1000;
-            overflow: hidden;
         }
 
         .nav-menu.active {
@@ -191,17 +141,14 @@
 
         .nav-menu a {
             color: var(--text-muted);
-            padding: 12px 20px;
+            padding: 10px 18px;
             text-decoration: none;
             font-size: 0.9rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-weight: 500;
         }
 
         .nav-menu a:hover {
-            background: rgba(255, 69, 0, 0.1);
+            background-color: var(--bg-main);
             color: var(--accent-color);
         }
 
@@ -209,295 +156,94 @@
         .hero {
             position: relative;
             width: 100%;
-            max-width: 1080px;
+            max-width: 1050px;
             margin: 35px auto 0 auto;
             padding: 0 20px;
-            z-index: 1;
-        }
-
-        .hero-wrapper {
-            position: relative;
-            border-radius: 20px;
-            padding: 2px;
-            background: linear-gradient(135deg, var(--border-color), rgba(255,255,255,0.05));
-            box-shadow: 0 20px 40px var(--shadow-color);
         }
 
         .cover-img {
             width: 100%;
-            border-radius: 18px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 15px 35px var(--shadow-color);
             display: block;
-            object-fit: cover;
         }
 
-        /* --- Main Content --- */
+        /* --- Content Container --- */
         .content {
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 50px 20px;
+            padding: 40px 20px;
             text-align: center;
-            z-index: 1;
         }
 
         .main-crest {
-            width: 120px;
-            height: 120px;
-            margin-bottom: 24px;
-            filter: drop-shadow(0 0 25px var(--accent-glow));
-            animation: float 4s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
+            width: 110px;
+            height: 110px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px var(--accent-glow));
         }
 
         .game-title {
-            background: var(--accent-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 3.5rem;
+            color: var(--accent-color);
+            font-size: 3.2rem;
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-bottom: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
         }
 
         .game-description {
             font-size: 1.15rem;
             color: var(--text-muted);
-            max-width: 640px;
+            max-width: 620px;
             line-height: 1.6;
-            margin-bottom: 40px;
+            margin-bottom: 35px;
         }
 
-        /* --- Interactive Action Section --- */
-        .action-grid {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 16px;
-            max-width: 850px;
-            width: 100%;
+        /* Store Link Section */
+        .store-section {
             margin-bottom: 20px;
         }
 
-        .action-card {
-            flex: 1;
-            min-width: 240px;
-            background: var(--bg-card);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 22px 20px;
-            text-decoration: none;
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .action-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: var(--holo-gradient);
-            transition: left 0.6s ease;
-            pointer-events: none;
-        }
-
-        .action-card:hover::before {
-            left: 100%;
-        }
-
-        .action-card:hover {
-            background: var(--bg-card-hover);
-            border-color: var(--border-glow);
-            transform: translateY(-4px);
-            box-shadow: 0 10px 25px var(--accent-glow);
-        }
-
-        .action-icon {
-            font-size: 1.8rem;
-        }
-
-        .action-title {
-            font-size: 1.1rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .action-sub {
+        .section-title {
             font-size: 0.8rem;
+            font-weight: 700;
             color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
         }
 
-        /* Highlight Primary CTA Button */
-        .action-card.primary {
-            background: var(--accent-gradient);
-            border: none;
-            box-shadow: 0 8px 25px var(--accent-glow);
-        }
-
-        .action-card.primary .action-title,
-        .action-card.primary .action-sub,
-        .action-card.primary .action-icon {
+        .store-btn {
+            display: inline-block;
+            background-color: var(--accent-color);
             color: #ffffff;
-        }
-
-        .action-card.primary:hover {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 12px 30px var(--accent-glow);
-        }
-
-        /* --- Modals (Popups for Leaderboards & Update Logs) --- */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-box {
-            background: var(--modal-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
-            width: 100%;
-            max-width: 600px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 20px 50px var(--shadow-color);
-            overflow: hidden;
-            animation: modalUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes modalUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-title {
-            font-size: 1.25rem;
+            font-size: 1.05rem;
             font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--accent-color);
-        }
-
-        .modal-close {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0 8px;
-        }
-
-        .modal-close:hover {
-            color: var(--text-main);
-        }
-
-        .modal-body {
-            padding: 24px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            text-align: left;
-        }
-
-        /* Log Entry & Leaderboard Styles */
-        .log-entry {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
+            padding: 16px 36px;
             border-radius: 10px;
-            padding: 16px;
+            text-decoration: none;
+            box-shadow: 0 6px 20px var(--accent-glow);
         }
 
-        .log-date {
-            font-size: 0.75rem;
-            color: var(--accent-color);
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
-
-        .log-title {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .log-desc {
-            font-size: 0.88rem;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-
-        .leaderboard-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .leaderboard-table th, .leaderboard-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.9rem;
-        }
-
-        .leaderboard-table th {
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-        }
-
-        .rank-num {
-            font-weight: 800;
-            color: var(--accent-color);
+        .store-btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
         }
 
         /* --- Footer --- */
         footer {
-            background: var(--bg-nav);
-            backdrop-filter: blur(16px);
+            background-color: var(--bg-card);
             border-top: 1px solid var(--border-color);
             padding: 40px 20px 30px 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 30px;
-            z-index: 1;
         }
 
         .footer-grid {
@@ -516,15 +262,6 @@
             gap: 10px;
         }
 
-        .footer-title {
-            font-size: 0.8rem;
-            font-weight: 800;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 4px;
-        }
-
         .footer-group a {
             color: var(--text-muted);
             text-decoration: none;
@@ -541,36 +278,16 @@
             font-size: 0.85rem;
             opacity: 0.8;
         }
-
-        /* --- Mobile Responsive Fixes --- */
-        @media (max-width: 600px) {
-            header {
-                padding: 12px 18px;
-            }
-            .game-title {
-                font-size: 2.4rem;
-            }
-            .game-description {
-                font-size: 1rem;
-            }
-            .action-grid {
-                flex-direction: column;
-            }
-        }
     </style>
 </head>
 <body>
 
-    <!-- Ambient Glowing Background Accents -->
-    <div class="ambient-glow-1"></div>
-    <div class="ambient-glow-2"></div>
-
     <!-- Glassmorphism Header -->
     <header>
-        <a href="index.html" class="header-brand">
+        <div class="header-brand">
             <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
             <div class="logo-text">Mugen Revolution Studios</div>
-        </a>
+        </div>
         <div class="nav-actions">
             <!-- Theme Toggle Selector -->
             <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
@@ -580,22 +297,16 @@
             </select>
             <button class="menu-btn" onclick="toggleMenu()">Menu ☰</button>
         </div>
-        
-        <!-- Navigation Menu -->
         <div class="nav-menu" id="navMenu">
-            <a href="index.html">🏠 Home</a>
-            <a href="#" onclick="openModal('leaderboardModal')">🏆 Leaderboards</a>
-            <a href="#" onclick="openModal('updateLogsModal')">📜 Update Logs</a>
-            <a href="privacy.html">🔒 Privacy Policy</a>
-            <a href="terms.html">📄 Terms of Service</a>
+            <a href="index.html">Home</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
         </div>
     </header>
 
     <!-- Showcase Hero -->
     <div class="hero">
-        <div class="hero-wrapper">
-            <img src="cover.png" alt="Volleyball Revengers Court" class="cover-img">
-        </div>
+        <img src="cover.png" alt="Volleyball Revengers Court" class="cover-img">
     </div>
 
     <!-- Main Content -->
@@ -603,53 +314,83 @@
         <img src="logo.png" alt="Volleyball Revengers Crest" class="main-crest">
         <h1 class="game-title">Volleyball Revengers</h1>
         <p class="game-description">
-            The ultimate virtual reality volleyball experience. Master the court with realistic physics, precise movement, and high-intensity multiplayer action.
+            The ultimate virtual reality volleyball experience. Master the court with realistic physics, precise controls, and high-intensity match action.
         </p>
 
-        <!-- Interactive Action Grid -->
-        <div class="action-grid">
-            <a href="https://www.meta.com/experiences/volleyball-revengers/26538006869191156/" target="_blank" class="action-card primary">
-                <span class="action-icon">🥽</span>
-                <span class="action-title">Get on Meta Quest</span>
-                <span class="action-sub">Available on Quest Store</span>
+        <!-- Store Link Section -->
+        <div class="store-section">
+            <div class="section-title">Store Link</div>
+            <a href="https://www.meta.com/experiences/volleyball-revengers/26538006869191156/" target="_blank" class="store-btn">
+                Get on Meta Quest
             </a>
-
-            <div class="action-card" onclick="openModal('leaderboardModal')">
-                <span class="action-icon">🏆</span>
-                <span class="action-title">Leaderboards</span>
-                <span class="action-sub">View Global Rankings</span>
-            </div>
-
-            <div class="action-card" onclick="openModal('updateLogsModal')">
-                <span class="action-icon">📜</span>
-                <span class="action-title">Update Logs</span>
-                <span class="action-sub">See What's New</span>
-            </div>
         </div>
     </div>
 
-    <!-- Modal: Leaderboards -->
-    <div class="modal-overlay" id="leaderboardModal">
-        <div class="modal-box">
-            <div class="modal-header">
-                <div class="modal-title">🏆 Global Leaderboards</div>
-                <button class="modal-close" onclick="closeModal('leaderboardModal')">&times;</button>
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-group">
+                <div class="section-title">Social Links</div>
+                <a href="https://youtube.com/@MugenRevolutionStudio" target="_blank">YouTube</a>
+                <a href="https://discord.gg/xG6QcTbfp2" target="_blank">Discord</a>
             </div>
-            <div class="modal-body">
-                <table class="leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Player</th>
-                            <th>Rating / ELO</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="rank-num">#1</td>
-                            <td>SpikeKing_VR</td>
-                            <td>2,840</td>
-                        </tr>
-                        <tr>
-                            <td class="rank-num">#2</td>
-                         
+
+            <div class="footer-group">
+                <div class="section-title">Legal</div>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+            </div>
+        </div>
+
+        <div class="copyright">
+            &copy; 2026 Mugen Revolution Studios. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Theme & Menu JavaScript -->
+    <script>
+        // Menu Toggle
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('navMenu');
+            const button = document.querySelector('.menu-btn');
+            if (menu && button && !menu.contains(event.target) && !button.contains(event.target)) {
+                menu.classList.remove('active');
+            }
+        });
+
+        // Theme Switcher Logic
+        function changeTheme(mode) {
+            localStorage.setItem('preferred-theme', mode);
+            applyTheme(mode);
+        }
+
+        function applyTheme(mode) {
+            const html = document.documentElement;
+            if (mode === 'auto') {
+                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                html.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
+            } else {
+                html.setAttribute('data-theme', mode);
+            }
+        }
+
+        // Initialize saved theme on load
+        const savedTheme = localStorage.getItem('preferred-theme') || 'auto';
+        document.getElementById('themeSelect').value = savedTheme;
+        applyTheme(savedTheme);
+
+        // Listen for OS system theme changes if in auto mode
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (localStorage.getItem('preferred-theme') === 'auto') {
+                applyTheme('auto');
+            }
+        });
+    </script>
+
+</body>
+</html>
