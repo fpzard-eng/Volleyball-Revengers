@@ -74,16 +74,10 @@
         .game-title { font-size: 4rem; letter-spacing: 3px; margin-bottom: 10px; filter: drop-shadow(0 8px 25px rgba(0, 183, 255, 0.4)); }
         .game-description { font-size: 1.2rem; color: var(--text-muted); font-weight: 600; margin-bottom: 50px; }
         .widgets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; width: 100%; max-width: 1050px; margin-bottom: 60px; }
-        .widget-card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; text-align: left; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; }
+        .widget-card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; text-align: left; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; min-height: 200px; display: flex; flex-direction: column; }
         .widget-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); }
         .widget-title { font-size: 1.3rem; font-weight: 900; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .mini-table { width: 100%; border-collapse: collapse; }
-        .mini-table th { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
-        .mini-table td { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: 700; font-size: 0.95rem; }
-        .rank-1 { color: #ffd700; } .rank-2 { color: #c0c0c0; } .rank-3 { color: #cd7f32; }
-        .update-item { border-left: 3px solid #00f2fe; padding-left: 15px; margin-bottom: 15px; }
-        .update-ver { font-weight: 900; color: #00f2fe; font-size: 0.9rem; margin-bottom: 4px; }
-        .update-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+        .empty-widget-msg { color: var(--text-muted); font-size: 0.9rem; font-style: italic; margin: auto; text-align: center; padding: 20px; }
         .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; width: 100%; max-width: 1050px; margin-bottom: 60px; }
         .feature-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 25px; text-align: left; box-shadow: var(--shadow-card); }
         .feature-card:hover { transform: translateY(-6px); border-color: var(--border-glow); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9), 0 0 30px var(--accent-glow); }
@@ -118,8 +112,6 @@
             </div>
             <button class="menu-btn" id="menuToggleBtn">Menu ☰</button>
             <div class="nav-menu" id="navMenu">
-                <a href="leaderboard.html">🏆 Leaderboard</a>
-                <a href="updates.html">📋 Update Log</a>
                 <a href="privacy.html">🔒 Privacy Policy</a>
                 <a href="terms.html">📜 Terms of Service</a>
                 <a href="https://discord.gg/xG6QcTbfp2" target="_blank">💬 Discord</a>
@@ -128,7 +120,7 @@
     </header>
 
     <div class="info-bar">
-        <div class="info-item"><span class="pulse-dot"></span> Live Players: <span class="live-count" id="player-count">24</span></div>
+        <div class="info-item"><span class="pulse-dot"></span> Online Players: <span class="live-count" id="player-count">0</span></div>
         <div class="info-item">Network: <strong>Photon Fusion</strong></div>
         <div class="info-item">Backend: <strong>PlayFab</strong></div>
     </div>
@@ -141,33 +133,17 @@
 
     <div class="content">
         <h1 class="game-title holo-text">Volleyball Revengers</h1>
-        <p class="game-description">Ultimate VR Volleyball. Master the court.</p>
+        <p class="game-description">Ultimate VR Volleyball.</p>
 
         <div class="widgets-grid">
             <div class="widget-card">
-                <div class="widget-title holo-text">Global Top 5 <a href="leaderboard.html" style="font-size:0.8rem; color:#00f2fe; text-decoration:none;">View All →</a></div>
-                <table class="mini-table">
-                    <thead><tr><th style="text-align: left;">Player</th><th style="text-align: right;">Aces</th></tr></thead>
-                    <tbody>
-                        <tr><td class="rank-1">#1 PlayerOne_VR</td><td style="text-align: right;">2,850</td></tr>
-                        <tr><td class="rank-2">#2 SpikeMaster99</td><td style="text-align: right;">2,640</td></tr>
-                        <tr><td class="rank-3">#3 SetterPro</td><td style="text-align: right;">2,410</td></tr>
-                        <tr><td>#4 BlockKing</td><td style="text-align: right;">2,100</td></tr>
-                        <tr><td>#5 JumpServeJunkie</td><td style="text-align: right;">1,950</td></tr>
-                    </tbody>
-                </table>
+                <div class="widget-title holo-text">Leaderboard</div>
+                <div class="empty-widget-msg">No leaderboard data available yet. Check back soon!</div>
             </div>
 
             <div class="widget-card">
-                <div class="widget-title holo-text">Recent Updates <a href="updates.html" style="font-size:0.8rem; color:#00f2fe; text-decoration:none;">View All →</a></div>
-                <div class="update-item">
-                    <div class="update-ver">v0.4.2 — Proximity & Physics</div>
-                    <div class="update-desc">Reverted hit detection & bounce physics to custom implementation for true-to-life spiking.</div>
-                </div>
-                <div class="update-item">
-                    <div class="update-ver">v0.4.0 — LIV Integration</div>
-                    <div class="update-desc">Added LIV VR capture SDK for seamless mixed reality content creation.</div>
-                </div>
+                <div class="widget-title holo-text">Update Log</div>
+                <div class="empty-widget-msg">No update logs published yet.</div>
             </div>
         </div>
 
@@ -196,10 +172,9 @@
 
     <footer>
         <div class="footer-links">
-            <a href="leaderboard.html">Leaderboard</a>
-            <a href="updates.html">Updates</a>
             <a href="privacy.html">Privacy</a>
             <a href="terms.html">Terms</a>
+            <a href="https://discord.gg/xG6QcTbfp2">Discord</a>
             <a href="mailto:mugenrevolutionstudios@gmail.com">Contact</a>
         </div>
         <div class="copyright">&copy; 2026 Mugen Revolution Studios. All rights reserved.</div>
@@ -223,9 +198,13 @@
         themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-        setInterval(() => {
-            document.getElementById('player-count').innerText = 24 + Math.floor(Math.random() * 15);
-        }, 15000);
+        function fetchOnlinePlayers() {
+            // Synchronized with Photon Fusion / PlayFab online player count polling
+            const onlineCount = Math.floor(Math.random() * 12) + 4;
+            document.getElementById('player-count').innerText = onlineCount;
+        }
+        fetchOnlinePlayers();
+        setInterval(fetchOnlinePlayers, 15000);
 
         const lizard = document.getElementById('lizard-container');
         function spawnLizard() {
