@@ -64,10 +64,19 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .nav-menu a { color: var(--text-muted); padding: 12px 20px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         .nav-menu a:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-main); padding-left: 25px; }
+        
         .info-bar { background: linear-gradient(90deg, rgba(30, 144, 216, 0.15) 0%, rgba(30, 144, 216, 0.05) 100%); border-bottom: 1px solid var(--border-color); padding: 10px 20px; display: flex; justify-content: center; align-items: center; gap: 35px; font-size: 0.85rem; font-weight: 700; flex-wrap: wrap; z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .info-item { display: flex; align-items: center; gap: 8px; }
-        .pulse-dot { width: 10px; height: 10px; background-color: #1E90D8; border-radius: 50%; box-shadow: 0 0 10px #1E90D8; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(30, 144, 216, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(30, 144, 216, 0); } 100% { box-shadow: 0 0 0 0 rgba(30, 144, 216, 0); } }
+        
+        /* Blinking Eye Animation */
+        .eye-icon { display: inline-block; font-size: 1.1rem; line-height: 1; transition: transform 0.15s ease, opacity 0.15s ease; filter: drop-shadow(0 0 6px rgba(30, 144, 216, 0.6)); }
+        .eye-blink { animation: eyeBlink 0.35s ease-in-out; }
+        @keyframes eyeBlink {
+            0% { transform: scaleY(1); opacity: 1; }
+            50% { transform: scaleY(0.1); opacity: 0.3; }
+            100% { transform: scaleY(1); opacity: 1; }
+        }
+
         .live-count { color: #1E90D8; font-weight: 900; font-size: 1rem; }
         .hero { position: relative; width: 100%; max-width: 1100px; margin: 40px auto 0 auto; padding: 0 20px; z-index: 1; }
         .cover-container { position: relative; border-radius: 20px; padding: 3px; background: var(--holo-gradient); box-shadow: var(--shadow-hero); }
@@ -82,7 +91,6 @@
         .widget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
         .widget-title { font-size: 1.4rem; font-weight: 900; }
         
-        /* Leaderboard Controls & UI Enhancements */
         .tab-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
         .tab-btn { background: rgba(31, 40, 51, 0.6); border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.75rem; transition: all 0.2s ease; }
         .tab-btn:hover { border-color: #1E90D8; color: var(--text-main); }
@@ -91,13 +99,12 @@
         .table-responsive { width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th { padding: 12px; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800; }
-        td { padding: 14px 12px; border-bottom: 1px solid var(--border-color); font-size: 0.95krem; font-weight: 600; }
+        td { padding: 14px 12px; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; font-weight: 600; }
         tr:hover td { background-color: rgba(255, 255, 255, 0.02); }
         .rank-1 { color: #ffd700; font-weight: 900; filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4)); }
         .rank-2 { color: #c0c0c0; font-weight: 900; filter: drop-shadow(0 0 8px rgba(192, 192, 192, 0.4)); }
         .rank-3 { color: #cd7f32; font-weight: 900; filter: drop-shadow(0 0 8px rgba(205, 127, 50, 0.4)); }
 
-        /* Update Log Widget Styles */
         .empty-log-card { text-align: center; padding: 40px 20px; margin: auto; }
         .empty-icon { font-size: 2.5rem; margin-bottom: 12px; display: inline-block; filter: drop-shadow(0 5px 15px rgba(30, 144, 216, 0.3)); }
         .empty-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 8px; }
@@ -145,7 +152,11 @@
     </header>
 
     <div class="info-bar">
-        <div class="info-item"><span class="pulse-dot"></span> Online Players: <span class="live-count" id="player-count">0</span></div>
+        <!-- Replaced Online Players with Blinking Eye Viewer Count -->
+        <div class="info-item">
+            <span class="eye-icon" id="eye-icon">👁️</span> 
+            Viewing Website: <span class="live-count" id="viewer-count">1</span>
+        </div>
         <div class="info-item">Network: <strong>Photon Fusion</strong></div>
         <div class="info-item">Backend: <strong>PlayFab</strong></div>
     </div>
@@ -160,7 +171,6 @@
         <h1 class="game-title holo-text">Volleyball Revengers</h1>
         <p class="game-description">Ultimate VR Volleyball.</p>
 
-        <!-- Widgets Grid containing Dynamic PlayFab Leaderboard and Updates Log -->
         <div class="widgets-grid">
             <!-- PlayFab Leaderboard Widget -->
             <div class="widget-card">
@@ -255,12 +265,33 @@
         themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-        function fetchOnlinePlayers() {
-            const onlineCount = Math.floor(Math.random() * 12) + 4;
-            document.getElementById('player-count').innerText = onlineCount;
+        // Eye Blink & Website Viewer Counter Logic
+        const eyeIcon = document.getElementById('eye-icon');
+        const viewerCountElement = document.getElementById('viewer-count');
+        
+        function triggerEyeBlink() {
+            eyeIcon.classList.remove('eye-blink');
+            void eyeIcon.offsetWidth; // Force CSS reflow
+            eyeIcon.classList.add('eye-blink');
         }
-        fetchOnlinePlayers();
-        setInterval(fetchOnlinePlayers, 15000);
+
+        function simulateViewerActivity() {
+            // Randomly simulate visitor connections/disconnections (min 1 viewer)
+            let currentViewers = parseInt(viewerCountElement.innerText) || 1;
+            const change = Math.floor(Math.random() * 3) - 1; // -1, 0, or +1
+            let updatedViewers = Math.max(1, currentViewers + change);
+
+            // If a new viewer connects or count updates, trigger the eye blink
+            if (updatedViewers !== currentViewers || Math.random() > 0.4) {
+                triggerEyeBlink();
+            }
+
+            viewerCountElement.innerText = updatedViewers;
+        }
+
+        // Trigger initial blink on load and simulate periodic visitor joins
+        setTimeout(triggerEyeBlink, 800);
+        setInterval(simulateViewerActivity, 7000);
 
         // PlayFab Integration using Title ID 1E90D8
         const PLAYFAB_TITLE_ID = "1E90D8";
@@ -288,7 +319,7 @@
                 fetchPlayFabLeaderboard(currentStatistic);
             });
         }
-        
+
         function switchLeaderboard(statName, btnElement) {
             currentStatistic = statName;
             
@@ -355,7 +386,7 @@
                 tbody.appendChild(tr);
             });
         }
-        
+
         window.addEventListener('DOMContentLoaded', initPlayFab);
 
         const lizard = document.getElementById('lizard-container');
