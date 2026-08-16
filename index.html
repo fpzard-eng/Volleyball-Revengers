@@ -8,16 +8,16 @@
         :root {
             /* Dark Mode Variables */
             --bg-main: #060709;
-            --bg-card: rgba(18, 22, 31, 0.65);
-            --bg-card-hover: rgba(28, 34, 48, 0.85);
-            --bg-nav: rgba(10, 12, 16, 0.8);
+            --bg-card: rgba(18, 22, 31, 0.7);
+            --bg-card-hover: rgba(28, 34, 48, 0.9);
+            --bg-nav: rgba(10, 12, 16, 0.85);
             --text-main: #ffffff;
             --text-muted: #9ba3b4;
             --border-color: rgba(255, 255, 255, 0.12);
-            --border-glow: rgba(0, 183, 255, 0.4);
+            --border-glow: rgba(0, 242, 254, 0.4);
             --accent-glow: rgba(0, 183, 255, 0.3);
             --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 0, 0, 0.4);
-            --shadow-hero: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 183, 255, 0.2);
+            --shadow-hero: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(0, 242, 254, 0.25);
             --shadow-btn: 0 8px 25px rgba(255, 69, 0, 0.5);
             --holo-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 35%, #00c6ff 70%, #ff4500 100%);
             --btn-gradient: linear-gradient(135deg, #ff4500 0%, #ff6b00 100%);
@@ -27,16 +27,16 @@
         [data-theme="light"] {
             /* Light Mode Variables */
             --bg-main: #f3f5f9;
-            --bg-card: rgba(255, 255, 255, 0.85);
-            --bg-card-hover: rgba(255, 255, 255, 0.98);
-            --bg-nav: rgba(245, 247, 250, 0.88);
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --bg-card-hover: rgba(255, 255, 255, 1);
+            --bg-nav: rgba(245, 247, 250, 0.9);
             --text-main: #0f172a;
             --text-muted: #475569;
-            --border-color: rgba(0, 0, 0, 0.08);
-            --border-glow: rgba(0, 183, 255, 0.3);
+            --border-color: rgba(0, 0, 0, 0.1);
+            --border-glow: rgba(0, 183, 255, 0.4);
             --accent-glow: rgba(0, 183, 255, 0.2);
             --shadow-card: 0 10px 25px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-            --shadow-hero: 0 15px 35px rgba(0, 0, 0, 0.12), 0 0 20px rgba(0, 183, 255, 0.15);
+            --shadow-hero: 0 15px 35px rgba(0, 0, 0, 0.12), 0 0 25px rgba(0, 183, 255, 0.2);
             --shadow-btn: 0 8px 20px rgba(255, 69, 0, 0.35);
             --holo-gradient: linear-gradient(135deg, #0072ff 0%, #00c6ff 50%, #ff4500 100%);
             --btn-gradient: linear-gradient(135deg, #ff4500 0%, #ff6b00 100%);
@@ -60,7 +60,7 @@
             overflow-x: hidden;
         }
 
-        /* Ambient Glow Effect */
+        /* Ambient Background Glow */
         body::before {
             content: '';
             position: fixed;
@@ -69,17 +69,32 @@
             transform: translateX(-50%);
             width: 85vw;
             height: 550px;
-            background: radial-gradient(circle, rgba(0, 183, 255, 0.15) 0%, rgba(255, 69, 0, 0.08) 50%, transparent 80%);
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.15) 0%, rgba(255, 69, 0, 0.08) 50%, transparent 80%);
             pointer-events: none;
             z-index: 0;
         }
 
-        /* --- Glassmorphism Navigation --- */
+        /* --- Holographic Text Style --- */
+        .holo-text {
+            background: var(--holo-gradient);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: holoGlow 4s linear infinite;
+            font-weight: 800;
+        }
+
+        @keyframes holoGlow {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* --- Upgraded Navigation Bar --- */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 32px;
+            padding: 14px 32px;
             background: var(--bg-nav);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -87,13 +102,14 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
 
         .header-brand {
             display: flex;
             align-items: center;
             gap: 12px;
+            text-decoration: none;
         }
 
         .header-logo-img {
@@ -107,23 +123,76 @@
 
         .logo-text {
             font-size: 1.05rem;
-            font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 1.2px;
-            background: var(--holo-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        }
+
+        .desktop-nav {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .desktop-nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .desktop-nav a:hover, .desktop-nav a.active {
+            color: var(--text-main);
         }
 
         .nav-actions {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
         }
 
-        .theme-select, .menu-btn {
+        /* --- Clean Toggle Switch for Theme --- */
+        .theme-toggle-container {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 3px;
+            cursor: pointer;
+            position: relative;
+            width: 78px;
+            height: 32px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .theme-toggle-option {
+            flex: 1;
+            text-align: center;
+            font-size: 0.75rem;
+            z-index: 2;
+            user-select: none;
+        }
+
+        .theme-toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--btn-gradient);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        [data-theme="light"] .theme-toggle-slider {
+            transform: translateX(46px);
+        }
+
+        .menu-btn {
             background: var(--bg-card);
-            backdrop-filter: blur(10px);
             color: var(--text-main);
             border: 1px solid var(--border-color);
             padding: 8px 14px;
@@ -133,15 +202,18 @@
             cursor: pointer;
             outline: none;
             box-shadow: 0 2px 8px var(--shadow-card);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .theme-select:hover, .menu-btn:hover {
+        .menu-btn:hover {
             border-color: var(--border-glow);
             box-shadow: 0 0 15px var(--accent-glow);
             transform: translateY(-1px);
         }
 
-        /* Slide-out Dropdown */
+        /* --- Enhanced Dropdown Menu --- */
         .nav-menu {
             display: none;
             position: absolute;
@@ -153,14 +225,21 @@
             border: 1px solid var(--border-color);
             border-radius: 12px;
             box-shadow: var(--shadow-card);
-            width: 210px;
-            padding: 8px 0;
+            width: 230px;
+            padding: 10px 0;
             flex-direction: column;
             z-index: 1000;
+            margin-top: 8px;
         }
 
         .nav-menu.active {
             display: flex;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .nav-menu a {
@@ -169,6 +248,9 @@
             text-decoration: none;
             font-size: 0.9rem;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .nav-menu a:hover {
@@ -176,12 +258,41 @@
             color: var(--text-main);
         }
 
-        /* --- Hero Showcase with Dynamic Drop Shadow --- */
+        /* --- Information Bar --- */
+        .info-bar {
+            background: linear-gradient(90deg, rgba(0, 242, 254, 0.1) 0%, rgba(255, 69, 0, 0.1) 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            flex-wrap: wrap;
+            z-index: 10;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #66fcf1;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #66fcf1;
+        }
+
+        /* --- Hero Showcase --- */
         .hero {
             position: relative;
             width: 100%;
             max-width: 1050px;
-            margin: 35px auto 0 auto;
+            margin: 30px auto 0 auto;
             padding: 0 20px;
             z-index: 1;
         }
@@ -192,12 +303,11 @@
             padding: 2px;
             background: var(--holo-gradient);
             box-shadow: var(--shadow-hero);
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
         }
 
         .cover-container:hover {
             transform: translateY(-4px);
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 45px rgba(0, 183, 255, 0.35);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 45px rgba(0, 242, 254, 0.35);
         }
 
         .cover-img {
@@ -224,7 +334,6 @@
             height: 110px;
             margin-bottom: 24px;
             filter: drop-shadow(0 0 25px rgba(0, 183, 255, 0.45));
-            transition: transform 0.3s ease;
         }
 
         .main-crest:hover {
@@ -233,13 +342,9 @@
 
         .game-title {
             font-size: 3.4rem;
-            font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 2px;
             margin-bottom: 14px;
-            background: var(--holo-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 4px 20px rgba(0, 183, 255, 0.25));
         }
 
@@ -251,7 +356,7 @@
             margin-bottom: 35px;
         }
 
-        /* --- NEW FEATURE CARDS GRID UI --- */
+        /* --- Feature Cards Grid --- */
         .features-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -271,8 +376,6 @@
             padding: 24px 20px;
             text-align: left;
             box-shadow: var(--shadow-card);
-            position: relative;
-            overflow: hidden;
         }
 
         .feature-card:hover {
@@ -301,7 +404,7 @@
             line-height: 1.5;
         }
 
-        /* --- Store Button with Shadow & Hover Effect --- */
+        /* --- Store Button --- */
         .store-section {
             margin-bottom: 30px;
         }
@@ -326,8 +429,6 @@
             text-decoration: none;
             box-shadow: var(--shadow-btn);
             border: 1px solid rgba(255, 255, 255, 0.25);
-            position: relative;
-            overflow: hidden;
         }
 
         .store-btn:hover {
@@ -384,30 +485,62 @@
             font-size: 0.85rem;
             opacity: 0.7;
         }
+
+        @media (max-width: 768px) {
+            .desktop-nav { display: none; }
+            header { padding: 14px 20px; }
+            .info-bar { font-size: 0.78rem; gap: 12px; }
+        }
     </style>
 </head>
 <body>
 
     <!-- Header Navigation -->
     <header>
-        <div class="header-brand">
+        <a href="index.html" class="header-brand">
             <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
-            <div class="logo-text">Mugen Revolution Studios</div>
-        </div>
+            <span class="logo-text holo-text">Mugen Revolution Studios</span>
+        </a>
+
+        <nav class="desktop-nav">
+            <a href="index.html" class="active">Home</a>
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="updatelog.html">Update Log</a>
+        </nav>
+
         <div class="nav-actions">
-            <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
-                <option value="auto">Auto 🌓</option>
-                <option value="dark">Dark 🌙</option>
-                <option value="light">Light ☀️</option>
-            </select>
+            <!-- Cleaner Theme Toggle Button Switch -->
+            <div class="theme-toggle-container" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+                <div class="theme-toggle-slider"></div>
+                <span class="theme-toggle-option">🌙</span>
+                <span class="theme-toggle-option">☀️</span>
+            </div>
+
             <button class="menu-btn" onclick="toggleMenu()">Menu ☰</button>
         </div>
+
+        <!-- Slide-out Menu -->
         <div class="nav-menu" id="navMenu">
-            <a href="index.html">Home</a>
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="terms.html">Terms of Service</a>
+            <a href="index.html">🏠 Home</a>
+            <a href="leaderboard.html">🏆 Global Leaderboard</a>
+            <a href="updatelog.html">📋 Update Log</a>
+            <a href="privacy.html">🔒 Privacy Policy</a>
+            <a href="terms.html">📜 Terms of Service</a>
         </div>
     </header>
+
+    <!-- Upgraded Information Bar -->
+    <div class="info-bar">
+        <div class="info-item">
+            <span class="status-dot"></span> Photon Fusion Servers: <strong>Online</strong>
+        </div>
+        <div class="info-item">
+            Backend Services: <strong>PlayFab Active</strong>
+        </div>
+        <div class="info-item">
+            Capture SDK: <strong>LIV Ready</strong>
+        </div>
+    </div>
 
     <!-- Showcase Hero -->
     <div class="hero">
@@ -419,7 +552,7 @@
     <!-- Main Content -->
     <div class="content">
         <img src="logo.png" alt="Volleyball Revengers Crest" class="main-crest">
-        <h1 class="game-title">Volleyball Revengers</h1>
+        <h1 class="game-title holo-text">Volleyball Revengers</h1>
         <p class="game-description">
             The ultimate virtual reality volleyball experience. Master the court with realistic physics, precise controls, and high-intensity match action.
         </p>
@@ -456,6 +589,13 @@
     <footer>
         <div class="footer-grid">
             <div class="footer-group">
+                <div class="section-title">Navigation</div>
+                <a href="index.html">Home</a>
+                <a href="leaderboard.html">Leaderboard</a>
+                <a href="updatelog.html">Update Log</a>
+            </div>
+
+            <div class="footer-group">
                 <div class="section-title">Social Links</div>
                 <a href="https://youtube.com/@MugenRevolutionStudio" target="_blank">YouTube</a>
                 <a href="https://discord.gg/xG6QcTbfp2" target="_blank">Discord</a>
@@ -483,36 +623,4 @@
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('navMenu');
             const button = document.querySelector('.menu-btn');
-            if (menu && button && !menu.contains(event.target) && !button.contains(event.target)) {
-                menu.classList.remove('active');
-            }
-        });
-
-        function changeTheme(mode) {
-            localStorage.setItem('preferred-theme', mode);
-            applyTheme(mode);
-        }
-
-        function applyTheme(mode) {
-            const html = document.documentElement;
-            if (mode === 'auto') {
-                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                html.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
-            } else {
-                html.setAttribute('data-theme', mode);
-            }
-        }
-
-        const savedTheme = localStorage.getItem('preferred-theme') || 'auto';
-        document.getElementById('themeSelect').value = savedTheme;
-        applyTheme(savedTheme);
-
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-            if (localStorage.getItem('preferred-theme') === 'auto') {
-                applyTheme('auto');
-            }
-        });
-    </script>
-
-</body>
-</html>
+            if
