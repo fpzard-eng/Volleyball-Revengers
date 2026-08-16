@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Log - Volleyball Revengers</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #0b0c10; 
+            color: #c5c6c7; 
+            padding: 30px 20px; 
+            line-height: 1.7; 
+            max-width: 850px; 
+            margin: 0 auto; 
+        }
+
+        /* Holographic Text Style */
+        .holo-text {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 25%, #00c6ff 50%, #0072ff 75%, #00f2fe 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: holoGlow 4s linear infinite;
+            display: inline-block;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes holoGlow {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        h1 { font-size: 2.2rem; margin-bottom: 5px; }
+        h2 { font-size: 1.4rem; margin-top: 0; margin-bottom: 10px; display: inline-block; }
+
+        a { color: #66fcf1; text-decoration: none; transition: color 0.2s ease; }
+        a:hover { color: #45a29e; text-decoration: underline; }
+
+        .nav { margin-bottom: 30px; }
+        
+        /* Update Card Timeline Styles */
+        .update-entry {
+            background-color: #12141c;
+            border: 1px solid #1f2833;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .update-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #1f2833;
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .update-date {
+            font-size: 0.88rem;
+            color: #8892b0;
+            background-color: #1f2833;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .tag-container {
+            margin-bottom: 12px;
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-right: 6px;
+            text-transform: uppercase;
+        }
+
+        .tag-physics { background-color: rgba(0, 242, 254, 0.15); color: #00f2fe; border: 1px solid #00f2fe; }
+        .tag-network { background-color: rgba(102, 252, 241, 0.15); color: #66fcf1; border: 1px solid #66fcf1; }
+        .tag-liv { background-color: rgba(255, 69, 0, 0.15); color: #ff6b35; border: 1px solid #ff6b35; }
+        .tag-playfab { background-color: rgba(79, 172, 254, 0.15); color: #4facfe; border: 1px solid #4facfe; }
+
+        ul { margin-top: 8px; padding-left: 20px; }
+        li { margin-bottom: 8px; }
+
+        .contact-box {
+            background-color: #1f2833;
+            border-left: 4px solid #66fcf1;
+            padding: 15px 20px;
+            margin-top: 35px;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav"><a href="index.html">← Back to Home</a></div>
+    
+    <h1 class="holo-text">Update Log</h1>
+    <p style="margin-bottom: 35px;">Stay up to date with patch notes, backend refactors, network optimizations, and physics improvements for <strong>Volleyball Revengers</strong>.</p>
+
+    <!-- Entry 1 -->
+    <div class="update-entry">
+        <div class="update-header">
+            <h2 class="holo-text">Build v0.4.2 — Proximity Hit Detection & Physics Refactor</h2>
+            <span class="update-date">August 2026</span>
+        </div>
+        <div class="tag-container">
+            <span class="tag tag-physics">Physics</span>
+            <span class="tag tag-network">Photon Fusion</span>
+        </div>
+        <ul>
+            <li><strong>Custom Collision Physics:</strong> Reverted ball collision and bounce physics logic to earlier custom implementations for enhanced predictability during jump serves and high-velocity spikes.</li>
+            <li><strong>Proximity Hit Detection:</strong> Restored custom proximity hit detection scripts, ensuring accurate hand-to-ball contact registry on standalone Meta Quest hardware.</li>
+            <li><strong>Multiplayer Sync:</strong> Fine-tuned Photon Fusion network state serialization to reduce jitter on high-speed ball trajectories during low-latency matches.</li>
+        </ul>
+    </div>
+
+    <!-- Entry 2 -->
+    <div class="update-entry">
+        <div class="update-header">
+            <h2 class="holo-text">Build v0.4.0 — LIV Integration & Camera Mechanics</h2>
+            <span class="update-date">July 2026</span>
+        </div>
+        <div class="tag-container">
+            <span class="tag tag-liv">LIV SDK</span>
+            <span class="tag tag-playfab">PlayFab</span>
+        </div>
+        <ul>
+            <li><strong>LIV Camera Support:</strong> Full implementation of LIV VR capture SDK to support third-person spectator viewing, smoothing, and mixed reality content creation.</li>
+            <li><strong>Stat Syncing:</strong> Integrated PlayFab Title Data and User Data pipelines for real-time tracking of aces, blocks, and overall player profile stats.</li>
+            <li><strong>Input Polish:</strong> Optimized Quest controller velocity calculations for smoother float serve and jump serve tosses.</li>
+        </ul>
+    </div>
+
+    <!-- Entry 3 -->
+    <div class="update-entry">
+        <div class="update-header">
+            <h2 class="holo-text">Build v0.3.5 — Photon Fusion Netcode Foundation</h2>
+            <span class="update-date">June 2026</span>
+        </div>
+        <div class="tag-container">
+            <span class="tag tag-network">Photon Fusion</span>
+            <span class="tag tag-playfab">PlayFab</span>
+        </div>
+        <ul>
+            <li><strong>Netcode Migration:</strong> Core networking pipeline transitioned to Photon Fusion for ultra-low latency host/client synchronization across VR headsets.</li>
+            <li><strong>PlayFab Authentication:</strong> Added seamless client login authentication using PlayFab custom IDs tied to player device profiles.</li>
+            <li><strong>Basic Matchmaking:</strong> Implemented room creation, lobby Joining, and basic court positioning systems.</li>
+        </ul>
+    </div>
+
+    <div class="contact-box">
+        Need to report a bug or give feedback? Reach out to <strong>Mugen Revolution Studios</strong> at 
+        <a href="mailto:mugenrevolutionstudios@gmail.com">mugenrevolutionstudios@gmail.com</a>.
+    </div>
+</body>
+</html>
