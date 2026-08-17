@@ -88,8 +88,22 @@
         a { color: var(--text-main); text-decoration: none; transition: color 0.2s ease; }
         a:hover { color: var(--border-glow); text-decoration: underline; }
 
-        .nav { margin-bottom: 30px; font-weight: 700; }
-        
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; font-weight: 700; }
+
+        .guest-badge {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            border-radius: 10px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         .leaderboard-card {
             background: var(--bg-card);
             backdrop-filter: blur(15px);
@@ -173,16 +187,6 @@
             opacity: 0.7;
         }
 
-        .status-badge {
-            font-size: 0.8rem;
-            padding: 6px 12px;
-            border-radius: 6px;
-            background-color: var(--badge-bg);
-            color: var(--text-main);
-            border: 1px solid var(--badge-border);
-            font-weight: 700;
-        }
-
         .table-responsive { width: 100%; overflow-x: auto; }
         table {
             width: 100%;
@@ -236,7 +240,12 @@
         document.documentElement.setAttribute('data-theme', savedTheme);
     </script>
 
-    <div class="nav"><a href="home">← Back to Home</a></div>
+    <div class="nav-bar">
+        <a href="home">← Back to Home</a>
+        <div class="guest-badge">
+            <span>👤 Guest Session</span>
+        </div>
+    </div>
     
     <h1 class="holo-text">Global Leaderboards</h1>
     <p style="margin-bottom: 20px;">Live rankings updated directly from PlayFab backend services for <strong>Volleyball Revengers</strong>.</p>
@@ -281,26 +290,30 @@
 
     <script>
         const PLAYFAB_TITLE_ID = "1E90D8";
-        let currentStatistic = "Kills"; // Default stat to load
-        let cachedLeaderboardData = []; // Stores current raw leaderboard entries for client-side filtering
+        let currentStatistic = "Kills"; 
+        let cachedLeaderboardData = []; 
+
+        function getOrCreateGuestId() {
+            let id = localStorage.getItem("vbr_guest_custom_id");
+            if (!id) {
+                id = "Guest_" + Math.random().toString(36).substring(2, 11) + "_" + Date.now();
+                localStorage.setItem("vbr_guest_custom_id", id);
+            }
+            return id;
+        }
 
         function initPlayFab() {
             PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
 
+            const guestId = getOrCreateGuestId();
             const loginRequest = {
                 TitleId: PLAYFAB_TITLE_ID,
                 CreateAccount: true,
-                CustomId: "Website_Reader"
+                CustomId: guestId
             };
 
             PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
                 if (error) {
-                    const syncStatus = document.getElementById("sync-status");
-                    if (syncStatus) {
-                        syncStatus.innerText = "Sync Error";
-                        syncStatus.style.borderColor = "#ff4500";
-                        syncStatus.style.color = "#ff4500";
-                    }
                     document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff4500; padding: 20px;">Failed to connect to PlayFab backend.</td></tr>`;
                     return;
                 }
@@ -311,15 +324,12 @@
         function switchLeaderboard(statName, btnElement) {
             currentStatistic = statName;
             
-            // Clear search input on tab change
             const searchInput = document.getElementById("player-search");
             if (searchInput) searchInput.value = "";
 
-            // Update active styles on tabs
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
 
-            // Update column header text dynamically based on selected statistic
             let headerText = "Kills";
             if (statName === "PlayerElo") headerText = "Elo Rating";
             if (statName === "MVP") headerText = "MVPs";
@@ -329,7 +339,6 @@
             if (statName === "AeroCoins_Stat") headerText = "Aero-Coins";
             document.getElementById("stat-header").innerText = headerText;
 
-            // Fetch new stats
             fetchPlayFabLeaderboard(statName);
         }
 
@@ -338,7 +347,7 @@
 
             const leaderboardRequest = {
                 StartPosition: 0,
-                MaxResultsCount: 100, // Increased count to support search query filtering
+                MaxResultsCount: 100, 
                 StatisticName: statisticName
             };
 
@@ -396,7 +405,6 @@
                 if (rank === 2) rankClass = "rank-2";
                 if (rank === 3) rankClass = "rank-3";
 
-                // Fallback to PlayFabId if DisplayName is not set
                 const displayName = entry.DisplayName || entry.PlayFabId;
                 
                 const tr = document.createElement("tr");
