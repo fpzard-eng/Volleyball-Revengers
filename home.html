@@ -401,13 +401,6 @@
             });
         }
 
-        function createGuestAccount() {
-            localStorage.removeItem("vbr_guest_custom_id");
-            loginAsGuest();
-            showAuthStatus("New Guest Account created successfully!", false);
-            setTimeout(closeAuthModal, 1200);
-        }
-
         function loginWithPlayFab() {
             const input = document.getElementById("authEmail").value.trim();
             const password = document.getElementById("authPassword").value;
