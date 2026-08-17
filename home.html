@@ -1,423 +1,604 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volleyball Revengers | Mugen Revolution Studios</title>
-    <!-- PlayFab JS SDK -->
-    <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
-    <style>
-        :root {
-            /* Dark Mode: Blue, White Gradient & Holographic */
-            --bg-main: #060709;
-            --bg-card: rgba(18, 22, 31, 0.85);
-            --bg-card-hover: rgba(28, 34, 48, 0.95);
-            --bg-nav: rgba(10, 12, 16, 0.9);
-            --text-main: #ffffff;
-            --text-muted: #9ba3b4;
-            --border-color: rgba(255, 255, 255, 0.15);
-            --border-glow: rgba(30, 144, 216, 0.6);
-            --accent-glow: rgba(30, 144, 216, 0.4);
-            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.8), 0 8px 20px rgba(0, 0, 0, 0.6);
-            --shadow-hero: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 50px rgba(30, 144, 216, 0.35);
-            --shadow-btn: 0 12px 30px rgba(30, 144, 216, 0.5);
-            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.85);
-            --holo-gradient: linear-gradient(135deg, #1E90D8 0%, #ffffff 50%, #1E90D8 100%);
-            --btn-gradient: linear-gradient(135deg, #1E90D8 0%, #1572a8 100%);
-            --btn-hover: linear-gradient(135deg, #24a0f0 0%, #1a82c4 100%);
-            --badge-bg: rgba(30, 144, 216, 0.15);
-            --badge-border: rgba(30, 144, 216, 0.4);
-        }
-        [data-theme="light"] {
-            /* Light Mode: Red, Black Gradient & Holographic */
-            --bg-main: #f9f3f3;
-            --bg-card: rgba(255, 255, 255, 0.95);
-            --bg-card-hover: rgba(255, 255, 255, 1);
-            --bg-nav: rgba(250, 245, 245, 0.95);
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: rgba(0, 0, 0, 0.15);
-            --border-glow: rgba(220, 38, 38, 0.6);
-            --accent-glow: rgba(220, 38, 38, 0.3);
-            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.05);
-            --shadow-hero: 0 25px 50px rgba(0, 0, 0, 0.15), 0 0 40px rgba(220, 38, 38, 0.25);
-            --shadow-btn: 0 12px 30px rgba(220, 38, 38, 0.35);
-            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.1);
-            --holo-gradient: linear-gradient(135deg, #dc2626 0%, #000000 50%, #dc2626 100%);
-            --btn-gradient: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-            --btn-hover: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-            --badge-bg: rgba(220, 38, 38, 0.1);
-            --badge-border: rgba(220, 38, 38, 0.3);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
-        body::before { content: ''; position: fixed; top: -15%; left: 50%; transform: translateX(-50%); width: 85vw; height: 550px; background: radial-gradient(circle, var(--accent-glow) 0%, rgba(0,0,0,0) 70%); pointer-events: none; z-index: 0; }
-        
-        .holo-text { background: var(--holo-gradient); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: holoGlow 4s linear infinite; font-weight: 900; }
-        @keyframes holoGlow { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
-        
-        header { display: flex; justify-content: space-between; align-items: center; padding: 14px 32px; background: var(--bg-nav); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 9999; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4); }
-        .header-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-        .header-logo-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-color); filter: drop-shadow(0 0 10px var(--accent-glow)); }
-        .logo-text { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
-        
-        .nav-actions { display: flex; align-items: center; gap: 16px; position: relative; }
-        .theme-toggle-container { display: flex; align-items: center; background: rgba(100, 100, 100, 0.2); border: 1px solid var(--border-color); border-radius: 20px; padding: 3px; cursor: pointer; position: relative; width: 70px; height: 34px; z-index: 10000; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5); }
-        .theme-toggle-option { flex: 1; text-align: center; font-size: 0.8rem; z-index: 2; pointer-events: none; }
-        .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--btn-gradient); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        [data-theme="light"] .theme-toggle-slider { transform: translateX(36px); }
-        
-        .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.95rem; font-weight: 800; border-radius: 10px; cursor: pointer; outline: none; box-shadow: var(--shadow-card); z-index: 10000; display: flex; align-items: center; gap: 6px; }
-        .menu-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
-        
-        /* Upgraded Navigation Menu */
-        .nav-menu { display: none; position: absolute; top: calc(100% + 14px); right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: var(--shadow-widget); width: 240px; padding: 12px; flex-direction: column; gap: 6px; z-index: 9998; transform-origin: top right; }
-        .nav-menu.active { display: flex; animation: menuDropdownFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes menuDropdownFade { from { opacity: 0; transform: scale(0.95) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        
-        .nav-menu-header { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); padding: 6px 12px 4px 12px; font-weight: 800; opacity: 0.7; }
-        .nav-menu a { color: var(--text-muted); padding: 10px 14px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 12px; border-radius: 10px; transition: all 0.2s ease; }
-        .nav-menu a span.menu-icon { font-size: 1.1rem; width: 20px; text-align: center; }
-        .nav-menu a:hover { background: var(--badge-bg); color: var(--text-main); border-color: var(--border-glow); transform: translateX(4px); }
-        .nav-menu hr { border: none; border-top: 1px solid var(--border-color); margin: 6px 4px; }
-        
-        .hero { position: relative; width: 100%; max-width: 1100px; margin: 40px auto 0 auto; padding: 0 20px; z-index: 1; }
-        .cover-container { position: relative; border-radius: 20px; padding: 3px; background: var(--holo-gradient); box-shadow: var(--shadow-hero); }
-        .cover-img { width: 100%; border-radius: 17px; display: block; background-color: #000; }
-        
-        .content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; text-align: center; z-index: 1; }
-        
-        .beta-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--badge-bg); border: 1px solid var(--badge-border); padding: 6px 16px; border-radius: 30px; font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; box-shadow: 0 0 20px var(--accent-glow); }
-        .beta-dot { width: 8px; height: 8px; background: var(--holo-gradient); border-radius: 50%; animation: pulseDot 1.5s infinite; }
-        @keyframes pulseDot { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 10px var(--border-glow); } 100% { transform: scale(0.95); opacity: 0.8; } }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volleyball Revengers | Mugen Revolution Studios</title>
+    <!-- PlayFab JS SDK -->
+    <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
+    <style>
+        :root {
+            /* Dark Mode: Blue, White Gradient & Holographic */
+            --bg-main: #060709;
+            --bg-card: rgba(18, 22, 31, 0.85);
+            --bg-card-hover: rgba(28, 34, 48, 0.95);
+            --bg-nav: rgba(10, 12, 16, 0.9);
+            --text-main: #ffffff;
+            --text-muted: #9ba3b4;
+            --border-color: rgba(255, 255, 255, 0.15);
+            --border-glow: rgba(30, 144, 216, 0.6);
+            --accent-glow: rgba(30, 144, 216, 0.4);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.8), 0 8px 20px rgba(0, 0, 0, 0.6);
+            --shadow-hero: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 50px rgba(30, 144, 216, 0.35);
+            --shadow-btn: 0 12px 30px rgba(30, 144, 216, 0.5);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.85);
+            --holo-gradient: linear-gradient(135deg, #1E90D8 0%, #ffffff 50%, #1E90D8 100%);
+            --btn-gradient: linear-gradient(135deg, #1E90D8 0%, #1572a8 100%);
+            --btn-hover: linear-gradient(135deg, #24a0f0 0%, #1a82c4 100%);
+            --badge-bg: rgba(30, 144, 216, 0.15);
+            --badge-border: rgba(30, 144, 216, 0.4);
+        }
+        [data-theme="light"] {
+            /* Light Mode: Red, Black Gradient & Holographic */
+            --bg-main: #f9f3f3;
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --bg-card-hover: rgba(255, 255, 255, 1);
+            --bg-nav: rgba(250, 245, 245, 0.95);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: rgba(0, 0, 0, 0.15);
+            --border-glow: rgba(220, 38, 38, 0.6);
+            --accent-glow: rgba(220, 38, 38, 0.3);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.05);
+            --shadow-hero: 0 25px 50px rgba(0, 0, 0, 0.15), 0 0 40px rgba(220, 38, 38, 0.25);
+            --shadow-btn: 0 12px 30px rgba(220, 38, 38, 0.35);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.1);
+            --holo-gradient: linear-gradient(135deg, #dc2626 0%, #000000 50%, #dc2626 100%);
+            --btn-gradient: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            --btn-hover: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            --badge-bg: rgba(220, 38, 38, 0.1);
+            --badge-border: rgba(220, 38, 38, 0.3);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: -15%; left: 50%; transform: translateX(-50%); width: 85vw; height: 550px; background: radial-gradient(circle, var(--accent-glow) 0%, rgba(0,0,0,0) 70%); pointer-events: none; z-index: 0; }
+        
+        .holo-text { background: var(--holo-gradient); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: holoGlow 4s linear infinite; font-weight: 900; }
+        @keyframes holoGlow { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+        
+        header { display: flex; justify-content: space-between; align-items: center; padding: 14px 32px; background: var(--bg-nav); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 9999; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4); }
+        .header-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .header-logo-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-color); filter: drop-shadow(0 0 10px var(--accent-glow)); }
+        .logo-text { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
+        
+        .nav-actions { display: flex; align-items: center; gap: 16px; position: relative; }
+        .theme-toggle-container { display: flex; align-items: center; background: rgba(100, 100, 100, 0.2); border: 1px solid var(--border-color); border-radius: 20px; padding: 3px; cursor: pointer; position: relative; width: 70px; height: 34px; z-index: 10000; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5); }
+        .theme-toggle-option { flex: 1; text-align: center; font-size: 0.8rem; z-index: 2; pointer-events: none; }
+        .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--btn-gradient); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        [data-theme="light"] .theme-toggle-slider { transform: translateX(36px); }
+        
+        .menu-btn, .auth-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.95rem; font-weight: 800; border-radius: 10px; cursor: pointer; outline: none; box-shadow: var(--shadow-card); z-index: 10000; display: flex; align-items: center; gap: 6px; }
+        .menu-btn:hover, .auth-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
+        
+        .nav-menu { display: none; position: absolute; top: calc(100% + 14px); right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: var(--shadow-widget); width: 240px; padding: 12px; flex-direction: column; gap: 6px; z-index: 9998; transform-origin: top right; }
+        .nav-menu.active { display: flex; animation: menuDropdownFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes menuDropdownFade { from { opacity: 0; transform: scale(0.95) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        
+        .nav-menu-header { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); padding: 6px 12px 4px 12px; font-weight: 800; opacity: 0.7; }
+        .nav-menu a { color: var(--text-muted); padding: 10px 14px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 12px; border-radius: 10px; transition: all 0.2s ease; }
+        .nav-menu a span.menu-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+        .nav-menu a:hover { background: var(--badge-bg); color: var(--text-main); border-color: var(--border-glow); transform: translateX(4px); }
+        .nav-menu hr { border: none; border-top: 1px solid var(--border-color); margin: 6px 4px; }
+        
+        /* Auth Modal Styling */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(10px); z-index: 20000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; width: 100%; max-width: 400px; padding: 30px; box-shadow: var(--shadow-widget); position: relative; text-align: left; }
+        .modal-title { font-size: 1.5rem; font-weight: 900; margin-bottom: 15px; }
+        .auth-form-group { margin-bottom: 15px; }
+        .auth-form-group label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
+        .auth-input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0, 0, 0, 0.2); color: var(--text-main); font-size: 0.95rem; outline: none; }
+        .auth-input:focus { border-color: var(--border-glow); box-shadow: 0 0 10px var(--accent-glow); }
+        .modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .action-btn { width: 100%; padding: 12px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; font-size: 0.95rem; }
+        .primary-btn { background: var(--btn-gradient); color: white; box-shadow: var(--shadow-btn); }
+        .primary-btn:hover { background: var(--btn-hover); }
+        .secondary-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+        .secondary-btn:hover { border-color: var(--border-glow); }
+        .danger-btn { background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220, 38, 38, 0.5); color: #ef4444; }
+        .danger-btn:hover { background: rgba(220, 38, 38, 0.4); }
+        .close-modal-btn { position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; }
+        .auth-status-msg { font-size: 0.85rem; margin-top: 10px; text-align: center; font-weight: 600; min-height: 1.2em; }
 
-        .game-title { font-size: 4rem; letter-spacing: 3px; margin-bottom: 10px; filter: drop-shadow(0 8px 25px var(--accent-glow)); }
-        .game-description { font-size: 1.2rem; color: var(--text-muted); font-weight: 600; margin-bottom: 50px; }
-        
-        .widgets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 30px; width: 100%; max-width: 1100px; margin-bottom: 60px; }
-        .widget-card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 30px; text-align: left; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; display: flex; flex-direction: column; }
-        .widget-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); }
-        
-        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
-        .widget-title { font-size: 1.4rem; font-weight: 900; }
-        
-        .tab-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
-        .tab-btn { background: rgba(31, 40, 51, 0.4); border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.75rem; transition: all 0.2s ease; }
-        .tab-btn:hover { border-color: var(--border-glow); color: var(--text-main); }
-        .tab-btn.active { background: var(--badge-bg); border-color: var(--border-glow); color: var(--text-main); box-shadow: 0 0 15px var(--accent-glow); }
+        .hero { position: relative; width: 100%; max-width: 1100px; margin: 40px auto 0 auto; padding: 0 20px; z-index: 1; }
+        .cover-container { position: relative; border-radius: 20px; padding: 3px; background: var(--holo-gradient); box-shadow: var(--shadow-hero); }
+        .cover-img { width: 100%; border-radius: 17px; display: block; background-color: #000; }
+        
+        .content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; text-align: center; z-index: 1; }
+        
+        .beta-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--badge-bg); border: 1px solid var(--badge-border); padding: 6px 16px; border-radius: 30px; font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; box-shadow: 0 0 20px var(--accent-glow); }
+        .beta-dot { width: 8px; height: 8px; background: var(--holo-gradient); border-radius: 50%; animation: pulseDot 1.5s infinite; }
+        @keyframes pulseDot { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 10px var(--border-glow); } 100% { transform: scale(0.95); opacity: 0.8; } }
 
-        .status-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; background-color: var(--badge-bg); color: var(--text-main); border: 1px solid var(--badge-border); font-weight: 700; }
-        
-        .table-responsive { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { padding: 12px; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800; }
-        td { padding: 14px 12px; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; font-weight: 600; }
-        tr:hover td { background-color: rgba(255, 255, 255, 0.02); }
-        
-        .rank-1 { color: #ffd700; font-weight: 900; filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4)); }
-        .rank-2 { color: #c0c0c0; font-weight: 900; filter: drop-shadow(0 0 8px rgba(192, 192, 192, 0.4)); }
-        .rank-3 { color: #cd7f32; font-weight: 900; filter: drop-shadow(0 0 8px rgba(205, 127, 50, 0.4)); }
+        .game-title { font-size: 4rem; letter-spacing: 3px; margin-bottom: 10px; filter: drop-shadow(0 8px 25px var(--accent-glow)); }
+        .game-description { font-size: 1.2rem; color: var(--text-muted); font-weight: 600; margin-bottom: 50px; }
+        
+        .widgets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 30px; width: 100%; max-width: 1100px; margin-bottom: 60px; }
+        .widget-card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 30px; text-align: left; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        .widget-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); }
+        
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .widget-title { font-size: 1.4rem; font-weight: 900; }
+        
+        .tab-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+        .tab-btn { background: rgba(31, 40, 51, 0.4); border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.75rem; transition: all 0.2s ease; }
+        .tab-btn:hover { border-color: var(--border-glow); color: var(--text-main); }
+        .tab-btn.active { background: var(--badge-bg); border-color: var(--border-glow); color: var(--text-main); box-shadow: 0 0 15px var(--accent-glow); }
 
-        .empty-log-card { text-align: center; padding: 40px 20px; margin: auto; }
-        .empty-icon { font-size: 2.5rem; margin-bottom: 12px; display: inline-block; filter: drop-shadow(0 5px 15px var(--accent-glow)); }
-        .empty-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 8px; }
-        .empty-desc { color: var(--text-muted); font-size: 0.9rem; max-width: 380px; margin: 0 auto; line-height: 1.6; }
+        .status-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; background-color: var(--badge-bg); color: var(--text-main); border: 1px solid var(--badge-border); font-weight: 700; }
+        
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 12px; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800; }
+        td { padding: 14px 12px; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; font-weight: 600; }
+        tr:hover td { background-color: rgba(255, 255, 255, 0.02); }
+        
+        .rank-1 { color: #ffd700; font-weight: 900; filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4)); }
+        .rank-2 { color: #c0c0c0; font-weight: 900; filter: drop-shadow(0 0 8px rgba(192, 192, 192, 0.4)); }
+        .rank-3 { color: #cd7f32; font-weight: 900; filter: drop-shadow(0 0 8px rgba(205, 127, 50, 0.4)); }
 
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; width: 100%; max-width: 1100px; margin-bottom: 60px; }
-        .feature-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 30px; text-align: left; box-shadow: var(--shadow-card); }
-        .feature-card:hover { transform: translateY(-6px); border-color: var(--border-glow); box-shadow: var(--shadow-hero); }
-        .feature-icon { font-size: 2rem; margin-bottom: 15px; display: inline-block; filter: drop-shadow(0 4px 10px var(--accent-glow)); }
-        .feature-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 10px; }
-        .feature-desc { font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; }
-        
-        .store-btn { display: inline-block; background: var(--btn-gradient); color: #ffffff; font-size: 1.1rem; font-weight: 900; padding: 18px 50px; border-radius: 14px; text-decoration: none; box-shadow: var(--shadow-btn); border: 1px solid rgba(255, 255, 255, 0.2); text-transform: uppercase; letter-spacing: 1px; }
-        .store-btn:hover { background: var(--btn-hover); transform: translateY(-4px) scale(1.03); box-shadow: 0 20px 45px var(--accent-glow); }
-        
-        footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; box-shadow: 0 -10px 40px rgba(0,0,0,0.6); }
-        .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 15px; font-weight: 700; font-size: 0.9rem; }
-        .footer-links a:hover { color: var(--text-main); }
-        .copyright { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; opacity: 0.6; }
-        
-        #lizard-container { position: fixed; bottom: 30px; left: -100px; font-size: 2.5rem; z-index: 10000; pointer-events: none; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); opacity: 0; }
-        .crawl-active { animation: crawlScreen 12s linear forwards, wobble 0.4s infinite alternate ease-in-out; opacity: 1 !important; }
-        @keyframes crawlScreen { 0% { left: -100px; transform: scaleX(-1); } 100% { left: 110vw; transform: scaleX(-1); } }
-        @keyframes wobble { 0% { transform: scaleX(-1) translateY(0) rotate(-5deg); } 100% { transform: scaleX(-1) translateY(-8px) rotate(5deg); } }
-        
-        @media (max-width: 768px) { header { padding: 14px 20px; } .game-title { font-size: 2.5rem; } .widgets-grid { grid-template-columns: 1fr; } }
-    </style>
+        .empty-log-card { text-align: center; padding: 40px 20px; margin: auto; }
+        .empty-icon { font-size: 2.5rem; margin-bottom: 12px; display: inline-block; filter: drop-shadow(0 5px 15px var(--accent-glow)); }
+        .empty-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 8px; }
+        .empty-desc { color: var(--text-muted); font-size: 0.9rem; max-width: 380px; margin: 0 auto; line-height: 1.6; }
+
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; width: 100%; max-width: 1100px; margin-bottom: 60px; }
+        .feature-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 30px; text-align: left; box-shadow: var(--shadow-card); }
+        .feature-card:hover { transform: translateY(-6px); border-color: var(--border-glow); box-shadow: var(--shadow-hero); }
+        .feature-icon { font-size: 2rem; margin-bottom: 15px; display: inline-block; filter: drop-shadow(0 4px 10px var(--accent-glow)); }
+        .feature-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 10px; }
+        .feature-desc { font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; }
+        
+        .store-btn { display: inline-block; background: var(--btn-gradient); color: #ffffff; font-size: 1.1rem; font-weight: 900; padding: 18px 50px; border-radius: 14px; text-decoration: none; box-shadow: var(--shadow-btn); border: 1px solid rgba(255, 255, 255, 0.2); text-transform: uppercase; letter-spacing: 1px; }
+        .store-btn:hover { background: var(--btn-hover); transform: translateY(-4px) scale(1.03); box-shadow: 0 20px 45px var(--accent-glow); }
+        
+        footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; box-shadow: 0 -10px 40px rgba(0,0,0,0.6); }
+        .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 15px; font-weight: 700; font-size: 0.9rem; }
+        .footer-links a:hover { color: var(--text-main); }
+        .copyright { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; opacity: 0.6; }
+        
+        #lizard-container { position: fixed; bottom: 30px; left: -100px; font-size: 2.5rem; z-index: 10000; pointer-events: none; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5)); opacity: 0; }
+        .crawl-active { animation: crawlScreen 12s linear forwards, wobble 0.4s infinite alternate ease-in-out; opacity: 1 !important; }
+        @keyframes crawlScreen { 0% { left: -100px; transform: scaleX(-1); } 100% { left: 110vw; transform: scaleX(-1); } }
+        @keyframes wobble { 0% { transform: scaleX(-1) translateY(0) rotate(-5deg); } 100% { transform: scaleX(-1) translateY(-8px) rotate(5deg); } }
+        
+        @media (max-width: 768px) { header { padding: 14px 20px; } .game-title { font-size: 2.5rem; } .widgets-grid { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
 
-    <header>
-        <a href="home" class="header-brand">
-            <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
-            <span class="logo-text holo-text">Volleyball Revengers</span>
-        </a>
-        <div class="nav-actions">
-            <div class="theme-toggle-container" id="themeToggleBtn" title="Toggle Dark/Light Mode">
-                <div class="theme-toggle-slider"></div>
-                <span class="theme-toggle-option">🌙</span>
-                <span class="theme-toggle-option">☀️</span>
-            </div>
-            <button class="menu-btn" id="menuToggleBtn">
-                <span style="font-size: 1.1rem;">☰</span>
-            </button>
-            <div class="nav-menu" id="navMenu">
-                <div class="nav-menu-header">Navigation</div>
-                <a href="leaderboard"><span class="menu-icon">🏆</span> Global Leaderboard</a>
-                <a href="updates"><span class="menu-icon">🚀</span> Update Log</a>
-                <hr>
-                <div class="nav-menu-header">Community</div>
-                <a href="https://discord.gg/xG6QcTbfp2" target="_blank"><span class="menu-icon">💬</span> Discord </a>
-                <hr>
-                <div class="nav-menu-header">Legal & Info</div>
-                <a href="privacy"><span class="menu-icon">🛡️</span> Privacy Policy</a>
-                <a href="terms"><span class="menu-icon">📄</span> Terms of Service</a>
-            </div>
-        </div>
-    </header>
+    <header>
+        <a href="home" class="header-brand">
+            <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
+            <span class="logo-text holo-text">Volleyball Revengers</span>
+        </a>
+        <div class="nav-actions">
+            <button class="auth-btn" id="accountBtn" onclick="openAuthModal()">
+                <span id="accountLabel">Account</span>
+            </button>
+            <div class="theme-toggle-container" id="themeToggleBtn" title="Toggle Dark/Light Mode">
+                <div class="theme-toggle-slider"></div>
+                <span class="theme-toggle-option">🌙</span>
+                <span class="theme-toggle-option">☀️</span>
+            </div>
+            <button class="menu-btn" id="menuToggleBtn">
+                <span style="font-size: 1.1rem;">☰</span>
+            </button>
+            <div class="nav-menu" id="navMenu">
+                <div class="nav-menu-header">Navigation</div>
+                <a href="leaderboard"><span class="menu-icon">🏆</span> Global Leaderboard</a>
+                <a href="updates"><span class="menu-icon">🚀</span> Update Log</a>
+                <hr>
+                <div class="nav-menu-header">Community</div>
+                <a href="https://discord.gg/xG6QcTbfp2" target="_blank"><span class="menu-icon">💬</span> Discord </a>
+                <hr>
+                <div class="nav-menu-header">Legal & Info</div>
+                <a href="privacy"><span class="menu-icon">🛡️</span> Privacy Policy</a>
+                <a href="terms"><span class="menu-icon">📄</span> Terms of Service</a>
+            </div>
+        </div>
+    </header>
 
-<div class="hero">
-        <div class="cover-container">
-            <img src="cover.png" alt="Volleyball Revengers Court" class="cover-img">
-        </div>
-</div>
+    <!-- Account Auth Modal -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-card">
+            <button class="close-modal-btn" onclick="closeAuthModal()">&times;</button>
+            <div class="modal-title holo-text" id="modalTitle">Account Access</div>
+            
+            <div id="authForms">
+                <div class="auth-form-group">
+                    <label>Username / Email</label>
+                    <input type="text" id="authEmail" class="auth-input" placeholder="Enter username or email">
+                </div>
+                <div class="auth-form-group">
+                    <label>Password</label>
+                    <input type="password" id="authPassword" class="auth-input" placeholder="Enter password">
+                </div>
+                <div class="modal-actions">
+                    <button class="action-btn primary-btn" onclick="loginWithPlayFab()">Login</button>
+                    <button class="action-btn secondary-btn" onclick="registerWithPlayFab()">Register New Account</button>
+                    <button class="action-btn secondary-btn" onclick="createGuestAccount()">Create New Guest Session</button>
+                </div>
+            </div>
 
+            <div id="authenticatedControls" style="display: none;">
+                <p style="margin-bottom: 15px; font-weight: 600; color: var(--text-muted);" id="userDisplayInfo"></p>
+                <div class="modal-actions">
+                    <button class="action-btn secondary-btn" onclick="logoutPlayFab()">Log Out</button>
+                    <button class="action-btn danger-btn" onclick="deletePlayFabAccount()">Delete Account</button>
+                </div>
+            </div>
 
+            <div class="auth-status-msg" id="authStatusMsg"></div>
+        </div>
+    </div>
 
-    <div class="content">
-        <div class="beta-badge">
-            <span class="beta-dot"></span> Open Beta Releasing Soon
-        </div>
-        <h1 class="game-title holo-text">Volleyball Revengers</h1>
-        <p class="game-description">Premier VR Volleyball Experience.</p>
-        
-        <div class="widgets-grid">
-            <!-- PlayFab Leaderboard Widget -->
-            <div class="widget-card">
-                <a href="leaderboard" style="text-decoration: none; color: inherit;">
-                    <div class="widget-title holo-text" style="margin-bottom: 10px; cursor: pointer;">Leaderboard</div>
-                </a>
-                <div class="controls">
-                    <div class="tab-buttons">
-                        <button class="tab-btn active" onclick="switchLeaderboard('Kills', this)">Most Kills</button>
-                        <button class="tab-btn" onclick="switchLeaderboard('PlayerElo', this)">Most Elo</button>
-                        <button class="tab-btn" onclick="switchLeaderboard('MVP', this)">Most MVPs</button>
-                        <button class="tab-btn" onclick="switchLeaderboard('Wins', this)">Most Wins</button>
-                        <button class="tab-btn" onclick="switchLeaderboard('Assists', this)">Most Assists</button>
-                        <button class="tab-btn" onclick="switchLeaderboard('Blocks', this)">Most Blocks</button>
-                        <button class="tab-btn" onclick="switchLeaderboard('AeroCoins_Stat', this)">Most Aero-Coins</button>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Player</th>
-                                <th id="stat-header">Kills</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leaderboard-body">
-                            <tr>
-                                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;">Connecting to PlayFab...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+    <div class="hero">
+        <div class="cover-container">
+            <img src="cover.png" alt="Volleyball Revengers Court" class="cover-img">
+        </div>
+    </div>
 
-            <!-- Update Log Widget -->
-            <div class="widget-card" style="justify-content: center;">
-                <a href="updates" style="text-decoration: none; color: inherit;">
-                    <div class="widget-title holo-text" style="margin-bottom: 10px; cursor: pointer;">Update Log</div>
-                </a>
-                <div class="empty-log-card">
-                    <div class="empty-icon">🚀</div>
-                    <div class="empty-title holo-text">No Update Logs Yet</div>
-                    <div class="empty-desc">Patch notes and build logs will be published here leading up to the upcoming Open Beta release. Check back soon!</div>
-                </div>
-            </div>
-        </div>
+    <div class="content">
+        <div class="beta-badge">
+            <span class="beta-dot"></span> Open Beta Releasing Soon
+        </div>
+        <h1 class="game-title holo-text">Volleyball Revengers</h1>
+        <p class="game-description">Premier VR Volleyball Experience.</p>
+        
+        <div class="widgets-grid">
+            <!-- PlayFab Leaderboard Widget -->
+            <div class="widget-card">
+                <a href="leaderboard" style="text-decoration: none; color: inherit;">
+                    <div class="widget-title holo-text" style="margin-bottom: 10px; cursor: pointer;">Leaderboard</div>
+                </a>
+                <div class="controls">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchLeaderboard('Kills', this)">Most Kills</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('PlayerElo', this)">Most Elo</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('MVP', this)">Most MVPs</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Wins', this)">Most Wins</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Assists', this)">Most Assists</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('Blocks', this)">Most Blocks</button>
+                        <button class="tab-btn" onclick="switchLeaderboard('AeroCoins_Stat', this)">Most Aero-Coins</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th id="stat-header">Kills</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;">Connecting to PlayFab...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">🏐</div>
-                <div class="feature-title">Custom Mechanics</div>
-                <div class="feature-desc">Engineered for realistic passing, setting, spiking, and spin control.</div>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🥽</div>
-                <div class="feature-title">Meta Quest Optimized</div>
-                <div class="feature-desc">Standalone performance built from the ground up for Quest hardware.</div>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">⚡</div>
-                <div class="feature-title">Solo Dev Passion</div>
-                <div class="feature-desc">Independently crafted by Mugen Revolution Studios to bring competitive volleyball to VR.</div>
-            </div>
-        </div>
+            <!-- Update Log Widget -->
+            <div class="widget-card" style="justify-content: center;">
+                <a href="updates" style="text-decoration: none; color: inherit;">
+                    <div class="widget-title holo-text" style="margin-bottom: 10px; cursor: pointer;">Update Log</div>
+                </a>
+                <div class="empty-log-card">
+                    <div class="empty-icon">🚀</div>
+                    <div class="empty-title holo-text">No Update Logs Yet</div>
+                    <div class="empty-desc">Patch notes and build logs will be published here leading up to the upcoming Open Beta release. Check back soon!</div>
+                </div>
+            </div>
+        </div>
 
-        <div class="store-btn">
-            Releasing Soon On Meta Quest
-        </div>
-    </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🏐</div>
+                <div class="feature-title">Custom Mechanics</div>
+                <div class="feature-desc">Engineered for realistic passing, setting, spiking, and spin control.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🥽</div>
+                <div class="feature-title">Meta Quest Optimized</div>
+                <div class="feature-desc">Standalone performance built from the ground up for Quest hardware.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Solo Dev Passion</div>
+                <div class="feature-desc">Independently crafted by Mugen Revolution Studios to bring competitive volleyball to VR.</div>
+            </div>
+        </div>
 
-    <footer>
-        <div class="footer-links">
-            <a href="privacy.html">Privacy</a>
-            <a href="terms.html">Terms</a>
-            <a href="https://discord.gg/xG6QcTbfp2">Discord</a>
-            <a href="mailto:mugenrevolutionstudios@gmail.com">Contact</a>
-        </div>
-        <div class="copyright">&copy; 2026 Mugen Revolution Studios. All rights reserved.</div>
-    </footer>
+        <div class="store-btn">
+            Releasing Soon On Meta Quest
+        </div>
+    </div>
 
-    <div id="lizard-container">🦎</div>
+    <footer>
+        <div class="footer-links">
+            <a href="privacy.html">Privacy</a>
+            <a href="terms.html">Terms</a>
+            <a href="https://discord.gg/xG6QcTbfp2">Discord</a>
+            <a href="mailto:mugenrevolutionstudios@gmail.com">Contact</a>
+        </div>
+        <div class="copyright">&copy; 2026 Mugen Revolution Studios. All rights reserved.</div>
+    </footer>
 
-    <script>
-        const menuBtn = document.getElementById('menuToggleBtn');
-        const navMenu = document.getElementById('navMenu');
-        
-        menuBtn.addEventListener('click', (e) => { 
-            e.stopPropagation(); 
-            navMenu.classList.toggle('active'); 
-        });
-        
-        document.addEventListener('click', (e) => { 
-            if (!navMenu.contains(e.target) && !menuBtn.contains(e.target)) { 
-                navMenu.classList.remove('active'); 
-            } 
-        });
+    <div id="lizard-container">🦎</div>
 
-        const themeBtn = document.getElementById('themeToggleBtn');
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('preferred-theme', newTheme);
-        }
-        themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
-        document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
+    <script>
+        const menuBtn = document.getElementById('menuToggleBtn');
+        const navMenu = document.getElementById('navMenu');
+        
+        menuBtn.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            navMenu.classList.toggle('active'); 
+        });
+        
+        document.addEventListener('click', (e) => { 
+            if (!navMenu.contains(e.target) && !menuBtn.contains(e.target)) { 
+                navMenu.classList.remove('active'); 
+            } 
+        });
 
-        // PlayFab Integration
-        const PLAYFAB_TITLE_ID = "1E90D8";
-        let currentStatistic = "Kills"; // Default stat to load
+        const themeBtn = document.getElementById('themeToggleBtn');
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('preferred-theme', newTheme);
+        }
+        themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-        function initPlayFab() {
-            PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
+        // PlayFab & Authentication System
+        const PLAYFAB_TITLE_ID = "1E90D8";
+        let currentStatistic = "Kills";
+        let currentUserSession = null;
 
-           const loginRequest = {
-    TitleId: 1E90D8,
-    CreateAccount: true,
-    CustomId: "Website_Reader"
-};
+        function getOrCreateGuestId() {
+            let id = localStorage.getItem("vbr_guest_custom_id");
+            if (!id) {
+                id = "Guest_" + Math.random().toString(36).substring(2, 11) + "_" + Date.now();
+                localStorage.setItem("vbr_guest_custom_id", id);
+            }
+            return id;
+        }
 
-            PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
-                if (error) {
-                    const syncStatus = document.getElementById("sync-status");
-                    if (syncStatus) {
-                        syncStatus.innerText = "Sync Error";
-                        syncStatus.style.borderColor = "#ff4500";
-                        syncStatus.style.color = "#ff4500";
-                    }
-                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff4500; padding: 20px;">Failed to connect to PlayFab backend.</td></tr>`;
-                    return;
-                }
-                fetchPlayFabLeaderboard(currentStatistic);
-            });
-         }
+        function initPlayFab() {
+            PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
 
-        function switchLeaderboard(statName, btnElement) {
-            currentStatistic = statName;
-            
-            // Update active styles on tabs
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            btnElement.classList.add('active');
+            const savedAuthType = localStorage.getItem("vbr_auth_type");
+            const savedUsername = localStorage.getItem("vbr_saved_username");
 
-            // Update column header text dynamically based on selected statistic
-            let headerText = "Kills";
-            if (statName === "PlayerElo") headerText = "Elo";
-            if (statName === "MVP") headerText = "MVPs";
-            if (statName === "Wins") headerText = "Wins";
-            if (statName === "Assists") headerText = "Assists";
-            if (statName === "Blocks") headerText = "Blocks";
-            if (statName === "AeroCoins_Stat") headerText = "Aero-Coins";
-            document.getElementById("stat-header").innerText = headerText;
+            if (savedAuthType === "account" && savedUsername) {
+                updateAuthUI(true, savedUsername);
+                fetchPlayFabLeaderboard(currentStatistic);
+            } else {
+                loginAsGuest();
+            }
+        }
 
-            // Fetch new stats
-            fetchPlayFabLeaderboard(statName);
-        }
+        function loginAsGuest() {
+            const guestId = getOrCreateGuestId();
+            const loginRequest = {
+                TitleId: PLAYFAB_TITLE_ID,
+                CreateAccount: true,
+                CustomId: guestId
+            };
 
-        function fetchPlayFabLeaderboard(statisticName) {
-            document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading rankings...</td></tr>`;
+            PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
+                if (error) {
+                    showAuthStatus("Error connecting to PlayFab.", true);
+                    return;
+                }
+                currentUserSession = result.data;
+                localStorage.setItem("vbr_auth_type", "guest");
+                updateAuthUI(false, "Guest User");
+                fetchPlayFabLeaderboard(currentStatistic);
+            });
+        }
 
-            const leaderboardRequest = {
-                StartPosition: 0,
-                MaxResultsCount: 10,
-                StatisticName: statisticName
-            };
+        function createGuestAccount() {
+            localStorage.removeItem("vbr_guest_custom_id");
+            loginAsGuest();
+            showAuthStatus("New Guest Account created successfully!", false);
+            setTimeout(closeAuthModal, 1200);
+        }
 
-            PlayFabClientSDK.GetLeaderboard(leaderboardRequest, (lbResult, lbError) => {
-                if (lbError) {
-                    let errorMsg = "No entries found for this statistic yet.";
-                    if (statisticName === "AeroCoins_Stat") {
-                        errorMsg = "Aero-Coins leaderboard requires mirroring currency to a Statistic in PlayFab.";
-                    }
-                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">${errorMsg}</td></tr>`;
-                    return;
-                }
-                if (lbResult && lbResult.data && lbResult.data.Leaderboard) {
-                    renderLeaderboard(lbResult.data.Leaderboard);
-                } else {
-                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No leaderboard data available.</td></tr>`;
-                }
-            });
-        }
+        function loginWithPlayFab() {
+            const input = document.getElementById("authEmail").value.trim();
+            const password = document.getElementById("authPassword").value;
 
-        function renderLeaderboard(entries) {
-            const tbody = document.getElementById("leaderboard-body");
-            tbody.innerHTML = "";
+            if (!input || !password) {
+                showAuthStatus("Please fill in both fields.", true);
+                return;
+            }
 
-            if (entries.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No players ranked yet.</td></tr>`;
-                return;
-            }
+            const loginRequest = {
+                TitleId: PLAYFAB_TITLE_ID,
+                Username: input,
+                Password: password
+            };
 
-            entries.forEach(entry => {
-                const rank = entry.Position + 1;
-                let rankClass = "";
-                if (rank === 1) rankClass = "rank-1";
-                if (rank === 2) rankClass = "rank-2";
-                if (rank === 3) rankClass = "rank-3";
+            PlayFabClientSDK.LoginWithPlayFab(loginRequest, (result, error) => {
+                if (error) {
+                    showAuthStatus(error.errorMessage || "Login failed.", true);
+                    return;
+                }
+                currentUserSession = result.data;
+                localStorage.setItem("vbr_auth_type", "account");
+                localStorage.setItem("vbr_saved_username", input);
+                updateAuthUI(true, input);
+                showAuthStatus("Login successful!", false);
+                fetchPlayFabLeaderboard(currentStatistic);
+                setTimeout(closeAuthModal, 1200);
+            });
+        }
 
-                // Fallback to PlayFabId if DisplayName is not set
-                const displayName = entry.DisplayName || entry.PlayFabId;
-                
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td class="${rankClass}">#${rank}</td>
-                    <td>${displayName}</td>
-                    <td>${entry.StatValue.toLocaleString()}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+        function registerWithPlayFab() {
+            const username = document.getElementById("authEmail").value.trim();
+            const password = document.getElementById("authPassword").value;
 
-        window.onload = initPlayFab;
+            if (!username || !password) {
+                showAuthStatus("Username and password are required.", true);
+                return;
+            }
 
-        // Easter Egg: Lizard Crawler
-        const lizardContainer = document.getElementById('lizard-container');
-        function triggerLizardCrawl() {
-            lizardContainer.classList.add('crawl-active');
-            setTimeout(() => {
-                lizardContainer.classList.remove('crawl-active');
-            }, 12000);
-            
-            const nextCrawlTime = Math.random() * 45000 + 45000;
-            setTimeout(triggerLizardCrawl, nextCrawlTime);
-        }
-        setTimeout(triggerLizardCrawl, 20000);
-    </script>
+            const registerRequest = {
+                TitleId: PLAYFAB_TITLE_ID,
+                Username: username,
+                Password: password,
+                RequireBothUsernameAndEmail: false
+            };
+
+            PlayFabClientSDK.RegisterPlayFabUser(registerRequest, (result, error) => {
+                if (error) {
+                    showAuthStatus(error.errorMessage || "Registration failed.", true);
+                    return;
+                }
+                showAuthStatus("Account created! Logging in...", false);
+                loginWithPlayFab();
+            });
+        }
+
+        function logoutPlayFab() {
+            localStorage.removeItem("vbr_auth_type");
+            localStorage.removeItem("vbr_saved_username");
+            loginAsGuest();
+            showAuthStatus("Logged out.", false);
+            setTimeout(closeAuthModal, 1000);
+        }
+
+        function deletePlayFabAccount() {
+            if (!confirm("Are you sure you want to clear this account session from this browser?")) return;
+            localStorage.clear();
+            loginAsGuest();
+            showAuthStatus("Account session cleared from local storage.", false);
+            setTimeout(closeAuthModal, 1200);
+        }
+
+        function updateAuthUI(isLoggedIn, name) {
+            const accountLabel = document.getElementById("accountLabel");
+            const forms = document.getElementById("authForms");
+            const controls = document.getElementById("authenticatedControls");
+            const userDisplayInfo = document.getElementById("userDisplayInfo");
+
+            if (isLoggedIn) {
+                accountLabel.innerText = `👤 ${name}`;
+                forms.style.display = "none";
+                controls.style.display = "block";
+                userDisplayInfo.innerText = `Logged in as: ${name}`;
+            } else {
+                accountLabel.innerText = "Guest Account";
+                forms.style.display = "block";
+                controls.style.display = "none";
+            }
+        }
+
+        function openAuthModal() {
+            document.getElementById("authModal").classList.add("active");
+            document.getElementById("authStatusMsg").innerText = "";
+        }
+
+        function closeAuthModal() {
+            document.getElementById("authModal").classList.remove("active");
+        }
+
+        function showAuthStatus(msg, isError) {
+            const el = document.getElementById("authStatusMsg");
+            el.innerText = msg;
+            el.style.color = isError ? "#ef4444" : "#10b981";
+        }
+
+        function switchLeaderboard(statName, btnElement) {
+            currentStatistic = statName;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            let headerText = "Kills";
+            if (statName === "PlayerElo") headerText = "Elo";
+            if (statName === "MVP") headerText = "MVPs";
+            if (statName === "Wins") headerText = "Wins";
+            if (statName === "Assists") headerText = "Assists";
+            if (statName === "Blocks") headerText = "Blocks";
+            if (statName === "AeroCoins_Stat") headerText = "Aero-Coins";
+            document.getElementById("stat-header").innerText = headerText;
+
+            fetchPlayFabLeaderboard(statName);
+        }
+
+        function fetchPlayFabLeaderboard(statisticName) {
+            document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading rankings...</td></tr>`;
+
+            const leaderboardRequest = {
+                StartPosition: 0,
+                MaxResultsCount: 10,
+                StatisticName: statisticName
+            };
+
+            PlayFabClientSDK.GetLeaderboard(leaderboardRequest, (lbResult, lbError) => {
+                if (lbError) {
+                    let errorMsg = "No entries found for this statistic yet.";
+                    if (statisticName === "AeroCoins_Stat") {
+                        errorMsg = "Aero-Coins leaderboard requires mirroring currency to a Statistic in PlayFab.";
+                    }
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">${errorMsg}</td></tr>`;
+                    return;
+                }
+                if (lbResult && lbResult.data && lbResult.data.Leaderboard) {
+                    renderLeaderboard(lbResult.data.Leaderboard);
+                } else {
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No leaderboard data available.</td></tr>`;
+                }
+            });
+        }
+
+        function renderLeaderboard(entries) {
+            const tbody = document.getElementById("leaderboard-body");
+            tbody.innerHTML = "";
+
+            if (entries.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No players ranked yet.</td></tr>`;
+                return;
+            }
+
+            entries.forEach(entry => {
+                const rank = entry.Position + 1;
+                let rankClass = "";
+                if (rank === 1) rankClass = "rank-1";
+                if (rank === 2) rankClass = "rank-2";
+                if (rank === 3) rankClass = "rank-3";
+
+                const displayName = entry.DisplayName || entry.PlayFabId;
+                
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="${rankClass}">#${rank}</td>
+                    <td>${displayName}</td>
+                    <td>${entry.StatValue.toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.onload = initPlayFab;
+
+        // Easter Egg: Lizard Crawler
+        const lizardContainer = document.getElementById('lizard-container');
+        function triggerLizardCrawl() {
+            lizardContainer.classList.add('crawl-active');
+            setTimeout(() => {
+                lizardContainer.classList.remove('crawl-active');
+            }, 12000);
+            
+            const nextCrawlTime = Math.random() * 45000 + 45000;
+            setTimeout(triggerLizardCrawl, nextCrawlTime);
+        }
+        setTimeout(triggerLizardCrawl, 20000);
+    </script>
 </body>
 </html>
