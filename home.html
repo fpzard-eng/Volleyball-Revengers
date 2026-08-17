@@ -67,8 +67,9 @@
         .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--btn-gradient); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         [data-theme="light"] .theme-toggle-slider { transform: translateX(36px); }
         
-        .menu-btn, .auth-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.95rem; font-weight: 800; border-radius: 10px; cursor: pointer; outline: none; box-shadow: var(--shadow-card); z-index: 10000; display: flex; align-items: center; gap: 6px; }
-        .menu-btn:hover, .auth-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
+        .menu-btn, .guest-badge { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.95rem; font-weight: 800; border-radius: 10px; outline: none; box-shadow: var(--shadow-card); z-index: 10000; display: flex; align-items: center; gap: 6px; }
+        .menu-btn { cursor: pointer; }
+        .menu-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
         
         .nav-menu { display: none; position: absolute; top: calc(100% + 14px); right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: var(--shadow-widget); width: 240px; padding: 12px; flex-direction: column; gap: 6px; z-index: 9998; transform-origin: top right; }
         .nav-menu.active { display: flex; animation: menuDropdownFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -79,26 +80,6 @@
         .nav-menu a span.menu-icon { font-size: 1.1rem; width: 20px; text-align: center; }
         .nav-menu a:hover { background: var(--badge-bg); color: var(--text-main); border-color: var(--border-glow); transform: translateX(4px); }
         .nav-menu hr { border: none; border-top: 1px solid var(--border-color); margin: 6px 4px; }
-        
-        /* Auth Modal Styling */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(10px); z-index: 20000; justify-content: center; align-items: center; }
-        .modal-overlay.active { display: flex; }
-        .modal-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; width: 100%; max-width: 400px; padding: 30px; box-shadow: var(--shadow-widget); position: relative; text-align: left; }
-        .modal-title { font-size: 1.5rem; font-weight: 900; margin-bottom: 15px; }
-        .auth-form-group { margin-bottom: 15px; }
-        .auth-form-group label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
-        .auth-input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0, 0, 0, 0.2); color: var(--text-main); font-size: 0.95rem; outline: none; }
-        .auth-input:focus { border-color: var(--border-glow); box-shadow: 0 0 10px var(--accent-glow); }
-        .modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        .action-btn { width: 100%; padding: 12px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; font-size: 0.95rem; }
-        .primary-btn { background: var(--btn-gradient); color: white; box-shadow: var(--shadow-btn); }
-        .primary-btn:hover { background: var(--btn-hover); }
-        .secondary-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
-        .secondary-btn:hover { border-color: var(--border-glow); }
-        .danger-btn { background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220, 38, 38, 0.5); color: #ef4444; }
-        .danger-btn:hover { background: rgba(220, 38, 38, 0.4); }
-        .close-modal-btn { position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; }
-        .auth-status-msg { font-size: 0.85rem; margin-top: 10px; text-align: center; font-weight: 600; min-height: 1.2em; }
 
         .hero { position: relative; width: 100%; max-width: 1100px; margin: 40px auto 0 auto; padding: 0 20px; z-index: 1; }
         .cover-container { position: relative; border-radius: 20px; padding: 3px; background: var(--holo-gradient); box-shadow: var(--shadow-hero); }
@@ -125,8 +106,6 @@
         .tab-btn:hover { border-color: var(--border-glow); color: var(--text-main); }
         .tab-btn.active { background: var(--badge-bg); border-color: var(--border-glow); color: var(--text-main); box-shadow: 0 0 15px var(--accent-glow); }
 
-        .status-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; background-color: var(--badge-bg); color: var(--text-main); border: 1px solid var(--badge-border); font-weight: 700; }
-        
         .table-responsive { width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th { padding: 12px; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800; }
@@ -173,9 +152,9 @@
             <span class="logo-text holo-text">Volleyball Revengers</span>
         </a>
         <div class="nav-actions">
-            <button class="auth-btn" id="accountBtn" onclick="openAuthModal()">
-                <span id="accountLabel">Account</span>
-            </button>
+            <div class="guest-badge">
+                <span>👤 Guest Session</span>
+            </div>
             <div class="theme-toggle-container" id="themeToggleBtn" title="Toggle Dark/Light Mode">
                 <div class="theme-toggle-slider"></div>
                 <span class="theme-toggle-option">🌙</span>
@@ -198,39 +177,6 @@
             </div>
         </div>
     </header>
-
-    <!-- Account Auth Modal -->
-    <div class="modal-overlay" id="authModal">
-        <div class="modal-card">
-            <button class="close-modal-btn" onclick="closeAuthModal()">&times;</button>
-            <div class="modal-title holo-text" id="modalTitle">Account Access</div>
-            
-            <div id="authForms">
-                <div class="auth-form-group">
-                    <label>Username / Email</label>
-                    <input type="text" id="authEmail" class="auth-input" placeholder="Enter username or email">
-                </div>
-                <div class="auth-form-group">
-                    <label>Password</label>
-                    <input type="password" id="authPassword" class="auth-input" placeholder="Enter password">
-                </div>
-                <div class="modal-actions">
-                    <button class="action-btn primary-btn" onclick="loginWithPlayFab()">Login</button>
-                    <button class="action-btn secondary-btn" onclick="registerWithPlayFab()">Register New Account</button>
-                </div>
-            </div>
-
-            <div id="authenticatedControls" style="display: none;">
-                <p style="margin-bottom: 15px; font-weight: 600; color: var(--text-muted);" id="userDisplayInfo"></p>
-                <div class="modal-actions">
-                    <button class="action-btn secondary-btn" onclick="logoutPlayFab()">Log Out</button>
-                    <button class="action-btn danger-btn" onclick="deletePlayFabAccount()">Delete Account</button>
-                </div>
-            </div>
-
-            <div class="auth-status-msg" id="authStatusMsg"></div>
-        </div>
-    </div>
 
     <div class="hero">
         <div class="cover-container">
@@ -353,10 +299,9 @@
         themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-        // PlayFab & Authentication System
+        // PlayFab Integration (Automatic Guest Session)
         const PLAYFAB_TITLE_ID = "1E90D8";
         let currentStatistic = "Kills";
-        let currentUserSession = null;
 
         function getOrCreateGuestId() {
             let id = localStorage.getItem("vbr_guest_custom_id");
@@ -367,21 +312,9 @@
             return id;
         }
 
-        function initPlayFab() {
+        function initPlayFabGuestSession() {
             PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
 
-            const savedAuthType = localStorage.getItem("vbr_auth_type");
-            const savedUsername = localStorage.getItem("vbr_saved_username");
-
-            if (savedAuthType === "account" && savedUsername) {
-                updateAuthUI(true, savedUsername);
-                fetchPlayFabLeaderboard(currentStatistic);
-            } else {
-                loginAsGuest();
-            }
-        }
-
-        function loginAsGuest() {
             const guestId = getOrCreateGuestId();
             const loginRequest = {
                 TitleId: PLAYFAB_TITLE_ID,
@@ -391,119 +324,11 @@
 
             PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
                 if (error) {
-                    showAuthStatus("Error connecting to PlayFab.", true);
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Unable to connect to PlayFab servers.</td></tr>`;
                     return;
                 }
-                currentUserSession = result.data;
-                localStorage.setItem("vbr_auth_type", "guest");
-                updateAuthUI(false, "Guest User");
                 fetchPlayFabLeaderboard(currentStatistic);
             });
-        }
-
-        function loginWithPlayFab() {
-            const input = document.getElementById("authEmail").value.trim();
-            const password = document.getElementById("authPassword").value;
-
-            if (!input || !password) {
-                showAuthStatus("Please fill in both fields.", true);
-                return;
-            }
-
-            const loginRequest = {
-                TitleId: PLAYFAB_TITLE_ID,
-                Username: input,
-                Password: password
-            };
-
-            PlayFabClientSDK.LoginWithPlayFab(loginRequest, (result, error) => {
-                if (error) {
-                    showAuthStatus(error.errorMessage || "Login failed.", true);
-                    return;
-                }
-                currentUserSession = result.data;
-                localStorage.setItem("vbr_auth_type", "account");
-                localStorage.setItem("vbr_saved_username", input);
-                updateAuthUI(true, input);
-                showAuthStatus("Login successful!", false);
-                fetchPlayFabLeaderboard(currentStatistic);
-                setTimeout(closeAuthModal, 1200);
-            });
-        }
-
-        function registerWithPlayFab() {
-            const username = document.getElementById("authEmail").value.trim();
-            const password = document.getElementById("authPassword").value;
-
-            if (!username || !password) {
-                showAuthStatus("Username and password are required.", true);
-                return;
-            }
-
-            const registerRequest = {
-                TitleId: PLAYFAB_TITLE_ID,
-                Username: username,
-                Password: password,
-                RequireBothUsernameAndEmail: false
-            };
-
-            PlayFabClientSDK.RegisterPlayFabUser(registerRequest, (result, error) => {
-                if (error) {
-                    showAuthStatus(error.errorMessage || "Registration failed.", true);
-                    return;
-                }
-                showAuthStatus("Account created! Logging in...", false);
-                loginWithPlayFab();
-            });
-        }
-
-        function logoutPlayFab() {
-            localStorage.removeItem("vbr_auth_type");
-            localStorage.removeItem("vbr_saved_username");
-            loginAsGuest();
-            showAuthStatus("Logged out.", false);
-            setTimeout(closeAuthModal, 1000);
-        }
-
-        function deletePlayFabAccount() {
-            if (!confirm("Are you sure you want to clear this account session from this browser?")) return;
-            localStorage.clear();
-            loginAsGuest();
-            showAuthStatus("Account session cleared from local storage.", false);
-            setTimeout(closeAuthModal, 1200);
-        }
-
-        function updateAuthUI(isLoggedIn, name) {
-            const accountLabel = document.getElementById("accountLabel");
-            const forms = document.getElementById("authForms");
-            const controls = document.getElementById("authenticatedControls");
-            const userDisplayInfo = document.getElementById("userDisplayInfo");
-
-            if (isLoggedIn) {
-                accountLabel.innerText = `👤 ${name}`;
-                forms.style.display = "none";
-                controls.style.display = "block";
-                userDisplayInfo.innerText = `Logged in as: ${name}`;
-            } else {
-                accountLabel.innerText = "Guest Account";
-                forms.style.display = "block";
-                controls.style.display = "none";
-            }
-        }
-
-        function openAuthModal() {
-            document.getElementById("authModal").classList.add("active");
-            document.getElementById("authStatusMsg").innerText = "";
-        }
-
-        function closeAuthModal() {
-            document.getElementById("authModal").classList.remove("active");
-        }
-
-        function showAuthStatus(msg, isError) {
-            const el = document.getElementById("authStatusMsg");
-            el.innerText = msg;
-            el.style.color = isError ? "#ef4444" : "#10b981";
         }
 
         function switchLeaderboard(statName, btnElement) {
@@ -577,7 +402,7 @@
             });
         }
 
-        window.onload = initPlayFab;
+        window.onload = initPlayFabGuestSession;
 
         // Easter Egg: Lizard Crawler
         const lizardContainer = document.getElementById('lizard-container');
