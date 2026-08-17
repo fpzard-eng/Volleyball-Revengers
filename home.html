@@ -298,14 +298,14 @@
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
         // PlayFab Integration
-        const PLAYFAB_TITLE_ID = "1E90D8";
+        const PLAYFAB_TITLE_ID = PLAYFAB_TITLE_ID;
         let currentStatistic = "Kills"; // Default stat to load
 
         function initPlayFab() {
-            PlayFab.settings.titleId = "1E90D8";
+            PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
 
             const loginRequest = {
-                TitleId:  PlayFab.settings.titleId,
+                TitleId: PLAYFAB_TITLE_ID,
                 CreateAccount: true,
                 CustomId: "Website_Guest_User"
             };
