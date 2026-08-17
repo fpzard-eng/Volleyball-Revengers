@@ -253,10 +253,10 @@
             PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
 
             const loginRequest = {
-                TitleId: PLAYFAB_TITLE_ID,
-                CreateAccount: true,
-                CustomId: "WebsiteVisitor_" + Math.random().toString(36).substring(7)
-            };
+    TitleId: 1E90D8,
+    CreateAccount: true,
+    CustomId: "Website_Reader"
+};
 
             PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
                 if (error) {
