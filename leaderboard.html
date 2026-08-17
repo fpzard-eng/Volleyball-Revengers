@@ -142,6 +142,37 @@
             box-shadow: 0 0 15px var(--accent-glow);
         }
 
+        .search-container {
+            position: relative;
+            min-width: 200px;
+            flex-grow: 1;
+            max-width: 260px;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(31, 40, 51, 0.4);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--border-glow);
+            box-shadow: 0 0 10px var(--accent-glow);
+            background: rgba(31, 40, 51, 0.7);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
         .status-badge {
             font-size: 0.8rem;
             padding: 6px 12px;
@@ -221,6 +252,9 @@
                 <button class="tab-btn" onclick="switchLeaderboard('Blocks', this)">Most Blocks</button>
                 <button class="tab-btn" onclick="switchLeaderboard('AeroCoins_Stat', this)">Most Aero-Coins</button>
             </div>
+            <div class="search-container">
+                <input type="text" id="player-search" class="search-input" placeholder="Search player..." oninput="filterLeaderboard()">
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -248,15 +282,16 @@
     <script>
         const PLAYFAB_TITLE_ID = "1E90D8";
         let currentStatistic = "Kills"; // Default stat to load
+        let cachedLeaderboardData = []; // Stores current raw leaderboard entries for client-side filtering
 
         function initPlayFab() {
             PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
 
             const loginRequest = {
-    TitleId: 1E90D8,
-    CreateAccount: true,
-    CustomId: "Website_Reader"
-};
+                TitleId: PLAYFAB_TITLE_ID,
+                CreateAccount: true,
+                CustomId: "Website_Reader"
+            };
 
             PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
                 if (error) {
@@ -276,6 +311,10 @@
         function switchLeaderboard(statName, btnElement) {
             currentStatistic = statName;
             
+            // Clear search input on tab change
+            const searchInput = document.getElementById("player-search");
+            if (searchInput) searchInput.value = "";
+
             // Update active styles on tabs
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
@@ -299,7 +338,7 @@
 
             const leaderboardRequest = {
                 StartPosition: 0,
-                MaxResultsCount: 10,
+                MaxResultsCount: 100, // Increased count to support search query filtering
                 StatisticName: statisticName
             };
 
@@ -309,23 +348,44 @@
                     if (statisticName === "AeroCoins_Stat") {
                         errorMsg = "Aero-Coins leaderboard requires mirroring currency to a Statistic in PlayFab.";
                     }
+                    cachedLeaderboardData = [];
                     document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">${errorMsg}</td></tr>`;
                     return;
                 }
                 if (lbResult && lbResult.data && lbResult.data.Leaderboard) {
-                    renderLeaderboard(lbResult.data.Leaderboard);
+                    cachedLeaderboardData = lbResult.data.Leaderboard;
+                    filterLeaderboard();
                 } else {
+                    cachedLeaderboardData = [];
                     document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No leaderboard data available.</td></tr>`;
                 }
             });
         }
 
-        function renderLeaderboard(entries) {
+        function filterLeaderboard() {
+            const query = document.getElementById("player-search").value.toLowerCase().trim();
+            if (!query) {
+                renderLeaderboard(cachedLeaderboardData);
+                return;
+            }
+
+            const filtered = cachedLeaderboardData.filter(entry => {
+                const name = (entry.DisplayName || entry.PlayFabId).toLowerCase();
+                return name.includes(query);
+            });
+
+            renderLeaderboard(filtered, query);
+        }
+
+        function renderLeaderboard(entries, searchQuery = "") {
             const tbody = document.getElementById("leaderboard-body");
             tbody.innerHTML = "";
 
             if (entries.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No players ranked yet.</td></tr>`;
+                const msg = searchQuery 
+                    ? `No players found matching "${searchQuery}".` 
+                    : "No players ranked yet.";
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">${msg}</td></tr>`;
                 return;
             }
 
