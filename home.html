@@ -70,15 +70,14 @@
         .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.95rem; font-weight: 800; border-radius: 10px; cursor: pointer; outline: none; box-shadow: var(--shadow-card); z-index: 10000; display: flex; align-items: center; gap: 6px; }
         .menu-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
         
-        /* Upgraded Navigation Menu */
         .nav-menu { display: none; position: absolute; top: calc(100% + 14px); right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: var(--shadow-widget); width: 240px; padding: 12px; flex-direction: column; gap: 6px; z-index: 9998; transform-origin: top right; }
         .nav-menu.active { display: flex; animation: menuDropdownFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes menuDropdownFade { from { opacity: 0; transform: scale(0.95) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         
         .nav-menu-header { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); padding: 6px 12px 4px 12px; font-weight: 800; opacity: 0.7; }
-        .nav-menu a, .nav-menu button.menu-item-btn { color: var(--text-muted); padding: 10px 14px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 12px; border-radius: 10px; transition: all 0.2s ease; background: none; border: none; width: 100%; text-align: left; cursor: pointer; }
-        .nav-menu a span.menu-icon, .nav-menu button.menu-item-btn span.menu-icon { font-size: 1.1rem; width: 20px; text-align: center; }
-        .nav-menu a:hover, .nav-menu button.menu-item-btn:hover { background: var(--badge-bg); color: var(--text-main); border-color: var(--border-glow); transform: translateX(4px); }
+        .nav-menu a { color: var(--text-muted); padding: 10px 14px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 12px; border-radius: 10px; transition: all 0.2s ease; }
+        .nav-menu a span.menu-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+        .nav-menu a:hover { background: var(--badge-bg); color: var(--text-main); border-color: var(--border-glow); transform: translateX(4px); }
         .nav-menu hr { border: none; border-top: 1px solid var(--border-color); margin: 6px 4px; }
         
         .hero { position: relative; width: 100%; max-width: 1100px; margin: 40px auto 0 auto; padding: 0 20px; z-index: 1; }
@@ -143,23 +142,6 @@
         @keyframes crawlScreen { 0% { left: -100px; transform: scaleX(-1); } 100% { left: 110vw; transform: scaleX(-1); } }
         @keyframes wobble { 0% { transform: scaleX(-1) translateY(0) rotate(-5deg); } 100% { transform: scaleX(-1) translateY(-8px) rotate(5deg); } }
         
-        /* Modal Styles */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(10px); z-index: 20000; justify-content: center; align-items: center; }
-        .modal-overlay.active { display: flex; }
-        .modal-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; padding: 30px; width: 100%; max-width: 400px; box-shadow: var(--shadow-widget); position: relative; }
-        .modal-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); border-radius: 20px 20px 0 0; }
-        .modal-title { font-size: 1.5rem; font-weight: 900; margin-bottom: 20px; text-align: center; }
-        .form-group { margin-bottom: 15px; text-align: left; }
-        .form-group label { display: block; font-size: 0.8rem; color: var(--text-muted); font-weight: 700; margin-bottom: 5px; text-transform: uppercase; }
-        .form-group input { width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-weight: 600; outline: none; }
-        .form-group input:focus { border-color: var(--border-glow); }
-        .modal-btn { width: 100%; padding: 12px; background: var(--btn-gradient); color: #fff; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
-        .modal-btn:hover { background: var(--btn-hover); }
-        .modal-toggle { margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); text-align: center; cursor: pointer; }
-        .modal-toggle span { color: var(--text-main); font-weight: 800; text-decoration: underline; }
-        .modal-close { position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
-        .auth-error { color: #ff4500; font-size: 0.85rem; margin-top: 10px; text-align: center; display: none; }
-
         @media (max-width: 768px) { header { padding: 14px 20px; } .game-title { font-size: 2.5rem; } .widgets-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -194,11 +176,11 @@
         </div>
     </header>
 
-    <div class="hero">
+<div class="hero">
         <div class="cover-container">
             <img src="cover.png" alt="Volleyball Revengers Court" class="cover-img">
         </div>
-    </div>
+</div>
 
     <div class="content">
         <div class="beta-badge">
@@ -288,31 +270,6 @@
         <div class="copyright">&copy; 2026 Mugen Revolution Studios. All rights reserved.</div>
     </footer>
 
-    <!-- Authentication Modal -->
-    <div class="modal-overlay" id="authModal">
-        <div class="modal-card">
-            <button class="modal-close" onclick="closeAuthModal()">✕</button>
-            <div class="modal-title holo-text" id="modalTitle">Login</div>
-            <form id="authForm" onsubmit="submitAuthForm(event)">
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="authUsername" required>
-                </div>
-                <div class="form-group" id="emailGroup" style="display: none;">
-                    <label>Email</label>
-                    <input type="email" id="authEmail">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="authPassword" required>
-                </div>
-                <button type="submit" class="modal-btn" id="modalSubmitBtn">Login</button>
-                <div class="auth-error" id="authError"></div>
-                <div class="modal-toggle" id="modalToggle" onclick="toggleAuthMode()">Don't have an account? <span>Register</span></div>
-            </form>
-        </div>
-    </div>
-
     <div id="lizard-container">🦎</div>
 
     <script>
@@ -340,180 +297,46 @@
         themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-        // PlayFab & Auth Logic
+        // PlayFab Integration
         const PLAYFAB_TITLE_ID = "1E90D8";
-        let currentStatistic = "Kills";
-        let isRegisteredUser = false;
-        let isRegisterMode = false;
+        let currentStatistic = "Kills"; // Default stat to load
 
         function initPlayFab() {
-            PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
-            
-            const savedUser = localStorage.getItem('vbr_username');
-            const savedPass = localStorage.getItem('vbr_password');
-
-            if (savedUser && savedPass) {
-                // Attempt PlayFab Login with Saved Credentials
-                loginWithPlayFabAccount(savedUser, savedPass);
-            } else {
-                // Fallback to Guest Account
-                loginAsGuest();
-            }
-        }
-
-        function loginAsGuest() {
-            let guestId = localStorage.getItem('vbr_guest_id');
-            if (!guestId) {
-                guestId = "Guest_" + Math.random().toString(36).substring(2, 10);
-                localStorage.setItem('vbr_guest_id', guestId);
-            }
+            PlayFab.settings.titleId = "1E90D8";
 
             const loginRequest = {
-                TitleId: PLAYFAB_TITLE_ID,
+                TitleId:  PlayFab.settings.titleId,
                 CreateAccount: true,
-                CustomId: guestId
+                CustomId: "Website_Guest_User"
             };
 
             PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
                 if (error) {
-                    handlePlayFabError("Failed to connect as Guest.");
+                    const syncStatus = document.getElementById("sync-status");
+                    if (syncStatus) {
+                        syncStatus.innerText = "Sync Error";
+                        syncStatus.style.borderColor = "#ff4500";
+                        syncStatus.style.color = "#ff4500";
+                    }
+                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff4500; padding: 20px;">Failed to connect to PlayFab backend.</td></tr>`;
                     return;
                 }
-                isRegisteredUser = false;
-                updateAuthUI("Guest", false);
-                fetchPlayFabLeaderboard(currentStatistic);
-            });
-        }
 
-        function loginWithPlayFabAccount(username, password) {
-            const loginRequest = {
-                TitleId: PLAYFAB_TITLE_ID,
-                Username: username,
-                Password: password
-            };
-
-            PlayFabClientSDK.LoginWithPlayFab(loginRequest, (result, error) => {
-                if (error) {
-                    // Fall back to Guest if login fails
-                    localStorage.removeItem('vbr_username');
-                    localStorage.removeItem('vbr_password');
-                    loginAsGuest();
-                    return;
-                }
-                isRegisteredUser = true;
-                localStorage.setItem('vbr_username', username);
-                localStorage.setItem('vbr_password', password);
-                updateAuthUI(username, true);
-                fetchPlayFabLeaderboard(currentStatistic);
-            });
-        }
-
-        function updateAuthUI(name, isLoggedIn) {
-            const authBtnText = document.getElementById('authBtnText');
-            if (isLoggedIn) {
-                authBtnText.innerText = `Logout (${name})`;
-            } else {
-                authBtnText.innerText = `Login (Guest)`;
-            }
-        }
-
-        function handleAuthAction() {
-            navMenu.classList.remove('active');
-            if (isRegisteredUser) {
-                // Logout
-                localStorage.removeItem('vbr_username');
-                localStorage.removeItem('vbr_password');
-                loginAsGuest();
-            } else {
-                // Open Login Modal
-                openAuthModal();
-            }
-        }
-
-        function openAuthModal() {
-            document.getElementById('authModal').classList.add('active');
-            document.getElementById('authError').style.display = 'none';
-        }
-
-        function closeAuthModal() {
-            document.getElementById('authModal').classList.remove('active');
-        }
-
-        function toggleAuthMode() {
-            isRegisterMode = !isRegisterMode;
-            document.getElementById('modalTitle').innerText = isRegisterMode ? "Register" : "Login";
-            document.getElementById('modalSubmitBtn').innerText = isRegisterMode ? "Register" : "Login";
-            document.getElementById('emailGroup').style.display = isRegisterMode ? "block" : "none";
-            document.getElementById('modalToggle').innerHTML = isRegisterMode ? 
-                `Already have an account? <span>Login</span>` : 
-                `Don't have an account? <span>Register</span>`;
-            document.getElementById('authError').style.display = 'none';
-        }
-
-        function submitAuthForm(e) {
-            e.preventDefault();
-            const username = document.getElementById('authUsername').value;
-            const password = document.getElementById('authPassword').value;
-            const email = document.getElementById('authEmail').value;
-            const errorElem = document.getElementById('authError');
-
-            errorElem.style.display = 'none';
-
-            if (isRegisterMode) {
-                const regRequest = {
-                    TitleId: PLAYFAB_TITLE_ID,
-                    Username: username,
-                    Password: password,
-                    Email: email,
-                    DisplayName: username
-                };
-
-                PlayFabClientSDK.RegisterPlayFabUser(regRequest, (result, error) => {
-                    if (error) {
-                        errorElem.innerText = error.errorMessage || "Registration failed.";
-                        errorElem.style.display = 'block';
-                        return;
-                    }
-                    localStorage.setItem('vbr_username', username);
-                    localStorage.setItem('vbr_password', password);
-                    isRegisteredUser = true;
-                    updateAuthUI(username, true);
-                    closeAuthModal();
+                // Ensure Display Name is updated to "Website"
+                PlayFabClientSDK.UpdateUserTitleDisplayName({ DisplayName: "Website" }, (nameResult, nameError) => {
                     fetchPlayFabLeaderboard(currentStatistic);
                 });
-            } else {
-                const loginRequest = {
-                    TitleId: PLAYFAB_TITLE_ID,
-                    Username: username,
-                    Password: password
-                };
-
-                PlayFabClientSDK.LoginWithPlayFab(loginRequest, (result, error) => {
-                    if (error) {
-                        errorElem.innerText = error.errorMessage || "Invalid username or password.";
-                        errorElem.style.display = 'block';
-                        return;
-                    }
-                    localStorage.setItem('vbr_username', username);
-                    localStorage.setItem('vbr_password', password);
-                    isRegisteredUser = true;
-                    updateAuthUI(username, true);
-                    closeAuthModal();
-                    fetchPlayFabLeaderboard(currentStatistic);
-                });
-            }
-        }
-
-        function handlePlayFabError(message) {
-            document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff4500; padding: 20px;">${message}</td></tr>`;
+            });
         }
 
         function switchLeaderboard(statName, btnElement) {
             currentStatistic = statName;
             
+            // Update active styles on tabs
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
 
+            // Update column header text dynamically based on selected statistic
             let headerText = "Kills";
             if (statName === "PlayerElo") headerText = "Elo";
             if (statName === "MVP") headerText = "MVPs";
@@ -523,6 +346,7 @@
             if (statName === "AeroCoins_Stat") headerText = "Aero-Coins";
             document.getElementById("stat-header").innerText = headerText;
 
+            // Fetch new stats
             fetchPlayFabLeaderboard(statName);
         }
 
@@ -531,7 +355,7 @@
 
             const leaderboardRequest = {
                 StartPosition: 0,
-                MaxResultsCount: 10,
+                MaxResultsCount: 3, // Restrict display to top 3
                 StatisticName: statisticName
             };
 
@@ -561,13 +385,17 @@
                 return;
             }
 
-            entries.forEach(entry => {
+            // Only take the top 3 entries in case PlayFab returns more
+            const topThreeEntries = entries.slice(0, 3);
+
+            topThreeEntries.forEach(entry => {
                 const rank = entry.Position + 1;
                 let rankClass = "";
                 if (rank === 1) rankClass = "rank-1";
                 if (rank === 2) rankClass = "rank-2";
                 if (rank === 3) rankClass = "rank-3";
 
+                // Fallback to PlayFabId if DisplayName is not set
                 const displayName = entry.DisplayName || entry.PlayFabId;
                 
                 const tr = document.createElement("tr");
