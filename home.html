@@ -307,7 +307,7 @@
             const loginRequest = {
                 TitleId: PLAYFAB_TITLE_ID,
                 CreateAccount: true,
-                CustomId: "Website_Guest_User"
+                CustomId: "Website_Reader"
             };
 
             PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
@@ -321,11 +321,7 @@
                     document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff4500; padding: 20px;">Failed to connect to PlayFab backend.</td></tr>`;
                     return;
                 }
-
-                // Ensure Display Name is updated to "Website"
-                PlayFabClientSDK.UpdateUserTitleDisplayName({ DisplayName: "Website" }, (nameResult, nameError) => {
-                    fetchPlayFabLeaderboard(currentStatistic);
-                });
+                fetchPlayFabLeaderboard(currentStatistic);
             });
         }
 
