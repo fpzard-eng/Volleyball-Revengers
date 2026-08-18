@@ -6,9 +6,10 @@
     <title>Global Leaderboard - Volleyball Revengers</title>
     <!-- PlayFab JS SDK -->
     <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
+    <!-- Centralized PlayFab Shared Auth Script -->
+    <script src="playfab-auth.js"></script>
     <style>
         :root {
-            /* Dark Mode: Blue, White Gradient & Holographic */
             --bg-main: #060709;
             --bg-card: rgba(18, 22, 31, 0.85);
             --bg-card-hover: rgba(28, 34, 48, 0.95);
@@ -29,7 +30,6 @@
             --badge-border: rgba(30, 144, 216, 0.4);
         }
         [data-theme="light"] {
-            /* Light Mode: Red, Black Gradient & Holographic */
             --bg-main: #f9f3f3;
             --bg-card: rgba(255, 255, 255, 0.95);
             --bg-card-hover: rgba(255, 255, 255, 1);
@@ -89,20 +89,6 @@
         a:hover { color: var(--border-glow); text-decoration: underline; }
 
         .nav-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; font-weight: 700; }
-
-        .guest-badge {
-            background: var(--bg-card);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            padding: 6px 14px;
-            font-size: 0.85rem;
-            font-weight: 800;
-            border-radius: 10px;
-            box-shadow: var(--shadow-card);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
 
         .leaderboard-card {
             background: var(--bg-card);
@@ -286,36 +272,18 @@
     </div>
 
     <script>
-        const PLAYFAB_TITLE_ID = "1E90D8";
         let currentStatistic = "Kills"; 
         let cachedLeaderboardData = []; 
 
-        function getOrCreateGuestId() {
-            let id = localStorage.getItem("vbr_guest_custom_id");
-            if (!id) {
-                id = "Guest_" + Math.random().toString(36).substring(2, 11) + "_" + Date.now();
-                localStorage.setItem("vbr_guest_custom_id", id);
-            }
-            return id;
-        }
-
-        function initPlayFab() {
-            PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
-
-            const guestId = getOrCreateGuestId();
-            const loginRequest = {
-                TitleId: PLAYFAB_TITLE_ID,
-                CreateAccount: true,
-                CustomId: guestId
-            };
-
-            PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
-                if (error) {
+        function initializePageSession() {
+            initPlayFabSession(
+                (result) => {
+                    fetchPlayFabLeaderboard(currentStatistic);
+                },
+                (error) => {
                     document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff4500; padding: 20px;">Failed to connect to PlayFab backend.</td></tr>`;
-                    return;
                 }
-                fetchPlayFabLeaderboard(currentStatistic);
-            });
+            );
         }
 
         function switchLeaderboard(statName, btnElement) {
@@ -414,7 +382,7 @@
             });
         }
 
-        window.onload = initPlayFab;
+        window.onload = initializePageSession;
     </script>
 </body>
 </html>
