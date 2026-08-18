@@ -6,6 +6,8 @@
     <title>Volleyball Revengers | Mugen Revolution Studios</title>
     <!-- PlayFab JS SDK -->
     <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
+    <!-- Shared PlayFab Auth Module -->
+    <script src="playfab-auth.js"></script>
     <style>
         :root {
             /* Dark Mode: Blue, White Gradient & Holographic */
@@ -271,7 +273,7 @@
 
     <div id="lizard-container">🦎</div>
 
-    <script>
+     <script>
         const menuBtn = document.getElementById('menuToggleBtn');
         const navMenu = document.getElementById('navMenu');
         
@@ -296,39 +298,20 @@
         themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-        // PlayFab Integration (Automatic Guest Session)
-        const PLAYFAB_TITLE_ID = "1E90D8";
         let currentStatistic = "Kills";
 
-        function getOrCreateGuestId() {
-            let id = localStorage.getItem("vbr_guest_custom_id");
-            if (!id) {
-                id = "Guest_" + Math.random().toString(36).substring(2, 11) + "_" + Date.now();
-                localStorage.setItem("vbr_guest_custom_id", id);
-            }
-            return id;
-        }
-
-        function initPlayFabGuestSession() {
-            PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
-
-            const guestId = getOrCreateGuestId();
-            const loginRequest = {
-                TitleId: PLAYFAB_TITLE_ID,
-                CreateAccount: true,
-                CustomId: guestId
-            };
-
-            PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
-                if (error) {
+        function initializeHomePageSession() {
+            initPlayFabSession(
+                (result) => {
+                    fetchPlayFabLeaderboard(currentStatistic);
+                },
+                (error) => {
                     document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Unable to connect to PlayFab servers.</td></tr>`;
-                    return;
                 }
-                fetchPlayFabLeaderboard(currentStatistic);
-            });
+            );
         }
 
-        function switchLeaderboard(statName, btnElement) {
+         function switchLeaderboard(statName, btnElement) {
             currentStatistic = statName;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
@@ -343,9 +326,9 @@
             document.getElementById("stat-header").innerText = headerText;
 
             fetchPlayFabLeaderboard(statName);
-        }
+         }
 
-        function fetchPlayFabLeaderboard(statisticName) {
+         function fetchPlayFabLeaderboard(statisticName) {
             document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading rankings...</td></tr>`;
 
             const leaderboardRequest = {
@@ -369,9 +352,9 @@
                     document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No leaderboard data available.</td></tr>`;
                 }
             });
-        }
+         }
 
-        function renderLeaderboard(entries) {
+         function renderLeaderboard(entries) {
             const tbody = document.getElementById("leaderboard-body");
             tbody.innerHTML = "";
 
@@ -399,7 +382,7 @@
             });
         }
 
-        window.onload = initPlayFabGuestSession;
+        window.onload = initializeHomePageSession;
 
         // Easter Egg: Lizard Crawler
         const lizardContainer = document.getElementById('lizard-container');
