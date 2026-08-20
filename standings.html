@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Leaderboard - Volleyball Revengers</title>
+    <title>National Tournament Standings - Volleyball Revengers</title>
     <!-- PlayFab JS SDK -->
     <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
     <!-- Centralized PlayFab Shared Auth Script -->
@@ -201,6 +201,25 @@
             background-color: rgba(255, 255, 255, 0.02);
         }
 
+        .status-box {
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        .status-title {
+            font-size: 1.25rem;
+            color: var(--text-main);
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .status-subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+
         .rank-1 { color: #ffd700; font-weight: 900; filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4)); }
         .rank-2 { color: #c0c0c0; font-weight: 900; filter: drop-shadow(0 0 8px rgba(192, 192, 192, 0.4)); }
         .rank-3 { color: #cd7f32; font-weight: 900; filter: drop-shadow(0 0 8px rgba(205, 127, 50, 0.4)); }
@@ -230,22 +249,18 @@
         <a href="home">← Back to Home</a>
     </div>
     
-    <h1 class="holo-text">Global Leaderboards</h1>
-    <p style="margin-bottom: 20px;">Live rankings updated directly from PlayFab backend services for <strong>Volleyball Revengers</strong>.</p>
+    <h1 class="holo-text">National Tournament Standings</h1>
+    <p style="margin-bottom: 20px;">Official competitive standings for <strong>Volleyball Revengers National Tournament</strong>!</p>
 
     <div class="leaderboard-card">
         <div class="controls">
             <div class="tab-buttons">
-                <button class="tab-btn active" onclick="switchLeaderboard('Kills', this)">Most Kills</button>
-                <button class="tab-btn" onclick="switchLeaderboard('PlayerElo', this)">Most Elo</button>
-                <button class="tab-btn" onclick="switchLeaderboard('MVP', this)">Most MVPs</button>
-                <button class="tab-btn" onclick="switchLeaderboard('Wins', this)">Most Wins</button>
-                <button class="tab-btn" onclick="switchLeaderboard('Assists', this)">Most Assists</button>
-                <button class="tab-btn" onclick="switchLeaderboard('Blocks', this)">Most Blocks</button>
-                <button class="tab-btn" onclick="switchLeaderboard('AeroCoins_Stat', this)">Most Aero-Coins</button>
+                <button class="tab-btn active" onclick="switchStage('Qualification', this)">Qualification Round</button>
+                <button class="tab-btn" onclick="switchStage('League', this)">League Stage</button>
+                <button class="tab-btn" onclick="switchStage('Playoffs', this)">Playoff Finals</button>
             </div>
             <div class="search-container">
-                <input type="text" id="player-search" class="search-input" placeholder="Search player..." oninput="filterLeaderboard()">
+                <input type="text" id="club-search" class="search-input" placeholder="Search club..." oninput="filterStandings()">
             </div>
         </div>
 
@@ -254,13 +269,20 @@
                 <thead>
                     <tr>
                         <th>Rank</th>
-                        <th>Player</th>
-                        <th id="stat-header">Kills</th>
+                        <th>Club Name</th>
+                        <th>Wins</th>
+                        <th>Losses</th>
+                        <th id="stat-header">Points</th>
                     </tr>
                 </thead>
                 <tbody id="leaderboard-body">
                     <tr>
-                        <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;">Connecting to PlayFab...</td>
+                        <td colspan="5">
+                            <div class="status-box">
+                                <div class="status-title">The Tournament is being setup</div>
+                                <div class="status-subtitle">Qualifications and pool brackets are currently being finalized. Check back soon!</div>
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -268,98 +290,90 @@
     </div>
 
     <div class="contact-box">
-        Official player rankings powered by <strong>PlayFab Backend Services</strong>. Questions or dispute inquiries? Email <a href="mailto:mugenrevolutionstudios@gmail.com">mugenrevolutionstudios@gmail.com</a>.
+        Official National Tournament standings powered by <strong>PlayFab Backend Services</strong>. Questions or dispute inquiries? Email <a href="mailto:mugenrevolutionstudios@gmail.com">mugenrevolutionstudios@gmail.com</a>.
     </div>
 
     <script>
-        let currentStatistic = "Kills"; 
-        let cachedLeaderboardData = []; 
+        let currentStage = "Qualification"; 
+        let cachedStandingsData = []; 
 
         function initializePageSession() {
             initPlayFabSession(
                 (result) => {
-                    fetchPlayFabLeaderboard(currentStatistic);
+                    fetchNTStandings(currentStage);
                 },
                 (error) => {
-                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff4500; padding: 20px;">Failed to connect to PlayFab backend.</td></tr>`;
+                    renderSetupMessage("Failed to connect to PlayFab backend services.");
                 }
             );
         }
 
-        function switchLeaderboard(statName, btnElement) {
-            currentStatistic = statName;
+        function switchStage(stageName, btnElement) {
+            currentStage = stageName;
             
-            const searchInput = document.getElementById("player-search");
+            const searchInput = document.getElementById("club-search");
             if (searchInput) searchInput.value = "";
 
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
 
-            let headerText = "Kills";
-            if (statName === "PlayerElo") headerText = "Elo Rating";
-            if (statName === "MVP") headerText = "MVPs";
-            if (statName === "Wins") headerText = "Wins";
-            if (statName === "Assists") headerText = "Assists";
-            if (statName === "Blocks") headerText = "Blocks";
-            if (statName === "AeroCoins_Stat") headerText = "Aero-Coins";
-            document.getElementById("stat-header").innerText = headerText;
-
-            fetchPlayFabLeaderboard(statName);
+            fetchNTStandings(stageName);
         }
 
-        function fetchPlayFabLeaderboard(statisticName) {
-            document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Loading rankings...</td></tr>`;
-
+        function fetchNTStandings(stageName) {
             const leaderboardRequest = {
                 StartPosition: 0,
                 MaxResultsCount: 100, 
-                StatisticName: statisticName
+                StatisticName: `NT_${stageName}_Points`
             };
 
             PlayFabClientSDK.GetLeaderboard(leaderboardRequest, (lbResult, lbError) => {
-                if (lbError) {
-                    let errorMsg = "No entries found for this statistic yet.";
-                    if (statisticName === "AeroCoins_Stat") {
-                        errorMsg = "Aero-Coins leaderboard requires mirroring currency to a Statistic in PlayFab.";
-                    }
-                    cachedLeaderboardData = [];
-                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">${errorMsg}</td></tr>`;
+                if (lbError || !lbResult || !lbResult.data || !lbResult.data.Leaderboard || lbResult.data.Leaderboard.length === 0) {
+                    cachedStandingsData = [];
+                    renderSetupMessage("The Tournament is being setup", "Qualifications and pool brackets are currently being finalized. Check back soon!");
                     return;
                 }
-                if (lbResult && lbResult.data && lbResult.data.Leaderboard) {
-                    cachedLeaderboardData = lbResult.data.Leaderboard;
-                    filterLeaderboard();
-                } else {
-                    cachedLeaderboardData = [];
-                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">No leaderboard data available.</td></tr>`;
-                }
+                cachedStandingsData = lbResult.data.Leaderboard;
+                filterStandings();
             });
         }
 
-        function filterLeaderboard() {
-            const query = document.getElementById("player-search").value.toLowerCase().trim();
+        function renderSetupMessage(title, subtitle = "") {
+            document.getElementById("leaderboard-body").innerHTML = `
+                <tr>
+                    <td colspan="5">
+                        <div class="status-box">
+                            <div class="status-title">${title}</div>
+                            ${subtitle ? `<div class="status-subtitle">${subtitle}</div>` : ''}
+                        </div>
+                    </td>
+                </tr>`;
+        }
+
+        function filterStandings() {
+            const query = document.getElementById("club-search").value.toLowerCase().trim();
             if (!query) {
-                renderLeaderboard(cachedLeaderboardData);
+                renderStandings(cachedStandingsData);
                 return;
             }
 
-            const filtered = cachedLeaderboardData.filter(entry => {
+            const filtered = cachedStandingsData.filter(entry => {
                 const name = (entry.DisplayName || entry.PlayFabId).toLowerCase();
                 return name.includes(query);
             });
 
-            renderLeaderboard(filtered, query);
+            renderStandings(filtered, query);
         }
 
-        function renderLeaderboard(entries, searchQuery = "") {
+        function renderStandings(entries, searchQuery = "") {
             const tbody = document.getElementById("leaderboard-body");
             tbody.innerHTML = "";
 
             if (entries.length === 0) {
                 const msg = searchQuery 
-                    ? `No players found matching "${searchQuery}".` 
-                    : "No players ranked yet.";
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">${msg}</td></tr>`;
+                    ? `No clubs found matching "${searchQuery}".` 
+                    : "The Tournament is being setup";
+                renderSetupMessage(msg);
                 return;
             }
 
@@ -376,6 +390,8 @@
                 tr.innerHTML = `
                     <td class="${rankClass}">#${rank}</td>
                     <td>${displayName}</td>
+                    <td>0</td>
+                    <td>0</td>
                     <td>${entry.StatValue.toLocaleString()}</td>
                 `;
                 tbody.appendChild(tr);
