@@ -57,7 +57,7 @@
             color: var(--text-muted); 
             padding: 40px 20px; 
             line-height: 1.7; 
-            max-width: 900px; 
+            max-width: 950px; 
             margin: 0 auto; 
             min-height: 100vh;
             display: flex;
@@ -220,6 +220,17 @@
             margin: 0 auto;
         }
 
+        .badge-stage {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            background: var(--badge-bg);
+            border: 1px solid var(--badge-border);
+            color: var(--text-main);
+        }
+
         .rank-1 { color: #ffd700; font-weight: 900; filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4)); }
         .rank-2 { color: #c0c0c0; font-weight: 900; filter: drop-shadow(0 0 8px rgba(192, 192, 192, 0.4)); }
         .rank-3 { color: #cd7f32; font-weight: 900; filter: drop-shadow(0 0 8px rgba(205, 127, 50, 0.4)); }
@@ -250,14 +261,14 @@
     </div>
     
     <h1 class="holo-text">National Tournament Standings</h1>
-    <p style="margin-bottom: 20px;">Official competitive standings for <strong>Volleyball Revengers National Tournament</strong>!</p>
+    <p style="margin-bottom: 20px;">Official competitive standings for <strong>Volleyball Revengers</strong> tournaments.</p>
 
     <div class="leaderboard-card">
         <div class="controls">
             <div class="tab-buttons">
-                <button class="tab-btn active" onclick="switchStage('Qualification', this)">Qualification Round</button>
-                <button class="tab-btn" onclick="switchStage('League', this)">League Stage</button>
-                <button class="tab-btn" onclick="switchStage('Playoffs', this)">Playoff Finals</button>
+                <button class="tab-btn active" onclick="switchStage('Qualification', this)">Stage 1: Qualification (36 Clubs)</button>
+                <button class="tab-btn" onclick="switchStage('RoundOf16', this)">Stage 2: Round of 16</button>
+                <button class="tab-btn" onclick="switchStage('Finals', this)">Stage 3: Finals</button>
             </div>
             <div class="search-container">
                 <input type="text" id="club-search" class="search-input" placeholder="Search club..." oninput="filterStandings()">
@@ -268,11 +279,11 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Rank</th>
+                        <th>Rank / Seed</th>
                         <th>Club Name</th>
-                        <th>Wins</th>
-                        <th>Losses</th>
-                        <th id="stat-header">Points</th>
+                        <th id="format-header">Match Style</th>
+                        <th>Status</th>
+                        <th id="stat-header">Score / Result</th>
                     </tr>
                 </thead>
                 <tbody id="leaderboard-body">
@@ -280,7 +291,7 @@
                         <td colspan="5">
                             <div class="status-box">
                                 <div class="status-title">The Tournament is being setup</div>
-                                <div class="status-subtitle">Qualifications and pool brackets are currently being finalized. Check back soon!</div>
+                                <div class="status-subtitle">Qualifications and bracket seeds are currently being finalized. Check back soon!</div>
                             </div>
                         </td>
                     </tr>
@@ -317,6 +328,13 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
 
+            const formatHeader = document.getElementById("format-header");
+            if (stageName === "Finals") {
+                formatHeader.innerText = "Match Format (Best of 5)";
+            } else {
+                formatHeader.innerText = "Match Format (Best of 3)";
+            }
+
             fetchNTStandings(stageName);
         }
 
@@ -324,13 +342,13 @@
             const leaderboardRequest = {
                 StartPosition: 0,
                 MaxResultsCount: 100, 
-                StatisticName: `NT_${stageName}_Points`
+                StatisticName: `NT_${stageName}_Standings`
             };
 
             PlayFabClientSDK.GetLeaderboard(leaderboardRequest, (lbResult, lbError) => {
                 if (lbError || !lbResult || !lbResult.data || !lbResult.data.Leaderboard || lbResult.data.Leaderboard.length === 0) {
                     cachedStandingsData = [];
-                    renderSetupMessage("The Tournament is being setup", "Qualifications and pool brackets are currently being finalized. Check back soon!");
+                    renderSetupMessage("The Tournament is being setup", "Qualifications and bracket seeds are currently being finalized. Check back soon!");
                     return;
                 }
                 cachedStandingsData = lbResult.data.Leaderboard;
@@ -385,14 +403,26 @@
                 if (rank === 3) rankClass = "rank-3";
 
                 const displayName = entry.DisplayName || entry.PlayFabId;
+                const matchStyle = currentStage === "Finals" ? "Best 3-of-5" : "Best 2-of-3";
                 
+                let statusBadge = `<span class="badge-stage">Registered</span>`;
+                if (currentStage === "Qualification") {
+                    statusBadge = rank <= 16 ? `<span class="badge-stage" style="border-color:#22c55e; color:#22c55e;">Qualified</span>` : `<span class="badge-stage">Play-In / KO</span>`;
+                } else if (currentStage === "RoundOf16") {
+                    statusBadge = rank <= 8 ? `<span class="badge-stage" style="border-color:#22c55e; color:#22c55e;">Elite 8</span>` : `<span class="badge-stage">Eliminated</span>`;
+                } else if (currentStage === "Finals") {
+                    if (rank === 1) statusBadge = `<span class="badge-stage" style="border-color:#ffd700; color:#ffd700;">Champion</span>`;
+                    else if (rank === 2) statusBadge = `<span class="badge-stage" style="border-color:#c0c0c0; color:#c0c0c0;">Runner-Up</span>`;
+                    else if (rank === 3) statusBadge = `<span class="badge-stage" style="border-color:#cd7f32; color:#cd7f32;">3rd Place</span>`;
+                }
+
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
                     <td class="${rankClass}">#${rank}</td>
                     <td>${displayName}</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>${entry.StatValue.toLocaleString()}</td>
+                    <td>${matchStyle}</td>
+                    <td>${statusBadge}</td>
+                    <td>${entry.StatValue.toLocaleString()} pts</td>
                 `;
                 tbody.appendChild(tr);
             });
