@@ -28,6 +28,9 @@
             --btn-hover: linear-gradient(135deg, #24a0f0 0%, #1a82c4 100%);
             --badge-bg: rgba(30, 144, 216, 0.15);
             --badge-border: rgba(30, 144, 216, 0.4);
+            --dev-badge-bg: rgba(234, 179, 8, 0.15);
+            --dev-badge-border: rgba(234, 179, 8, 0.5);
+            --dev-badge-text: #facc15;
         }
         [data-theme="light"] {
             --bg-main: #f9f3f3;
@@ -48,6 +51,9 @@
             --btn-hover: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
             --badge-bg: rgba(220, 38, 38, 0.1);
             --badge-border: rgba(220, 38, 38, 0.3);
+            --dev-badge-bg: rgba(217, 119, 6, 0.15);
+            --dev-badge-border: rgba(217, 119, 6, 0.5);
+            --dev-badge-text: #b45309;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; }
         
@@ -89,6 +95,77 @@
         a:hover { color: var(--border-glow); text-decoration: underline; }
 
         .nav-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; font-weight: 700; }
+
+        .dev-banner {
+            background: var(--bg-card);
+            border: 1px solid var(--dev-badge-border);
+            border-left: 4px solid var(--dev-badge-text);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            box-shadow: var(--shadow-card);
+        }
+        .dev-banner-text {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+        .dev-tag {
+            background: var(--dev-badge-bg);
+            border: 1px solid var(--dev-badge-border);
+            color: var(--dev-badge-text);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .format-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow-card);
+        }
+        .format-title {
+            color: var(--text-main);
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .format-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .format-step {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px 15px;
+        }
+        .format-step-title {
+            color: var(--border-glow);
+            font-weight: 800;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .format-step-desc {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
 
         .leaderboard-card {
             background: var(--bg-card);
@@ -216,7 +293,7 @@
         .status-subtitle {
             color: var(--text-muted);
             font-size: 0.95rem;
-            max-width: 450px;
+            max-width: 500px;
             margin: 0 auto;
         }
 
@@ -261,7 +338,36 @@
     </div>
     
     <h1 class="holo-text">National Tournament Standings</h1>
-    <p style="margin-bottom: 20px;">Official competitive standings for <strong>Volleyball Revengers</strong> tournaments.</p>
+    <p style="margin-bottom: 20px;">Official competitive standings & tournament pipeline for <strong>Volleyball Revengers</strong>.</p>
+
+    <!-- In-Development Notification Banner -->
+    <div class="dev-banner">
+        <div class="dev-banner-text">
+            <strong>System Notice:</strong> Club Leaderboard, NT Standings, & Aero-Stadium are currently <span style="color: var(--dev-badge-text);">In Development</span>.
+        </div>
+        <div class="dev-tag">In Development</div>
+    </div>
+
+    <!-- NT Tournament Structure Overview Card -->
+    <div class="format-card">
+        <div class="format-title">
+            🏆 Official National Tournament (NT) Format
+        </div>
+        <div class="format-grid">
+            <div class="format-step">
+                <div class="format-step-title">Stage 1: Qualification Round</div>
+                <div class="format-step-desc">Top 36 Clubs compete in a Single-Elimination Tournament (Best of 3 sets: 25-25-15). <strong>16 teams survive</strong> to advance.</div>
+            </div>
+            <div class="format-step">
+                <div class="format-step-title">Stage 2: Round of 16</div>
+                <div class="format-step-desc">16 teams enter a random draw pool for 8 knockout matches (Best of 3 sets: 25-25-15). <strong>8 teams survive</strong> to reach the Finals.</div>
+            </div>
+            <div class="format-step">
+                <div class="format-step-title">Stage 3: Finals (Elite Eight)</div>
+                <div class="format-step-desc">Best of 5 sets (FIVB / NCAA style). Features Quarterfinals, Semifinals, 3rd Place Match (SF Losers), and National Championship Match.</div>
+            </div>
+        </div>
+    </div>
 
     <div class="leaderboard-card">
         <div class="controls">
@@ -291,7 +397,7 @@
                         <td colspan="5">
                             <div class="status-box">
                                 <div class="status-title">The Tournament is being setup</div>
-                                <div class="status-subtitle">Qualifications and bracket seeds are currently being finalized. Check back soon!</div>
+                                <div class="status-subtitle">Aero-Stadium & National Tournament systems are currently in active development. Bracket seeds will populate here once active!</div>
                             </div>
                         </td>
                     </tr>
@@ -314,7 +420,7 @@
                     fetchNTStandings(currentStage);
                 },
                 (error) => {
-                    renderSetupMessage("Failed to connect to PlayFab backend services.");
+                    renderSetupMessage("System Offline", "Aero-Stadium & National Tournament backend integrations are currently in development.");
                 }
             );
         }
@@ -348,7 +454,7 @@
             PlayFabClientSDK.GetLeaderboard(leaderboardRequest, (lbResult, lbError) => {
                 if (lbError || !lbResult || !lbResult.data || !lbResult.data.Leaderboard || lbResult.data.Leaderboard.length === 0) {
                     cachedStandingsData = [];
-                    renderSetupMessage("The Tournament is being setup", "Qualifications and bracket seeds are currently being finalized. Check back soon!");
+                    renderSetupMessage("The Tournament is being setup", "Aero-Stadium & National Tournament features are in development. Bracket seeds will appear here once live!");
                     return;
                 }
                 cachedStandingsData = lbResult.data.Leaderboard;
