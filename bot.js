@@ -1,11 +1,36 @@
 require('dotenv').config();
+const http = require('http');
+const https = require('https');
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const PlayFab = require('playfab-sdk');
 
-// Configure PlayFab Title
+// --- Keep-Alive Web Server (Render Port Binding & Anti-Sleep) ---
+const PORT = process.env.PORT || 10000;
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('VBR Assistant Coach Bot is running 24/7!');
+}).listen(PORT, () => {
+    console.log(`🌐 Keep-alive server listening on port ${PORT}`);
+});
+
+// Self-ping every 5 minutes (300,000 ms) to prevent Render from idling
+setInterval(() => {
+    const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
+    if (renderAppUrl) {
+        const requester = renderAppUrl.startsWith('https') ? https : http;
+        requester.get(renderAppUrl, (res) => {
+            console.log(`[Heartbeat] Ping sent to ${renderAppUrl} - Status: ${res.statusCode}`);
+        }).on('error', (err) => {
+            console.error(`[Heartbeat Error] ${err.message}`);
+        });
+    }
+}, 300000);
+
+// --- Configure PlayFab Credentials ---
 PlayFab.settings.titleId = process.env.PLAYFAB_TITLE_ID;
 PlayFab.settings.developerSecretKey = process.env.PLAYFAB_SECRET_KEY;
 
+// --- Initialize Discord Client ---
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -94,7 +119,6 @@ const commands = [
         .setName('manage-club')
         .setDescription('Link to manage your club settings'),
 
-    // Added /msg (Administrator Only)
     new SlashCommandBuilder()
         .setName('msg')
         .setDescription('Sends a custom message to a specific channel (Admin Only)')
@@ -129,7 +153,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
 function getPlayFabUserByDiscordId(discordId) {
     return new Promise((resolve) => {
         PlayFab.PlayFabServer.GetUserAccountInfo({
-            PlayFabId: discordId // Assuming PlayFabId or custom data holds Discord ID linkage
+            PlayFabId: discordId
         }, (error, result) => {
             if (error || !result || !result.data) resolve(null);
             else resolve(result.data.UserInfo);
@@ -158,8 +182,25 @@ async function enforceAccountLink(interaction) {
 }
 
 // --- Bot Ready Listener ---
-client.once('ready', () => {
+client.once('clientReady', () => {
     console.log(`🤖 VBR Assistant Coach is online as ${client.user.tag}!`);
+});
+
+// --- Connection Recovery & Error Handlers ---
+client.on('shardDisconnect', (event, id) => {
+    console.warn(`[Network Warning] Shard ${id} disconnected. Reconnecting...`);
+});
+
+client.on('shardError', (error, id) => {
+    console.error(`[Network Error] Connection error on shard ${id}:`, error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[Unhandled Rejection]', reason);
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('[Uncaught Exception]', error);
 });
 
 // --- Interaction Handler ---
@@ -187,7 +228,6 @@ client.on('interactionCreate', async interaction => {
         const user = await enforceAccountLink(interaction);
         if (!user) return;
 
-        // Fetch club details (Example embed structure for linked user)
         const embed = new EmbedBuilder()
             .setTitle(`🏐 Club Info: Spikers United`)
             .setColor('#1E90D8')
@@ -229,7 +269,6 @@ client.on('interactionCreate', async interaction => {
 
     // 6. /online-players
     if (commandName === 'online-players') {
-        // Fetch active player counts
         const embed = new EmbedBuilder()
             .setTitle('🌐 Active Players Online')
             .setDescription('Currently **0 Players** are active on the courts!')
@@ -335,4 +374,5 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+// Log in the client
 client.login(process.env.DISCORD_BOT_TOKEN);
