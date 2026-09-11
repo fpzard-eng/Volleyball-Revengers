@@ -87,18 +87,23 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
 
 function executeLinkCloudScript(code, discordUser) {
     return new Promise((resolve) => {
+        const payload = {
+            Code: String(code),
+            DiscordUserId: String(discordUser.id),
+            DiscordUsername: String(discordUser.username)
+        };
+
         PlayFab.PlayFabServer.ExecuteCloudScript({
             FunctionName: "LinkDiscord",
-            FunctionParameter: {
-                Code: String(code),
-                DiscordUserId: String(discordUser.id),
-                DiscordUsername: String(discordUser.username)
-            }
+            FunctionParameter: payload
         }, (error, result) => {
             if (error) {
+                console.error("[PlayFab Server API Error]:", error);
                 resolve({ success: false, message: error.errorMessage || 'PlayFab API error.' });
             } else if (result && result.data && result.data.FunctionResult) {
                 resolve(result.data.FunctionResult);
+            } else if (result && result.data && result.data.Error) {
+                resolve({ success: false, message: result.data.Error.Message || 'CloudScript Execution Error.' });
             } else {
                 resolve({ success: false, message: 'Invalid response from PlayFab CloudScript.' });
             }
