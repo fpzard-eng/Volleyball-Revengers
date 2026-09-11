@@ -1,0 +1,14 @@
+{
+  "name": "vbr-assistant-coach",
+  "version": "1.0.0",
+  "description": "Discord Bot for Volleyball Revengers",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
+    "playfab-sdk": "^2.112.240213"
+  }
+}
