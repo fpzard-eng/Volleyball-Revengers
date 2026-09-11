@@ -90,9 +90,9 @@ function executeLinkCloudScript(code, discordUser) {
         PlayFab.PlayFabServer.ExecuteCloudScript({
             FunctionName: "LinkDiscord",
             FunctionParameter: {
-                Code: code,
-                DiscordUserId: discordUser.id,
-                DiscordUsername: discordUser.username
+                Code: String(code),
+                DiscordUserId: String(discordUser.id),
+                DiscordUsername: String(discordUser.username)
             }
         }, (error, result) => {
             if (error) {
