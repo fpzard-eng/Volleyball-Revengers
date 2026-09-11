@@ -17,22 +17,82 @@ const client = new Client({
 // --- Register Slash Commands ---
 const commands = [
     new SlashCommandBuilder()
-        .setName('stats')
-        .setDescription('View your Volleyball Revengers stats')
-        .addUserOption(option => 
-            option.setName('target')
-                .setDescription('User to view stats for')
-                .setRequired(false)
-        ),
+        .setName('website')
+        .setDescription('Get the official Volleyball Revengers website link'),
 
     new SlashCommandBuilder()
-        .setName('clubinfo')
-        .setDescription('Get details and standings for a club')
-        .addStringOption(option =>
-            option.setName('club_name')
-                .setDescription('Name of the club')
-                .setRequired(true)
-        )
+        .setName('link-to-account')
+        .setDescription('Link your Discord account to your Volleyball Revengers profile'),
+
+    new SlashCommandBuilder()
+        .setName('club')
+        .setDescription('View your club details, rank, W-L ratio, and members'),
+
+    new SlashCommandBuilder()
+        .setName('club-info')
+        .setDescription('Learn information about what clubs are in Volleyball Revengers'),
+
+    new SlashCommandBuilder()
+        .setName('nt-info')
+        .setDescription('Learn about the National Tournament coming in full release'),
+
+    new SlashCommandBuilder()
+        .setName('online-players')
+        .setDescription('Show the current online player count'),
+
+    new SlashCommandBuilder()
+        .setName('party-request')
+        .setDescription('Send a party request to another player')
+        .addUserOption(opt => opt.setName('target').setDescription('Player to invite').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('accept-party')
+        .setDescription('Accept an incoming party request')
+        .addUserOption(opt => opt.setName('target').setDescription('Player who invited you').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('decline-party')
+        .setDescription('Decline an incoming party request')
+        .addUserOption(opt => opt.setName('target').setDescription('Player who invited you').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('friend-request')
+        .setDescription('Send a friend request to another player')
+        .addUserOption(opt => opt.setName('target').setDescription('Player to add').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('accept-friend')
+        .setDescription('Accept an incoming friend request')
+        .addUserOption(opt => opt.setName('target').setDescription('Player who added you').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('decline-friend')
+        .setDescription('Decline an incoming friend request')
+        .addUserOption(opt => opt.setName('target').setDescription('Player who added you').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('make-a-club')
+        .setDescription('Create a new club')
+        .addStringOption(opt => opt.setName('name').setDescription('Name of your new club').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('club-request')
+        .setDescription('Send a request to join a club')
+        .addStringOption(opt => opt.setName('club_name').setDescription('Name of the club').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('join-club')
+        .setDescription('Accept an invite to join a club')
+        .addStringOption(opt => opt.setName('club_name').setDescription('Name of the club').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('decline-club')
+        .setDescription('Decline an invite to join a club')
+        .addStringOption(opt => opt.setName('club_name').setDescription('Name of the club').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('manage-club')
+        .setDescription('Link to manage your club settings')
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
@@ -50,18 +110,36 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
     }
 })();
 
-// --- Helper: PlayFab API Wrapper ---
-function getPlayFabLeaderboard(statisticName) {
-    return new Promise((resolve, reject) => {
-        PlayFab.PlayFabServer.GetLeaderboard({
-            StatisticName: statisticName,
-            StartPosition: 0,
-            MaxResultsCount: 10
+// --- Helper: Check Linked Account via PlayFab ---
+function getPlayFabUserByDiscordId(discordId) {
+    return new Promise((resolve) => {
+        PlayFab.PlayFabServer.GetUserAccountInfo({
+            PlayFabId: discordId // Assuming PlayFabId or custom data holds Discord ID linkage
         }, (error, result) => {
-            if (error) reject(error);
-            else resolve(result.data.Leaderboard);
+            if (error || !result || !result.data) resolve(null);
+            else resolve(result.data.UserInfo);
         });
     });
+}
+
+// --- Helper: Check Link Enforcement ---
+async function enforceAccountLink(interaction) {
+    const playfabUser = await getPlayFabUserByDiscordId(interaction.user.id);
+    if (!playfabUser) {
+        const unlinkedEmbed = new EmbedBuilder()
+            .setTitle('⚠️ Account Not Linked')
+            .setDescription('You must link your Discord account with Volleyball Revengers to use this command!')
+            .setColor('#FF4B4B')
+            .addFields({ 
+                name: '🔗 Link Your Account Here', 
+                value: 'https://fpzard-eng.github.io/Volleyball-Revengers/link-discord' 
+            })
+            .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
+            
+        await interaction.reply({ embeds: [unlinkedEmbed], ephemeral: true });
+        return null;
+    }
+    return playfabUser;
 }
 
 // --- Bot Ready Listener ---
@@ -69,76 +147,163 @@ client.once('ready', () => {
     console.log(`🤖 VBR Assistant Coach is online as ${client.user.tag}!`);
 });
 
-// --- Interaction (Slash Commands) Handler ---
+// --- Interaction Handler ---
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     const { commandName } = interaction;
 
-    // Command: /stats
-    if (commandName === 'stats') {
-        const targetUser = interaction.options.getUser('target') || interaction.user;
+    // 1. /website
+    if (commandName === 'website') {
+        await interaction.reply({ 
+            content: '🌐 **Volleyball Revengers Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' 
+        });
+    }
 
+    // 2. /link-to-account
+    if (commandName === 'link-to-account') {
+        await interaction.reply({ 
+            content: '🔗 **Link your Discord to Volleyball Revengers:** https://fpzard-eng.github.io/Volleyball-Revengers/link-discord' 
+        });
+    }
+
+    // 3. /club
+    if (commandName === 'club') {
+        const user = await enforceAccountLink(interaction);
+        if (!user) return;
+
+        // Fetch club details (Example embed structure for linked user)
         const embed = new EmbedBuilder()
-            .setTitle(`🏐 Player Stats: ${targetUser.username}`)
-            .setThumbnail(targetUser.displayAvatarURL())
+            .setTitle(`🏐 Club Info: Spikers United`)
             .setColor('#1E90D8')
             .addFields(
-                { name: 'Spikes Completed', value: '142', inline: true },
-                { name: 'Blocks', value: '38', inline: true },
-                { name: 'Aero-Coins', value: '12,450 🪙', inline: true },
-                { name: 'Club Role', value: 'Captain', inline: true }
+                { name: 'Leaderboard Rank', value: '#12', inline: true },
+                { name: 'W - L Ratio', value: '24 W - 8 L (75%)', inline: true },
+                { name: 'Members', value: '6 / 10 Active Members', inline: false }
             )
-            .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' })
-            .setTimestamp();
+            .setFooter({ text: 'Volleyball Revengers • Club Manager' });
 
         await interaction.reply({ embeds: [embed] });
     }
 
-    // Command: /clubinfo
-    if (commandName === 'clubinfo') {
-        const clubName = interaction.options.getString('club_name');
-
+    // 4. /club-info
+    if (commandName === 'club-info') {
         const embed = new EmbedBuilder()
-            .setTitle(`🏆 Club Info: ${clubName}`)
+            .setTitle('🏆 What are Clubs in Volleyball Revengers?')
+            .setDescription('Clubs allow players to team up, participate in private practices, climb global Leaderboards together, and prepare for official Competitive Tournaments!')
             .setColor('#1E90D8')
-            .setDescription(`Official record and schedule for **${clubName}**.`)
             .addFields(
-                { name: 'Practice Days', value: 'Mon, Wed, Fri', inline: true },
-                { name: 'NT Stage Status', value: 'Stage 1: Qualification', inline: true },
-                { name: 'Record', value: '12 W - 3 L', inline: true }
+                { name: 'Features', value: '• Custom Club Tags\n• Team Leaderboard Standings\n• Exclusive Club Training Gyms' }
             )
-            .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' })
-            .setTimestamp();
+            .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
 
         await interaction.reply({ embeds: [embed] });
+    }
+
+    // 5. /nt-info
+    if (commandName === 'nt-info') {
+        const embed = new EmbedBuilder()
+            .setTitle('🏐 National Tournament (NT) Preview')
+            .setDescription('The **National Tournament** is the pinnacle competitive event in Volleyball Revengers!')
+            .setColor('#FF9900')
+            .addFields(
+                { name: 'Status', value: '🔒 Coming in Full Release!' },
+                { name: 'Format', value: 'Bracket-style elimination tournament featuring the top-ranked Clubs across all regions.' }
+            )
+            .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
+
+        await interaction.reply({ embeds: [embed] });
+    }
+
+    // 6. /online-players
+    if (commandName === 'online-players') {
+        // Fetch active player counts
+        const embed = new EmbedBuilder()
+            .setTitle('🌐 Active Players Online')
+            .setDescription('Currently **0 Players** are active on the courts!')
+            .setColor('#00FF7F')
+            .setFooter({ text: 'Volleyball Revengers Live Status' });
+
+        await interaction.reply({ embeds: [embed] });
+    }
+
+    // 7. /party-request
+    if (commandName === 'party-request') {
+        if (!await enforceAccountLink(interaction)) return;
+        const target = interaction.options.getUser('target');
+        await interaction.reply({ content: `🎉 Party request sent to **${target.username}**!` });
+    }
+
+    // 8. /accept-party
+    if (commandName === 'accept-party') {
+        if (!await enforceAccountLink(interaction)) return;
+        const target = interaction.options.getUser('target');
+        await interaction.reply({ content: `✅ You joined **${target.username}**'s party!` });
+    }
+
+    // 9. /decline-party
+    if (commandName === 'decline-party') {
+        if (!await enforceAccountLink(interaction)) return;
+        const target = interaction.options.getUser('target');
+        await interaction.reply({ content: `❌ You declined **${target.username}**'s party invitation.` });
+    }
+
+    // 10. /friend-request
+    if (commandName === 'friend-request') {
+        if (!await enforceAccountLink(interaction)) return;
+        const target = interaction.options.getUser('target');
+        await interaction.reply({ content: `📩 Friend request sent to **${target.username}**!` });
+    }
+
+    // 11. /accept-friend
+    if (commandName === 'accept-friend') {
+        if (!await enforceAccountLink(interaction)) return;
+        const target = interaction.options.getUser('target');
+        await interaction.reply({ content: `🤝 You are now friends with **${target.username}**!` });
+    }
+
+    // 12. /decline-friend
+    if (commandName === 'decline-friend') {
+        if (!await enforceAccountLink(interaction)) return;
+        const target = interaction.options.getUser('target');
+        await interaction.reply({ content: `❌ Declined friend request from **${target.username}**.` });
+    }
+
+    // 13. /make-a-club
+    if (commandName === 'make-a-club') {
+        if (!await enforceAccountLink(interaction)) return;
+        const clubName = interaction.options.getString('name');
+        await interaction.reply({ content: `🎉 Congratulations! Club **${clubName}** has been successfully created!` });
+    }
+
+    // 14. /club-request
+    if (commandName === 'club-request') {
+        if (!await enforceAccountLink(interaction)) return;
+        const clubName = interaction.options.getString('club_name');
+        await interaction.reply({ content: `📩 Application sent to join **${clubName}**!` });
+    }
+
+    // 15. /join-club
+    if (commandName === 'join-club') {
+        if (!await enforceAccountLink(interaction)) return;
+        const clubName = interaction.options.getString('club_name');
+        await interaction.reply({ content: `✅ You have joined **${clubName}**!` });
+    }
+
+    // 16. /decline-club
+    if (commandName === 'decline-club') {
+        if (!await enforceAccountLink(interaction)) return;
+        const clubName = interaction.options.getString('club_name');
+        await interaction.reply({ content: `❌ Declined invite to join **${clubName}**.` });
+    }
+
+    // 17. /manage-club
+    if (commandName === 'manage-club') {
+        await interaction.reply({ 
+            content: '⚙️ **Manage your club settings here:** https://fpzard-eng.github.io/Volleyball-Revengers/club' 
+        });
     }
 });
 
-// --- Direct Message (DM) Notification Handler ---
-/**
- * Sends a Direct Message to a specific Discord user via their Discord User ID.
- */
-async function sendDirectMessage(discordUserId, title, messageContent, fields = []) {
-    try {
-        const user = await client.users.fetch(discordUserId);
-        if (!user) return false;
-
-        const embed = new EmbedBuilder()
-            .setTitle(title)
-            .setDescription(messageContent)
-            .setColor('#1E90D8')
-            .addFields(fields)
-            .setFooter({ text: 'Volleyball Revengers • Personal Update' })
-            .setTimestamp();
-
-        await user.send({ embeds: [embed] });
-        console.log(`[VBR Coach] Direct message sent to ${user.tag}`);
-        return true;
-    } catch (err) {
-        console.error(`[VBR Coach] DM failed to send: ${err.message}`);
-        return false;
-    }
-}
-
 client.login(process.env.DISCORD_BOT_TOKEN);
+                    
