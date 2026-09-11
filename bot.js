@@ -82,8 +82,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
 })();
 
 // --- Helper Promises for PlayFab API ---
-
-// 1. Correctly fetch PlayFab User via Title Internal Data Mapping
 function getPlayFabUserByDiscordId(discordId) {
     return new Promise((resolve) => {
         PlayFab.PlayFabServer.GetTitleInternalData({
