@@ -190,11 +190,8 @@ client.on('interactionCreate', async interaction => {
     if (commandName === 'club-info') {
         const embed = new EmbedBuilder()
             .setTitle('🏆 What are Clubs in Volleyball Revengers?')
-            .setDescription('Clubs allow players to team up, participate in private practices, climb global Leaderboards together, and prepare for official Competitive Tournaments!')
+            .setDescription('Clubs allow players to team up, participate in Scrimmages, climb global Leaderboards together, and prepare for official Competitive Tournaments!')
             .setColor('#1E90D8')
-            .addFields(
-                { name: 'Features', value: '• Custom Club Tags\n• Team Leaderboard Standings\n• Exclusive Club Training Gyms' }
-            )
             .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
 
         await interaction.reply({ embeds: [embed] });
@@ -300,7 +297,7 @@ client.on('interactionCreate', async interaction => {
     // 17. /manage-club
     if (commandName === 'manage-club') {
         await interaction.reply({ 
-            content: '⚙️ **Manage your club settings here:** https://fpzard-eng.github.io/Volleyball-Revengers/club' 
+            content: '⚙️ **Manage your club settings here:** https://fpzard-eng.github.io/Volleyball-Revengers/manage-club' 
         });
     }
 });
