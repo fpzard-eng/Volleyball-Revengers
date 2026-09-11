@@ -84,15 +84,18 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
 // --- Helper Promises for PlayFab API ---
 function getPlayFabUserByDiscordId(discordId) {
     return new Promise((resolve) => {
+        // Sanitize incoming discordId string
+        const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
+
         PlayFab.PlayFabServer.GetTitleInternalData({
-            Keys: [`DiscordUserMap_${discordId}`]
+            Keys: [`DiscordUserMap_${cleanDiscordId}`]
         }, (error, result) => {
-            if (error || !result || !result.data || !result.data.Data[`DiscordUserMap_${discordId}`]) {
+            if (error || !result || !result.data || !result.data.Data[`DiscordUserMap_${cleanDiscordId}`]) {
                 resolve(null);
                 return;
             }
 
-            const playFabId = result.data.Data[`DiscordUserMap_${discordId}`];
+            const playFabId = result.data.Data[`DiscordUserMap_${cleanDiscordId}`];
 
             PlayFab.PlayFabServer.GetUserAccountInfo({
                 PlayFabId: playFabId
