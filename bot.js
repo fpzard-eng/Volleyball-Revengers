@@ -138,26 +138,36 @@ function getPlayerData(playFabId) {
 function getPlayFabUserByDiscordId(discordId) {
     return new Promise((resolve) => {
         const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
-
-        PlayFab.PlayFabServer.GetTitleInternalData({
-            Keys: [`DiscordUserMap_${cleanDiscordId}`]
+        PlayFab.PlayFabServer.GetUserAccountInfo({
+            TitleDisplayName: null,
+            PlayFabId: null,
+            ServerCustomId: "DISCORD_" + cleanDiscordId
         }, (error, result) => {
-            if (error || !result || !result.data || !result.data.Data[`DiscordUserMap_${cleanDiscordId}`]) {
-                resolve({ user: null, reason: 'NOT_LINKED' });
+            if (error || !result || !result.data || !result.data.UserInfo) {
+                PlayFab.PlayFabServer.GetTitleInternalData({
+                    Keys: [`DiscordUserMap_${cleanDiscordId}`]
+                }, (internalErr, internalResult) => {
+                    const fallbackPlayFabId = internalResult?.data?.Data?.[`DiscordUserMap_${cleanDiscordId}`];
+                    
+                    if (!fallbackPlayFabId) {
+                        resolve({ user: null, reason: 'NOT_LINKED' });
+                        return;
+                    }
+
+                    PlayFab.PlayFabServer.GetUserAccountInfo({
+                        PlayFabId: fallbackPlayFabId
+                    }, (accErr, accResult) => {
+                        if (accErr || !accResult || !accResult.data) {
+                            resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId: fallbackPlayFabId });
+                        } else {
+                            resolve({ user: accResult.data.UserInfo, reason: 'SUCCESS' });
+                        }
+                    });
+                });
                 return;
             }
 
-            const playFabId = result.data.Data[`DiscordUserMap_${cleanDiscordId}`];
-
-            PlayFab.PlayFabServer.GetUserAccountInfo({
-                PlayFabId: playFabId
-            }, (accErr, accResult) => {
-                if (accErr || !accResult || !accResult.data) {
-                    resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId });
-                } else {
-                    resolve({ user: accResult.data.UserInfo, reason: 'SUCCESS' });
-                }
-            });
+            resolve({ user: result.data.UserInfo, reason: 'SUCCESS' });
         });
     });
 }
