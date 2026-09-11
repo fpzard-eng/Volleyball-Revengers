@@ -29,6 +29,7 @@ setInterval(() => {
 // --- Configure PlayFab Credentials ---
 PlayFab.settings.titleId = process.env.PLAYFAB_TITLE_ID;
 PlayFab.settings.developerSecretKey = process.env.PLAYFAB_SECRET_KEY;
+PlayFab.settings.productionUrl = `https://${process.env.PLAYFAB_TITLE_ID}.playfabapi.com`;
 
 // --- Initialize Discord Client ---
 const client = new Client({
