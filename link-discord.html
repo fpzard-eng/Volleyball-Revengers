@@ -122,7 +122,7 @@
 
     <!-- Step 1: Discord Login -->
     <div id="login-section">
-        <button class="discord-btn" onclick="loginWithDiscord()">Login with Discord</button>
+        <button class="discord-btn" type="button" onclick="loginWithDiscord()">Login with Discord</button>
     </div>
 
     <!-- Step 2: Enter 6-Digit In-Game Code -->
@@ -132,7 +132,7 @@
             <span id="username" style="font-weight: 700;"></span>
         </div>
         <input type="text" id="link-code" class="code-input" maxlength="7" placeholder="123-456" oninput="formatCodeInput(this)">
-        <button class="submit-btn" onclick="verifyAndLinkCode()">Link to Discord</button>
+        <button class="submit-btn" type="button" onclick="verifyAndLinkCode()">Link to Discord</button>
     </div>
 
     <div id="status-msg" style="margin-top: 15px; font-size: 0.9rem; font-weight: 600;"></div>
@@ -141,7 +141,6 @@
 <script>
     const DISCORD_CLIENT_ID = "1547808053078925332"; 
     const PLAYFAB_TITLE_ID = "1E90D8D";
-    const REDIRECT_URI = encodeURIComponent(window.location.origin + window.location.pathname);
 
     let discordUserData = null;
 
@@ -159,21 +158,29 @@
     };
 
     function loginWithDiscord() {
-        const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=identify`;
-        window.location.href = discordAuthUrl;
+        try {
+            const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+            const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token&scope=identify`;
+            window.location.assign(discordAuthUrl);
+        } catch (e) {
+            showError("Failed to initiate Discord login. Ensure you are running on a web server.");
+        }
     }
 
     function fetchDiscordUser(token) {
+        setStatus("Fetching Discord profile...");
         fetch('https://discord.com/api/users/@me', {
             headers: { authorization: `Bearer ${token}` }
         })
         .then(res => res.json())
         .then(user => {
+            if (!user || !user.id) throw new Error("Invalid user response");
             discordUserData = user;
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('code-section').style.display = 'flex';
             document.getElementById('username').innerText = user.username;
             document.getElementById('avatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+            setStatus("");
         })
         .catch(err => {
             showError("Failed to fetch Discord user profile.");
@@ -200,7 +207,6 @@
 
         setStatus("Authenticating session with PlayFab...");
 
-        // Authenticate web session using the verification code as CustomId anchor
         PlayFabClientAPI.LoginWithCustomID({
             CustomId: code,
             CreateAccount: false
@@ -212,7 +218,6 @@
 
             setStatus("Verifying code and linking Discord...");
 
-            // Execute CloudScript under authenticated session
             PlayFabClientAPI.ExecuteCloudScript({
                 FunctionName: "LinkDiscord",
                 FunctionParameter: {
@@ -233,7 +238,6 @@
                     return;
                 }
 
-                // Direct UserData write fallback if CloudScript execution is disabled
                 fallbackUpdateUserData();
             });
         });
