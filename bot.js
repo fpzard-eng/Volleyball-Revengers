@@ -85,31 +85,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
     }
 })();
 
-// --- Helper Promises for PlayFab API ---
-function getPlayFabUserByDiscordId(discordId) {
-    return new Promise((resolve) => {
-        const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
-
-        PlayFab.PlayFabServer.GetTitleInternalData({
-            Keys: [`DiscordUserMap_${cleanDiscordId}`]
-        }, (error, result) => {
-            if (error || !result || !result.data || !result.data.Data[`DiscordUserMap_${cleanDiscordId}`]) {
-                resolve(null);
-                return;
-            }
-
-            const playFabId = result.data.Data[`DiscordUserMap_${cleanDiscordId}`];
-
-            PlayFab.PlayFabServer.GetUserAccountInfo({
-                PlayFabId: playFabId
-            }, (accErr, accResult) => {
-                if (accErr || !accResult || !accResult.data) resolve(null);
-                else resolve(accResult.data.UserInfo);
-            });
-        });
-    });
-}
-
 function executeLinkCloudScript(code, discordUser) {
     return new Promise((resolve) => {
         PlayFab.PlayFabServer.ExecuteCloudScript({
@@ -155,31 +130,73 @@ function getPlayerData(playFabId) {
     });
 }
 
-// --- Helper: Check Link Enforcement ---
+function getPlayFabUserByDiscordId(discordId) {
+    return new Promise((resolve) => {
+        const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
+
+        PlayFab.PlayFabServer.GetTitleInternalData({
+            Keys: [`DiscordUserMap_${cleanDiscordId}`]
+        }, (error, result) => {
+            // Case 1: Discord ID is not mapped (User has not linked their account)
+            if (error || !result || !result.data || !result.data.Data[`DiscordUserMap_${cleanDiscordId}`]) {
+                resolve({ user: null, reason: 'NOT_LINKED' });
+                return;
+            }
+
+            const playFabId = result.data.Data[`DiscordUserMap_${cleanDiscordId}`];
+
+            PlayFab.PlayFabServer.GetUserAccountInfo({
+                PlayFabId: playFabId
+            }, (accErr, accResult) => {
+                // Case 2: ID mapped, but PlayFab couldn't find/fetch the account
+                if (accErr || !accResult || !accResult.data) {
+                    resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId });
+                } else {
+                    resolve({ user: accResult.data.UserInfo, reason: 'SUCCESS' });
+                }
+            });
+        });
+    });
+}
+
 async function enforceAccountLink(interaction, targetUser = null) {
     const userToVerify = targetUser || interaction.user;
-    const playfabUser = await getPlayFabUserByDiscordId(userToVerify.id);
+    const isSelf = userToVerify.id === interaction.user.id;
     
-    if (!playfabUser) {
-        const isSelf = userToVerify.id === interaction.user.id;
-        const unlinkedEmbed = new EmbedBuilder()
-            .setTitle('⚠️ Account Not Linked')
-            .setDescription(isSelf 
-                ? 'You must link your Discord account with Volleyball Revengers to use this command! Use `/link <code>` with your in-game code.' 
-                : `**${userToVerify.username}** has not linked their Discord account to Volleyball Revengers yet!`)
-            .setColor('#FF4B4B')
-            .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
-            
-        if (interaction.deferred || interaction.replied) {
-            await interaction.editReply({ embeds: [unlinkedEmbed] });
-        } else {
-            await interaction.reply({ embeds: [unlinkedEmbed], ephemeral: true });
+    const { user, reason, playFabId } = await getPlayFabUserByDiscordId(userToVerify.id);
+
+    if (!user) {
+        let title = '⚠️ Account Not Linked';
+        let description = isSelf 
+            ? 'You have not linked your Discord account to Volleyball Revengers yet! Use `/link <code>` with your in-game code.' 
+            : `**${userToVerify.username}** has not linked their Discord account yet!`;
+
+        // Differentiate between unlinked vs API lookup failure
+        if (reason === 'ACCOUNT_NOT_FOUND') {
+            title = '❓ Account Not Found';
+            description = `Linked PlayFab ID \`${playFabId}\` could not be retrieved from the server. The account may have been removed or lost.`;
         }
-        
+
+        const responseEmbed = new EmbedBuilder()
+            .setTitle(title)
+            .setDescription(description)
+            .setColor('#FF4B4B')
+            .addFields({ 
+                name: '🔗 Link Page', 
+                value: 'https://fpzard-eng.github.io/Volleyball-Revengers/link-discord' 
+            })
+            .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
+
+        if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ embeds: [responseEmbed] });
+        } else {
+            await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+        }
+
         return null;
     }
-    
-    return playfabUser;
+
+    return user;
 }
 
 // --- Bot Ready Listener ---
