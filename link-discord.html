@@ -120,12 +120,10 @@
     <h2>Link Your Discord</h2>
     <p>Connect your Discord account to your Volleyball Revengers profile.</p>
 
-    <!-- Step 1: Discord Login -->
     <div id="login-section">
         <button class="discord-btn" type="button" onclick="loginWithDiscord()">Login with Discord</button>
     </div>
 
-    <!-- Step 2: Enter 6-Digit In-Game Code -->
     <div id="code-section" class="input-group">
         <div class="user-profile">
             <img id="avatar" class="user-avatar" src="" alt="Avatar">
@@ -143,6 +141,10 @@
     const PLAYFAB_TITLE_ID = "1E90D8D";
 
     let discordUserData = null;
+
+    if (typeof PlayFab !== "undefined") {
+        PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
+    }
 
     window.onload = function() {
         const fragment = new URLSearchParams(window.location.hash.slice(1));
@@ -188,7 +190,7 @@
         }
     }
 
-    async function verifyAndLinkCode() {
+    function verifyAndLinkCode() {
         const rawCode = document.getElementById('link-code').value.trim();
         const code = rawCode.includes('-') ? rawCode : (rawCode.length === 6 ? `${rawCode.slice(0,3)}-${rawCode.slice(3)}` : rawCode);
 
@@ -197,39 +199,37 @@
             return;
         }
 
-        setStatus("Verifying code with server...");
+        setStatus("Authenticating session with PlayFab...");
 
-        try {
-            // Execute CloudScript handler via direct REST endpoint (No local PlayFab login required)
-            const response = await fetch(`https://${PLAYFAB_TITLE_ID}.playfabapi.com/Client/ExecuteCloudScript`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    FunctionName: "LinkDiscord",
-                    FunctionParameter: {
-                        Code: code,
-                        DiscordUserId: discordUserData.id,
-                        DiscordUsername: discordUserData.username
-                    }
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.code === 200 && data.data?.FunctionResult?.success) {
-                handleSuccessState("Successfully linked your Discord account!");
-            } else if (data.data?.FunctionResult?.alreadyLinked) {
-                handleSuccessState("Account is already linked! Redirecting...");
-            } else {
-                const errorMsg = data.data?.FunctionResult?.message || "Invalid or expired code. Please check your in-game code.";
-                showError(errorMsg);
+        // Authenticate the web browser session to allow user data updates
+        PlayFabClientAPI.LoginWithCustomID({
+            CustomId: "DISCORD_LINK_" + code,
+            CreateAccount: true
+        }, (loginResult, loginError) => {
+            if (loginError) {
+                showError("Failed to authenticate with PlayFab session.");
+                return;
             }
-        } catch (err) {
-            console.error("Link Error:", err);
-            showError("Network error connecting to PlayFab. Please try again.");
-        }
+
+            setStatus("Saving Discord connection...");
+
+            // Post the user's Discord ID into PlayFab UserData so Unity can poll it
+            PlayFabClientAPI.UpdateUserData({
+                Data: {
+                    "DiscordLinked": "true",
+                    "DiscordUserId": discordUserData.id,
+                    "DiscordUsername": discordUserData.username,
+                    "PendingDiscordCode": code
+                }
+            }, (updateResult, updateError) => {
+                if (updateError) {
+                    showError("Failed to save Discord profile to server.");
+                    return;
+                }
+
+                handleSuccessState("Successfully linked your Discord account!");
+            });
+        });
     }
 
     function setStatus(msg) {
