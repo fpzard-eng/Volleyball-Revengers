@@ -189,15 +189,6 @@
         }
     }
 
-    function parsePlayFabValue(val) {
-        if (!val) return "";
-        try {
-            return JSON.parse(val);
-        } catch (e) {
-            return val;
-        }
-    }
-
     function verifyAndLinkCode() {
         const rawCode = document.getElementById('link-code').value.trim();
         const code = rawCode.includes('-') ? rawCode : (rawCode.length === 6 ? `${rawCode.slice(0,3)}-${rawCode.slice(3)}` : rawCode);
@@ -207,38 +198,9 @@
             return;
         }
 
-        setStatus("Verifying code with PlayFab...");
+        setStatus("Authenticating session with PlayFab...");
 
-        // Try executing CloudScript first
-        PlayFabClientAPI.ExecuteCloudScript({
-            FunctionName: "LinkDiscord",
-            FunctionParameter: {
-                Code: code,
-                DiscordUserId: discordUserData.id,
-                DiscordUsername: discordUserData.username
-            }
-        }, (result, error) => {
-            const resData = result?.data?.FunctionResult;
-
-            if (!error && resData && resData.success) {
-                handleSuccessState("Successfully linked your Discord account!");
-                return;
-            }
-
-            if (resData && resData.alreadyLinked) {
-                handleSuccessState("Account is already linked! Redirecting...");
-                return;
-            }
-
-            // Fallback: Authenticate web session using Custom ID derived from code or user identity
-            loginAndLinkClientFallback(code);
-        });
-    }
-
-    function loginAndLinkClientFallback(code) {
-        setStatus("Verifying code and completing link...");
-
-        // Authenticate the web client to gain write permissions for player UserData
+        // Authenticate web session using the verification code as CustomId anchor
         PlayFabClientAPI.LoginWithCustomID({
             CustomId: code,
             CreateAccount: false
@@ -248,22 +210,50 @@
                 return;
             }
 
-            // Save the linked status directly to PlayFab UserData
-            PlayFabClientAPI.UpdateUserData({
-                Data: {
-                    "DiscordLinked": "\"true\"",
-                    "DiscordUserId": `\"${discordUserData.id}\"`,
-                    "DiscordUsername": `\"${discordUserData.username}\"`,
-                    "PendingDiscordCode": "\"\""
+            setStatus("Verifying code and linking Discord...");
+
+            // Execute CloudScript under authenticated session
+            PlayFabClientAPI.ExecuteCloudScript({
+                FunctionName: "LinkDiscord",
+                FunctionParameter: {
+                    Code: code,
+                    DiscordUserId: discordUserData.id,
+                    DiscordUsername: discordUserData.username
                 }
-            }, (updateResult, updateError) => {
-                if (updateError) {
-                    showError("Failed to save Discord link data.");
+            }, (result, error) => {
+                const resData = result?.data?.FunctionResult;
+
+                if (!error && resData && resData.success) {
+                    handleSuccessState("Successfully linked your Discord account!");
                     return;
                 }
 
-                handleSuccessState("Successfully linked your Discord account!");
+                if (resData && resData.alreadyLinked) {
+                    handleSuccessState("Account is already linked! Redirecting...");
+                    return;
+                }
+
+                // Direct UserData write fallback if CloudScript execution is disabled
+                fallbackUpdateUserData();
             });
+        });
+    }
+
+    function fallbackUpdateUserData() {
+        PlayFabClientAPI.UpdateUserData({
+            Data: {
+                "DiscordLinked": "\"true\"",
+                "DiscordUserId": `\"${discordUserData.id}\"`,
+                "DiscordUsername": `\"${discordUserData.username}\"`,
+                "PendingDiscordCode": "\"\""
+            }
+        }, (updateResult, updateError) => {
+            if (updateError) {
+                showError("Failed to save Discord link data.");
+                return;
+            }
+
+            handleSuccessState("Successfully linked your Discord account!");
         });
     }
 
