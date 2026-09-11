@@ -50,6 +50,11 @@ const commands = [
         .setDescription('Link your Discord account to your Volleyball Revengers profile'),
 
     new SlashCommandBuilder()
+        .setName('account')
+        .setDescription('View your Volleyball Revengers profile, stats, physical attributes, and PlayFab info')
+        .addUserOption(opt => opt.setName('target').setDescription('Player profile to view (optional)').setRequired(false)),
+
+    new SlashCommandBuilder()
         .setName('club')
         .setDescription('View your club details, rank, W-L ratio, and members'),
 
@@ -149,7 +154,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
     }
 })();
 
-// --- Helper: Check Linked Account via PlayFab ---
+// --- Helper Promises for PlayFab API ---
 function getPlayFabUserByDiscordId(discordId) {
     return new Promise((resolve) => {
         PlayFab.PlayFabServer.GetUserAccountInfo({
@@ -161,13 +166,41 @@ function getPlayFabUserByDiscordId(discordId) {
     });
 }
 
+function getPlayerStats(playFabId) {
+    return new Promise((resolve) => {
+        PlayFab.PlayFabServer.GetUserStatistics({ PlayFabId: playFabId }, (error, result) => {
+            if (error || !result || !result.data) resolve({});
+            else {
+                const stats = {};
+                result.data.UserStatistics.forEach(stat => {
+                    stats[stat.StatisticName] = stat.Value;
+                });
+                resolve(stats);
+            }
+        });
+    });
+}
+
+function getPlayerData(playFabId) {
+    return new Promise((resolve) => {
+        PlayFab.PlayFabServer.GetUserData({ PlayFabId: playFabId }, (error, result) => {
+            if (error || !result || !result.data) resolve({});
+            else resolve(result.data.Data || {});
+        });
+    });
+}
+
 // --- Helper: Check Link Enforcement ---
-async function enforceAccountLink(interaction) {
-    const playfabUser = await getPlayFabUserByDiscordId(interaction.user.id);
+async function enforceAccountLink(interaction, targetUser = null) {
+    const userToVerify = targetUser || interaction.user;
+    const playfabUser = await getPlayFabUserByDiscordId(userToVerify.id);
     if (!playfabUser) {
+        const isSelf = userToVerify.id === interaction.user.id;
         const unlinkedEmbed = new EmbedBuilder()
             .setTitle('⚠️ Account Not Linked')
-            .setDescription('You must link your Discord account with Volleyball Revengers to use this command!')
+            .setDescription(isSelf 
+                ? 'You must link your Discord account with Volleyball Revengers to use this command!' 
+                : `**${userToVerify.username}** has not linked their Discord account to Volleyball Revengers yet!`)
             .setColor('#FF4B4B')
             .addFields({ 
                 name: '🔗 Link Your Account Here', 
@@ -223,7 +256,61 @@ client.on('interactionCreate', async interaction => {
         });
     }
 
-    // 3. /club
+    // 3. /account
+    if (commandName === 'account') {
+        const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+        const user = await enforceAccountLink(interaction, targetDiscordUser);
+        if (!user) return;
+
+        await interaction.deferReply();
+
+        const playFabId = user.PlayFabId;
+        const displayName = user.TitleInfo?.DisplayName || 'Unknown Player';
+
+        // Fetch statistics & user data parallelly
+        const [stats, userData] = await Promise.all([
+            getPlayerStats(playFabId),
+            getPlayerData(playFabId)
+        ]);
+
+        // Helper fallback for statistics
+        const getStat = (key) => stats[key] ?? 0;
+        const getData = (key) => userData[key]?.Value ?? null;
+
+        // Statistics
+        const playerElo = getStat('PlayerElo');
+        const matchMVPs = getStat('MVP');
+        const wins = getStat('Wins');
+        const matchesPlayed = getStat('MatchesPlayed');
+        const assists = getStat('Assists');
+        const blocks = getStat('Blocks');
+        const kills = getStat('Kills');
+
+        // Physical Traits & Handedness
+        const playerHeight = getStat('PlayerHeight') || getData('PlayerHeight') || 'N/A';
+        const standingReach = getData('StandingReach') || 'N/A';
+        const wingspan = getStat('Wingspan') || getData('Wingspan') || 'N/A';
+        
+        const rawHandedness = getStat('RightHanded');
+        const handednessText = rawHandedness === 1 ? 'Right-Handed 🖐️' : (rawHandedness === 0 ? 'Left-Handed 🤚' : 'N/A');
+
+        const accountEmbed = new EmbedBuilder()
+            .setTitle(`🏐 Player Profile: ${displayName}`)
+            .setColor('#1E90D8')
+            .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
+            .addFields(
+                { name: '🆔 Account Info', value: `**Display Name:** ${displayName}\n**PlayFab ID:** \`${playFabId}\`\n**Player ELO:** ${playerElo}`, inline: false },
+                { name: '📏 Physical Attributes', value: `**Height:** ${playerHeight}\n**Standing Reach:** ${standingReach}\n**Wingspan:** ${wingspan}\n**Handedness:** ${handednessText}`, inline: true },
+                { name: '📊 Performance Stats', value: `**Matches Played:** ${matchesPlayed}\n**Wins:** ${wins}\n**Match MVPs:** ${matchMVPs}`, inline: true },
+                { name: '🎯 In-Game Actions', value: `**Kills:** ${kills}\n**Blocks:** ${blocks}\n**Assists:** ${assists}`, inline: false }
+            )
+            .setFooter({ text: 'Volleyball Revengers • Player Statistics', iconURL: client.user.displayAvatarURL() })
+            .setTimestamp();
+
+        await interaction.editReply({ embeds: [accountEmbed] });
+    }
+
+    // 4. /club
     if (commandName === 'club') {
         const user = await enforceAccountLink(interaction);
         if (!user) return;
@@ -241,7 +328,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ embeds: [embed] });
     }
 
-    // 4. /club-info
+    // 5. /club-info
     if (commandName === 'club-info') {
         const embed = new EmbedBuilder()
             .setTitle('🏆 What are Clubs in Volleyball Revengers?')
@@ -252,7 +339,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ embeds: [embed] });
     }
 
-    // 5. /nt-info
+    // 6. /nt-info
     if (commandName === 'nt-info') {
         const embed = new EmbedBuilder()
             .setTitle('🏐 National Tournament (NT) Preview')
@@ -267,7 +354,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ embeds: [embed] });
     }
 
-    // 6. /online-players
+    // 7. /online-players
     if (commandName === 'online-players') {
         const embed = new EmbedBuilder()
             .setTitle('🌐 Active Players Online')
@@ -278,84 +365,84 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ embeds: [embed] });
     }
 
-    // 7. /party-request
+    // 8. /party-request
     if (commandName === 'party-request') {
         if (!await enforceAccountLink(interaction)) return;
         const target = interaction.options.getUser('target');
         await interaction.reply({ content: `🎉 Party request sent to **${target.username}**!` });
     }
 
-    // 8. /accept-party
+    // 9. /accept-party
     if (commandName === 'accept-party') {
         if (!await enforceAccountLink(interaction)) return;
         const target = interaction.options.getUser('target');
         await interaction.reply({ content: `✅ You joined **${target.username}**'s party!` });
     }
 
-    // 9. /decline-party
+    // 10. /decline-party
     if (commandName === 'decline-party') {
         if (!await enforceAccountLink(interaction)) return;
         const target = interaction.options.getUser('target');
         await interaction.reply({ content: `❌ You declined **${target.username}**'s party invitation.` });
     }
 
-    // 10. /friend-request
+    // 11. /friend-request
     if (commandName === 'friend-request') {
         if (!await enforceAccountLink(interaction)) return;
         const target = interaction.options.getUser('target');
         await interaction.reply({ content: `📩 Friend request sent to **${target.username}**!` });
     }
 
-    // 11. /accept-friend
+    // 12. /accept-friend
     if (commandName === 'accept-friend') {
         if (!await enforceAccountLink(interaction)) return;
         const target = interaction.options.getUser('target');
         await interaction.reply({ content: `🤝 You are now friends with **${target.username}**!` });
     }
 
-    // 12. /decline-friend
+    // 13. /decline-friend
     if (commandName === 'decline-friend') {
         if (!await enforceAccountLink(interaction)) return;
         const target = interaction.options.getUser('target');
         await interaction.reply({ content: `❌ Declined friend request from **${target.username}**.` });
     }
 
-    // 13. /make-a-club
+    // 14. /make-a-club
     if (commandName === 'make-a-club') {
         if (!await enforceAccountLink(interaction)) return;
         const clubName = interaction.options.getString('name');
         await interaction.reply({ content: `🎉 Congratulations! Club **${clubName}** has been successfully created!` });
     }
 
-    // 14. /club-request
+    // 15. /club-request
     if (commandName === 'club-request') {
         if (!await enforceAccountLink(interaction)) return;
         const clubName = interaction.options.getString('club_name');
         await interaction.reply({ content: `📩 Application sent to join **${clubName}**!` });
     }
 
-    // 15. /join-club
+    // 16. /join-club
     if (commandName === 'join-club') {
         if (!await enforceAccountLink(interaction)) return;
         const clubName = interaction.options.getString('club_name');
         await interaction.reply({ content: `✅ You have joined **${clubName}**!` });
     }
 
-    // 16. /decline-club
+    // 17. /decline-club
     if (commandName === 'decline-club') {
         if (!await enforceAccountLink(interaction)) return;
         const clubName = interaction.options.getString('club_name');
         await interaction.reply({ content: `❌ Declined invite to join **${clubName}**.` });
     }
 
-    // 17. /manage-club
+    // 18. /manage-club
     if (commandName === 'manage-club') {
         await interaction.reply({ 
             content: '⚙️ **Manage your club settings here:** https://fpzard-eng.github.io/Volleyball-Revengers/manage-club' 
         });
     }
 
-    // 18. /msg
+    // 19. /msg
     if (commandName === 'msg') {
         if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
             return interaction.reply({ content: '❌ You must have Administrator permissions to use this command.', ephemeral: true });
