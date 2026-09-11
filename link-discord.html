@@ -198,8 +198,6 @@
         return;
     }
 
-    const formattedCode = `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 6)}`;
-
     setStatus("Authenticating session with PlayFab...");
 
     try {
@@ -235,7 +233,7 @@
             body: JSON.stringify({
                 FunctionName: "LinkDiscord",
                 FunctionParameter: {
-                    Code: formattedCode,
+                    Code: digitsOnly, // Pass raw 6-digit string ("123456") to match Shared Group Data keys
                     DiscordUserId: String(discordUserData.id),
                     DiscordUsername: String(discordUserData.username)
                 },
