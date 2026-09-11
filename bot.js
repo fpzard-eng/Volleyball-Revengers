@@ -272,55 +272,55 @@ client.on('interactionCreate', async interaction => {
             }
         }
 
-        else if (commandName === 'account') {
-            // 1. Defer immediately so Discord never times out
-            await interaction.deferReply();
+       else if (commandName === 'account') {
+    await interaction.deferReply();
 
-            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
-            const user = await enforceAccountLink(interaction, targetDiscordUser);
-            if (!user) return; // enforceAccountLink automatically edits the reply with an unlinked embed
+    const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+    
+    const user = await enforceAccountLink(interaction, targetDiscordUser);
+    if (!user) return;
 
-            const playFabId = user.PlayFabId;
-            const displayName = user.TitleInfo?.DisplayName || 'Unknown Player';
+    const playFabId = user.PlayFabId;
+    const displayName = user.TitleInfo?.DisplayName || 'Unknown Player';
 
-            const [stats, userData] = await Promise.all([
-                getPlayerStats(playFabId),
-                getPlayerData(playFabId)
-            ]);
+    const [stats, userData] = await Promise.all([
+        getPlayerStats(playFabId),
+        getPlayerData(playFabId)
+    ]);
 
-            const getStat = (key) => stats[key] ?? 0;
-            const getData = (key) => userData[key]?.Value ?? null;
+    const getStat = (key) => stats[key] ?? 0;
+    const getData = (key) => userData[key]?.Value ?? null;
 
-            const playerElo = getStat('PlayerElo');
-            const matchMVPs = getStat('MVP');
-            const wins = getStat('Wins');
-            const matchesPlayed = getStat('MatchesPlayed');
-            const assists = getStat('Assists');
-            const blocks = getStat('Blocks');
-            const kills = getStat('Kills');
+    const playerElo = getStat('PlayerElo');
+    const matchMVPs = getStat('MVP');
+    const wins = getStat('Wins');
+    const matchesPlayed = getStat('MatchesPlayed');
+    const assists = getStat('Assists');
+    const blocks = getStat('Blocks');
+    const kills = getStat('Kills');
 
-            const playerHeight = getStat('PlayerHeight') || getData('PlayerHeight') || 'N/A';
-            const standingReach = getData('StandingReach') || 'N/A';
-            const wingspan = getStat('Wingspan') || getData('Wingspan') || 'N/A';
-            
-            const rawHandedness = getStat('RightHanded');
-            const handednessText = rawHandedness === 1 ? 'Right-Handed 🖐️' : (rawHandedness === 0 ? 'Left-Handed 🤚' : 'N/A');
+    const playerHeight = getStat('PlayerHeight') || getData('PlayerHeight') || 'N/A';
+    const standingReach = getData('StandingReach') || 'N/A';
+    const wingspan = getStat('Wingspan') || getData('Wingspan') || 'N/A';
+    
+    const rawHandedness = getStat('RightHanded');
+    const handednessText = rawHandedness === 1 ? 'Right-Handed 🖐️' : (rawHandedness === 0 ? 'Left-Handed 🤚' : 'N/A');
 
-            const accountEmbed = new EmbedBuilder()
-                .setTitle(`🏐 Player Profile: ${displayName}`)
-                .setColor('#1E90D8')
-                .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
-                .addFields(
-                    { name: '🆔 Account Info', value: `**Display Name:** ${displayName}\n**PlayFab ID:** \`${playFabId}\`\n**Player ELO:** ${playerElo}`, inline: false },
-                    { name: '📏 Physical Attributes', value: `**Height:** ${playerHeight}\n**Standing Reach:** ${standingReach}\n**Wingspan:** ${wingspan}\n**Handedness:** ${handednessText}`, inline: true },
-                    { name: '📊 Performance Stats', value: `**Matches Played:** ${matchesPlayed}\n**Wins:** ${wins}\n**Match MVPs:** ${matchMVPs}`, inline: true },
-                    { name: '🎯 In-Game Actions', value: `**Kills:** ${kills}\n**Blocks:** ${blocks}\n**Assists:** ${assists}`, inline: false }
-                )
-                .setFooter({ text: 'Volleyball Revengers • Player Statistics', iconURL: client.user.displayAvatarURL() })
-                .setTimestamp();
+    const accountEmbed = new EmbedBuilder()
+        .setTitle(`🏐 Player Profile: ${displayName}`)
+        .setColor('#1E90D8')
+        .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
+        .addFields(
+            { name: '🆔 Account Info', value: `**Display Name:** ${displayName}\n**PlayFab ID:** \`${playFabId}\`\n**Player ELO:** ${playerElo}`, inline: false },
+            { name: '📏 Physical Attributes', value: `**Height:** ${playerHeight}\n**Standing Reach:** ${standingReach}\n**Wingspan:** ${wingspan}\n**Handedness:** ${handednessText}`, inline: true },
+            { name: '📊 Performance Stats', value: `**Matches Played:** ${matchesPlayed}\n**Wins:** ${wins}\n**Match MVPs:** ${matchMVPs}`, inline: true },
+            { name: '🎯 In-Game Actions', value: `**Kills:** ${kills}\n**Blocks:** ${blocks}\n**Assists:** ${assists}`, inline: false }
+        )
+        .setFooter({ text: 'Volleyball Revengers • Player Statistics', iconURL: client.user.displayAvatarURL() })
+        .setTimestamp();
 
-            await interaction.editReply({ embeds: [accountEmbed] });
-        }
+    await interaction.editReply({ embeds: [accountEmbed] });
+}
 
         else if (commandName === 'club') {
             await interaction.deferReply();
