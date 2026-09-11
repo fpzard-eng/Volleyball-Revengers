@@ -3,8 +3,8 @@ const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuild
 const PlayFab = require('playfab-sdk');
 
 // Configure PlayFab Title
-PlayFab.settings.titleId = 1E90D8;
-PlayFab.settings.developerSecretKey = GJMO19S5F7KUQKEYOQWSYZF99JYGFU7F1TRI6OF1RQWQISXKMU;
+PlayFab.settings.titleId = process.env.PLAYFAB_TITLE_ID;
+PlayFab.settings.developerSecretKey = process.env.PLAYFAB_SECRET_KEY;
 
 const client = new Client({
     intents: [
@@ -35,13 +35,13 @@ const commands = [
         )
 ].map(command => command.toJSON());
 
-const rest = new REST({ version: '10' }).setToken(MTU0NzgwODA1MzA3ODkyNTMzMg.GxDtwN.SNpUVGFOsJ3Zznz6Pf1dT5xeHMXhcQrZz3S_yc);
+const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
 
 (async () => {
     try {
         console.log('Registering slash commands...');
         await rest.put(
-            Routes.applicationCommands(1547808053078925332),
+            Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
             { body: commands }
         );
         console.log('Slash commands registered successfully!');
@@ -141,4 +141,4 @@ async function sendDirectMessage(discordUserId, title, messageContent, fields = 
     }
 }
 
-client.login(MTU0NzgwODA1MzA3ODkyNTMzMg.GxDtwN.SNpUVGFOsJ3Zznz6Pf1dT5xeHMXhcQrZz3S_yc);
+client.login(process.env.DISCORD_BOT_TOKEN);
