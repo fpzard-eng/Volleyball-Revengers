@@ -137,7 +137,6 @@ function getPlayFabUserByDiscordId(discordId) {
         PlayFab.PlayFabServer.GetTitleInternalData({
             Keys: [`DiscordUserMap_${cleanDiscordId}`]
         }, (error, result) => {
-            // Case 1: Discord ID is not mapped (User has not linked their account)
             if (error || !result || !result.data || !result.data.Data[`DiscordUserMap_${cleanDiscordId}`]) {
                 resolve({ user: null, reason: 'NOT_LINKED' });
                 return;
@@ -148,7 +147,6 @@ function getPlayFabUserByDiscordId(discordId) {
             PlayFab.PlayFabServer.GetUserAccountInfo({
                 PlayFabId: playFabId
             }, (accErr, accResult) => {
-                // Case 2: ID mapped, but PlayFab couldn't find/fetch the account
                 if (accErr || !accResult || !accResult.data) {
                     resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId });
                 } else {
@@ -181,10 +179,6 @@ async function enforceAccountLink(interaction, targetUser = null) {
             .setTitle(title)
             .setDescription(description)
             .setColor('#FF4B4B')
-            .addFields({ 
-                name: '🔗 Link Page', 
-                value: 'https://fpzard-eng.github.io/Volleyball-Revengers/link-discord' 
-            })
             .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
 
         if (interaction.deferred || interaction.replied) {
