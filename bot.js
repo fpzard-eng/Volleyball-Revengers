@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const PlayFab = require('playfab-sdk');
 
 // Configure PlayFab Title
@@ -92,7 +92,22 @@ const commands = [
 
     new SlashCommandBuilder()
         .setName('manage-club')
-        .setDescription('Link to manage your club settings')
+        .setDescription('Link to manage your club settings'),
+
+    // Added /msg (Administrator Only)
+    new SlashCommandBuilder()
+        .setName('msg')
+        .setDescription('Sends a custom message to a specific channel (Admin Only)')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .addChannelOption(opt => 
+            opt.setName('channel')
+               .setDescription('Target channel for the message')
+               .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+               .setRequired(true))
+        .addStringOption(opt => 
+            opt.setName('message')
+               .setDescription('Message text to send')
+               .setRequired(true))
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
@@ -300,7 +315,24 @@ client.on('interactionCreate', async interaction => {
             content: '⚙️ **Manage your club settings here:** https://fpzard-eng.github.io/Volleyball-Revengers/manage-club' 
         });
     }
+
+    // 18. /msg
+    if (commandName === 'msg') {
+        if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+            return interaction.reply({ content: '❌ You must have Administrator permissions to use this command.', ephemeral: true });
+        }
+
+        const targetChannel = interaction.options.getChannel('channel');
+        const messageText = interaction.options.getString('message');
+
+        try {
+            await targetChannel.send(messageText);
+            await interaction.reply({ content: `✅ Custom message successfully sent to ${targetChannel}!`, ephemeral: true });
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            await interaction.reply({ content: '❌ Failed to send the message. Make sure I have permission to speak in that channel.', ephemeral: true });
+        }
+    }
 });
 
 client.login(process.env.DISCORD_BOT_TOKEN);
-                    
