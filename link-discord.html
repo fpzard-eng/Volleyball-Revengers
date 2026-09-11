@@ -190,7 +190,7 @@
         }
     }
 
-    async function verifyAndLinkCode() {
+   async function verifyAndLinkCode() {
     const digitsOnly = document.getElementById('link-code').value.replace(/\D/g, '');
 
     if (digitsOnly.length !== 6) {
@@ -201,7 +201,7 @@
     setStatus("Authenticating session with PlayFab...");
 
     try {
-        // Step 1: Create a temporary anonymous session to get an Authorization Ticket
+        // Step 1: Create a temporary anonymous session
         const loginResponse = await fetch(`https://${PLAYFAB_TITLE_ID}.playfabapi.com/Client/LoginWithCustomID`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -223,7 +223,7 @@
 
         setStatus("Verifying code with server...");
 
-        // Step 2: Call ExecuteCloudScript WITH the X-Authorization header
+        // Step 2: Call ExecuteCloudScript
         const cloudScriptResponse = await fetch(`https://${PLAYFAB_TITLE_ID}.playfabapi.com/Client/ExecuteCloudScript`, {
             method: 'POST',
             headers: {
@@ -233,7 +233,7 @@
             body: JSON.stringify({
                 FunctionName: "LinkDiscord",
                 FunctionParameter: {
-                    Code: digitsOnly, // Pass raw 6-digit string ("123456") to match Shared Group Data keys
+                    Code: digitsOnly,
                     DiscordUserId: String(discordUserData.id),
                     DiscordUsername: String(discordUserData.username)
                 },
@@ -242,11 +242,15 @@
         });
 
         const data = await cloudScriptResponse.json();
+        const resData = data.data?.FunctionResult;
 
-        if (data.code === 200 && data.data?.FunctionResult?.success) {
+        // Check if successful OR if already linked
+        if (data.code === 200 && resData?.success) {
             handleSuccessState("Successfully linked your Discord account!");
+        } else if (resData?.alreadyLinked) {
+            handleSuccessState("Account is already linked! Redirecting...");
         } else {
-            const errorMsg = data.data?.FunctionResult?.message 
+            const errorMsg = resData?.message 
                 || data.errorMessage 
                 || "Invalid or expired code. Please check your in-game code.";
             showError(errorMsg);
