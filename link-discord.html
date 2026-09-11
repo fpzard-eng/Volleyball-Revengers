@@ -197,51 +197,73 @@
     }
 
     function verifyAndLinkCode() {
-        const rawCode = document.getElementById('link-code').value.trim();
-        const code = rawCode.includes('-') ? rawCode : (rawCode.length === 6 ? `${rawCode.slice(0,3)}-${rawCode.slice(3)}` : rawCode);
+    const rawCode = document.getElementById('link-code').value.trim();
+    const code = rawCode.includes('-') ? rawCode : (rawCode.length === 6 ? `${rawCode.slice(0,3)}-${rawCode.slice(3)}` : rawCode);
 
-        if (code.length !== 7 || !code.includes('-')) {
-            showError("Please enter a valid 6-digit code (e.g. 123-456).");
+    if (code.length !== 7 || !code.includes('-')) {
+        showError("Please enter a valid 6-digit code (e.g. 123-456).");
+        return;
+    }
+
+    setStatus("Verifying code with PlayFab...");
+
+    // Try executing CloudScript directly (if session already exists)
+    PlayFabClientAPI.ExecuteCloudScript({
+        FunctionName: "LinkDiscord",
+        FunctionParameter: {
+            Code: code,
+            DiscordUserId: discordUserData.id,
+            DiscordUsername: discordUserData.username
+        }
+    }, (result, error) => {
+        const resData = result?.data?.FunctionResult;
+
+        if (!error && resData && resData.success) {
+            handleSuccessState("Successfully linked your Discord account!");
             return;
         }
 
-        setStatus("Authenticating session with PlayFab...");
+        if (resData && resData.alreadyLinked) {
+            handleSuccessState("Account is already linked! Redirecting...");
+            return;
+        }
 
-        PlayFabClientAPI.LoginWithCustomID({
-            CustomId: code,
-            CreateAccount: false
-        }, (loginResult, loginError) => {
-            if (loginError) {
-                showError("Invalid or expired code. Please check your in-game code.");
+        // If no active session exists, log in using a general web account or custom session
+        loginWebClientAndSave(code);
+    });
+}
+
+function loginWebClientAndSave(code) {
+    // Authenticate web session using the code as CustomID, allowing creation if needed
+    PlayFabClientAPI.LoginWithCustomID({
+        CustomId: "DISCORD_LINK_" + code,
+        CreateAccount: true
+    }, (loginResult, loginError) => {
+        if (loginError) {
+            showError("Failed to authenticate with PlayFab. Please try again.");
+            console.error(loginError);
+            return;
+        }
+
+        // Save linkage request to PlayFab UserData so your Unity/C# game client can pick it up
+        PlayFabClientAPI.UpdateUserData({
+            Data: {
+                "DiscordLinked": "true",
+                "DiscordUserId": discordUserData.id,
+                "DiscordUsername": discordUserData.username,
+                "PendingDiscordCode": code
+            }
+        }, (updateResult, updateError) => {
+            if (updateError) {
+                showError("Failed to save Discord link data.");
+                console.error(updateError);
                 return;
             }
 
-            setStatus("Verifying code and linking Discord...");
-
-            PlayFabClientAPI.ExecuteCloudScript({
-                FunctionName: "LinkDiscord",
-                FunctionParameter: {
-                    Code: code,
-                    DiscordUserId: discordUserData.id,
-                    DiscordUsername: discordUserData.username
-                }
-            }, (result, error) => {
-                const resData = result?.data?.FunctionResult;
-
-                if (!error && resData && resData.success) {
-                    handleSuccessState("Successfully linked your Discord account!");
-                    return;
-                }
-
-                if (resData && resData.alreadyLinked) {
-                    handleSuccessState("Account is already linked! Redirecting...");
-                    return;
-                }
-
-                fallbackUpdateUserData();
-            });
+            handleSuccessState("Successfully linked your Discord account!");
         });
-    }
+    });
+}
 
     function fallbackUpdateUserData() {
         PlayFabClientAPI.UpdateUserData({
