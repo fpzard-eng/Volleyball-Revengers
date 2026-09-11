@@ -137,25 +137,38 @@ function getPlayerData(playFabId) {
 
 function getPlayFabUserByDiscordId(discordId) {
     return new Promise((resolve) => {
-        const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
-        PlayFab.PlayFabServer.GetTitleInternalData({
-            Keys: [`DiscordUserMap_${cleanDiscordId}`]
-        }, (error, result) => {
-            const mappedPlayFabId = result?.data?.Data?.[`DiscordUserMap_${cleanDiscordId}`];
+        try {
+            const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
 
-            if (error || !mappedPlayFabId) {
-                return resolve({ user: null, reason: 'NOT_LINKED' });
-            }
-
-            PlayFab.PlayFabServer.GetUserAccountInfo({
-                PlayFabId: mappedPlayFabId
-            }, (accErr, accResult) => {
-                if (accErr || !accResult || !accResult.data) {
-                    return resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId: mappedPlayFabId });
+            PlayFab.PlayFabServer.GetTitleInternalData({
+                Keys: [`DiscordUserMap_${cleanDiscordId}`]
+            }, (error, result) => {
+                if (error) {
+                    console.error("[PlayFab Error] GetTitleInternalData:", error);
+                    return resolve({ user: null, reason: 'NOT_LINKED' });
                 }
-                resolve({ user: accResult.data.UserInfo, reason: 'SUCCESS' });
+
+                const mappedPlayFabId = result?.data?.Data?.[`DiscordUserMap_${cleanDiscordId}`];
+
+                if (!mappedPlayFabId) {
+                    return resolve({ user: null, reason: 'NOT_LINKED' });
+                }
+
+                PlayFab.PlayFabServer.GetUserAccountInfo({
+                    PlayFabId: mappedPlayFabId
+                }, (accErr, accResult) => {
+                    if (accErr || !accResult || !accResult.data || !accResult.data.UserInfo) {
+                        console.error("[PlayFab Error] GetUserAccountInfo:", accErr);
+                        return resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId: mappedPlayFabId });
+                    }
+
+                    resolve({ user: accResult.data.UserInfo, reason: 'SUCCESS' });
+                });
             });
-        });
+        } catch (fatalErr) {
+            console.error("[Bot Exception] getPlayFabUserByDiscordId failed:", fatalErr);
+            resolve({ user: null, reason: 'NOT_LINKED' });
+        }
     });
 }
 
