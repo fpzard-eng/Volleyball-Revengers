@@ -114,7 +114,7 @@
 
 <div class="link-card">
     <h2>Link Your Discord</h2>
-    <p>Connect your Discord account to receive Club match notifications & updates.</p>
+    <p>Connect your Discord account to Your VBR account.</p>
 
     <!-- Step 1: Discord Login -->
     <div id="login-section">
@@ -137,72 +137,91 @@
 <script>
     const DISCORD_CLIENT_ID = "1547808053078925332"; 
     const REDIRECT_URI = encodeURIComponent(window.location.origin + window.location.pathname);
-    
+
+ 
     let discordUserData = null;
 
-    // Check if returning from Discord OAuth2 login
-    window.onload = function() {
-        const fragment = new URLSearchParams(window.location.hash.slice(1));
-        const accessToken = fragment.get('access_token');
+// Check if returning from Discord OAuth2 login
+window.onload = function() {
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = fragment.get('access_token');
 
-        if (accessToken) {
-            fetchDiscordUser(accessToken);
-        }
-    };
+    if (accessToken) {
+        fetchDiscordUser(accessToken);
+    }
+};
 
     function loginWithDiscord() {
-        const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=identify`;
-        window.location.href = discordAuthUrl;
-    }
+    const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=identify`;
+    window.location.href = discordAuthUrl;
+}
 
     function fetchDiscordUser(token) {
-        fetch('https://discord.com/api/users/@me', {
-            headers: { authorization: `Bearer ${token}` }
-        })
-        .then(res => res.json())
-        .then(user => {
-            discordUserData = user;
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('code-section').style.display = 'flex';
-            document.getElementById('username').innerText = user.username;
-            document.getElementById('avatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
-        })
-        .catch(err => {
-            document.getElementById('status-msg').innerText = "Failed to fetch Discord user profile.";
-        });
-    }
+    fetch('https://discord.com/api/users/@me', {
+        headers: { authorization: `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(user => {
+        discordUserData = user;
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('code-section').style.display = 'flex';
+        document.getElementById('username').innerText = user.username;
+        document.getElementById('avatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+    })
+    .catch(err => {
+        document.getElementById('status-msg').innerText = "Failed to fetch Discord user profile.";
+    });
+}
 
     function verifyAndLinkCode() {
-        const code = document.getElementById('link-code').value.trim();
-        if (code.length !== 6) {
-            document.getElementById('status-msg').style.color = "#ff4500";
-            document.getElementById('status-msg').innerText = "Please enter a valid 6-digit code.";
-            return;
-        }
-
-        document.getElementById('status-msg').style.color = "var(--text-muted)";
-        document.getElementById('status-msg').innerText = "Verifying code with PlayFab...";
-
-        // Execute PlayFab CloudScript / API call to link Discord ID to Club
-        initPlayFabSession(() => {
-            PlayFabClientAPI.ExecuteCloudScript({
-                FunctionName: "LinkDiscordToClub",
-                FunctionParameter: {
-                    Code: code,
-                    DiscordUserId: discordUserData.id,
-                    DiscordUsername: discordUserData.username
-                }
-            }, (result, error) => {
-                if (error || (result.data.FunctionResult && !result.data.FunctionResult.success)) {
-                    document.getElementById('status-msg').style.color = "#ff4500";
-                    document.getElementById('status-msg').innerText = "Invalid or expired code.";
-                } else {
-                    document.getElementById('status-msg').style.color = "#22c55e";
-                    document.getElementById('status-msg').innerText = "Successfully linked your Discord account to your Club!";
-                }
-            });
-        });
+    const code = document.getElementById('link-code').value.trim();
+    if (code.length !== 6) {
+        document.getElementById('status-msg').style.color = "#ff4500";
+        document.getElementById('status-msg').innerText = "Please enter a valid 6-digit code.";
+        return;
     }
+
+    document.getElementById('status-msg').style.color = "var(--text-muted)";
+    document.getElementById('status-msg').innerText = "Verifying code...";
+
+    initPlayFabSession(() => {
+        PlayFabClientAPI.ExecuteCloudScript({
+            FunctionName: "LinkDiscordToClub",
+            FunctionParameter: {
+                Code: code,
+                DiscordUserId: discordUserData.id,
+                DiscordUsername: discordUserData.username
+            }
+        }, (result, error) => {
+            const resData = result?.data?.FunctionResult;
+
+            if (error || (resData && !resData.success)) {
+                // Handle "Already Linked" returned from CloudScript
+                if (resData && resData.alreadyLinked) {
+                    handleSuccessState("Account is already linked! Redirecting...");
+                } else {
+                    document.getElementById('status-msg').style.color = "#ff4500";
+                    document.getElementById('status-msg').innerText = error?.errorMessage || resData?.message || "Invalid or expired code.";
+                }
+            } else {
+                handleSuccessState("Successfully linked your Discord account to your VBR account!");
+            }
+        });
+    });
+}
+
+    // Displays the success message, disables inputs, and redirects after 2 seconds
+    function handleSuccessState(message) {
+    const statusMsg = document.getElementById('status-msg');
+    statusMsg.style.color = "#22c55e";
+    statusMsg.innerText = message;
+    document.getElementById('link-code').disabled = true;
+    document.querySelector('.submit-btn').disabled = true;
+
+    setTimeout(() => {
+        window.location.href = "home";
+    }, 2000);
+}
 </script>
 </body>
 </html>
