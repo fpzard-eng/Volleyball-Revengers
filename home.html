@@ -63,11 +63,52 @@
         .header-logo-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-color); filter: drop-shadow(0 0 10px var(--accent-glow)); }
         .logo-text { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
         
-        .nav-actions { display: flex; align-items: center; gap: 16px; position: relative; }
-        .theme-toggle-container { display: flex; align-items: center; background: rgba(100, 100, 100, 0.2); border: 1px solid var(--border-color); border-radius: 20px; padding: 3px; cursor: pointer; position: relative; width: 70px; height: 34px; z-index: 10000; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5); }
-        .theme-toggle-option { flex: 1; text-align: center; font-size: 0.8rem; z-index: 2; pointer-events: none; }
-        .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--btn-gradient); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        [data-theme="light"] .theme-toggle-slider { transform: translateX(36px); }
+        .nav-actions { 
+  display: flex; 
+  align-items: center; 
+  gap: 1.0rem; 
+  position: relative; 
+}
+
+.theme-toggle-container { 
+  display: flex; 
+  align-items: center; 
+  position: relative;
+  width: 70px; 
+  height: 34px; 
+  padding: 2px; /* Adjusted to balance top/left border gap */
+  border-radius: 9999px; /* Pill shape standard */
+  border: 1px solid var(--border-color); 
+  background: rgba(100, 100, 100, 0.2); 
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4); 
+  cursor: pointer; 
+  user-select: none; /* Prevents text highlighting on click */
+}
+
+.theme-toggle-option { 
+  flex: 1; 
+  text-align: center; 
+  font-size: 0.8rem; 
+  z-index: 2; 
+  pointer-events: none; 
+}
+
+.theme-toggle-slider { 
+  position: absolute; 
+  top: 2px; 
+  left: 2px; 
+  width: 28px; 
+  height: 28px; 
+  border-radius: 50%; 
+  background: var(--btn-gradient, #4f46e5); 
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3); 
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+  z-index: 1; 
+}
+
+[data-theme="light"] .theme-toggle-slider { 
+  transform: translateX(36px); 
+}
         
         .menu-btn, .guest-badge { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.95rem; font-weight: 800; border-radius: 10px; outline: none; box-shadow: var(--shadow-card); z-index: 10000; display: flex; align-items: center; gap: 6px; }
         .menu-btn { cursor: pointer; }
@@ -164,6 +205,7 @@
             </button>
             <div class="nav-menu" id="navMenu">
                 <div class="nav-menu-header">Navigation</div>
+                <a href="link-discord"><span class="menu-icon">💾</span> Link Discord</a>
                 <a href="updates"><span class="menu-icon">🚀</span> Update Log</a>
                 <hr>
                 <div class="nav-menu-header">Community</div>
