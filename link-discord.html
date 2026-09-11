@@ -147,28 +147,36 @@
     }
 
     window.onload = function() {
+        console.log("[DEBUG] Window Loaded");
         const fragment = new URLSearchParams(window.location.hash.slice(1));
         const accessToken = fragment.get('access_token');
 
         if (accessToken) {
+            console.log("[DEBUG] OAuth Access Token found in URL fragment");
             fetchDiscordUser(accessToken);
+        } else {
+            console.log("[DEBUG] No Access Token found in URL fragment");
         }
     };
 
     function loginWithDiscord() {
         const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
         const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token&scope=identify`;
+        console.log("[DEBUG] Initiating Discord OAuth Redirect to:", discordAuthUrl);
         window.location.href = discordAuthUrl;
     }
 
     function fetchDiscordUser(token) {
         setStatus("Fetching Discord profile...");
+        console.log("[DEBUG] Requesting Discord user details...");
+
         fetch('https://discord.com/api/users/@me', {
             headers: { authorization: `Bearer ${token}` }
         })
         .then(res => res.json())
         .then(user => {
-            if (!user || !user.id) throw new Error("Invalid user response");
+            console.log("[DEBUG] Discord user payload received:", user);
+            if (!user || !user.id) throw new Error("Invalid user response from Discord");
             discordUserData = user;
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('code-section').style.display = 'flex';
@@ -176,7 +184,8 @@
             document.getElementById('avatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
             setStatus("");
         })
-        .catch(() => {
+        .catch(err => {
+            console.error("[DEBUG] Error fetching Discord user:", err);
             showError("Failed to fetch Discord user profile.");
         });
     }
@@ -190,76 +199,92 @@
         }
     }
 
-   async function verifyAndLinkCode() {
-    const digitsOnly = document.getElementById('link-code').value.replace(/\D/g, '');
+    async function verifyAndLinkCode() {
+        const rawInputValue = document.getElementById('link-code').value;
+        const digitsOnly = rawInputValue.replace(/\D/g, '');
 
-    if (digitsOnly.length !== 6) {
-        showError("Please enter a valid 6-digit code (e.g. 123-456).");
-        return;
-    }
+        console.log(`[DEBUG] Verify Triggered. Input: "${rawInputValue}" -> Digits Only: "${digitsOnly}"`);
 
-    setStatus("Authenticating session with PlayFab...");
-
-    try {
-        // Step 1: Create a temporary anonymous session
-        const loginResponse = await fetch(`https://${PLAYFAB_TITLE_ID}.playfabapi.com/Client/LoginWithCustomID`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                TitleId: PLAYFAB_TITLE_ID,
-                CustomId: "WEB_LINK_SESSION_" + discordUserData.id,
-                CreateAccount: true
-            })
-        });
-
-        const loginData = await loginResponse.json();
-
-        if (loginData.code !== 200 || !loginData.data?.SessionTicket) {
-            showError("Failed to authenticate with PlayFab session.");
+        if (digitsOnly.length !== 6) {
+            console.warn("[DEBUG] Validation failed: Code length is not 6 digits");
+            showError("Please enter a valid 6-digit code (e.g. 123-456).");
             return;
         }
 
-        const sessionTicket = loginData.data.SessionTicket;
+        setStatus("Authenticating session with PlayFab...");
 
-        setStatus("Verifying code with server...");
+        try {
+            const customId = "WEB_LINK_SESSION_" + discordUserData.id;
+            console.log(`[DEBUG] Step 1: Logging into PlayFab via LoginWithCustomID using CustomId: ${customId}`);
 
-        // Step 2: Call ExecuteCloudScript
-        const cloudScriptResponse = await fetch(`https://${PLAYFAB_TITLE_ID}.playfabapi.com/Client/ExecuteCloudScript`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Authorization': sessionTicket
-            },
-            body: JSON.stringify({
-                FunctionName: "LinkDiscord",
-                FunctionParameter: {
-                    Code: digitsOnly,
-                    DiscordUserId: String(discordUserData.id),
-                    DiscordUsername: String(discordUserData.username)
+            const loginResponse = await fetch(`https://${PLAYFAB_TITLE_ID}.playfabapi.com/Client/LoginWithCustomID`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    TitleId: PLAYFAB_TITLE_ID,
+                    CustomId: customId,
+                    CreateAccount: true
+                })
+            });
+
+            const loginData = await loginResponse.json();
+            console.log("[DEBUG] PlayFab Login Response:", loginData);
+
+            if (loginData.code !== 200 || !loginData.data?.SessionTicket) {
+                console.error("[DEBUG] Authentication failed:", loginData);
+                showError("Failed to authenticate with PlayFab session.");
+                return;
+            }
+
+            const sessionTicket = loginData.data.SessionTicket;
+            console.log("[DEBUG] SessionTicket obtained successfully");
+
+            setStatus("Verifying code with server...");
+
+            const payload = {
+                Code: digitsOnly,
+                DiscordUserId: String(discordUserData.id),
+                DiscordUsername: String(discordUserData.username)
+            };
+            console.log("[DEBUG] Step 2: Executing CloudScript 'LinkDiscord' with Payload:", payload);
+
+            const cloudScriptResponse = await fetch(`https://${PLAYFAB_TITLE_ID}.playfabapi.com/Client/ExecuteCloudScript`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Authorization': sessionTicket
                 },
-                GeneratePlayStreamEvent: true
-            })
-        });
+                body: JSON.stringify({
+                    FunctionName: "LinkDiscord",
+                    FunctionParameter: payload,
+                    GeneratePlayStreamEvent: true
+                })
+            });
 
-        const data = await cloudScriptResponse.json();
-        const resData = data.data?.FunctionResult;
+            const data = await cloudScriptResponse.json();
+            console.log("[DEBUG] CloudScript Execution Raw Response:", data);
 
-        // Check if successful OR if already linked
-        if (data.code === 200 && resData?.success) {
-            handleSuccessState("Successfully linked your Discord account!");
-        } else if (resData?.alreadyLinked) {
-            handleSuccessState("Account is already linked! Redirecting...");
-        } else {
-            const errorMsg = resData?.message 
-                || data.errorMessage 
-                || "Invalid or expired code. Please check your in-game code.";
-            showError(errorMsg);
+            const resData = data.data?.FunctionResult;
+            console.log("[DEBUG] Extracted FunctionResult:", resData);
+
+            if (data.code === 200 && resData?.success) {
+                console.log("[DEBUG] Linking Successful!");
+                handleSuccessState("Successfully linked your Discord account!");
+            } else if (resData?.alreadyLinked) {
+                console.log("[DEBUG] Account already linked detected");
+                handleSuccessState("Account is already linked! Redirecting...");
+            } else {
+                const errorMsg = resData?.message 
+                    || data.errorMessage 
+                    || "Invalid or expired code. Please check your in-game code.";
+                console.warn("[DEBUG] Linking failed with message:", errorMsg);
+                showError(errorMsg);
+            }
+        } catch (err) {
+            console.error("[DEBUG] Network or Client Exception during link process:", err);
+            showError("Network error connecting to PlayFab. Please try again.");
         }
-    } catch (err) {
-        console.error("Link Error:", err);
-        showError("Network error connecting to PlayFab. Please try again.");
     }
-}
 
     function setStatus(msg) {
         const statusMsg = document.getElementById('status-msg');
@@ -274,6 +299,7 @@
     }
 
     function handleSuccessState(message) {
+        console.log(`[DEBUG] handleSuccessState called with message: "${message}". Redirecting in 2s...`);
         const statusMsg = document.getElementById('status-msg');
         statusMsg.style.color = "#22c55e";
         statusMsg.innerText = message;
@@ -281,6 +307,7 @@
         document.querySelector('.submit-btn').disabled = true;
 
         setTimeout(() => {
+            console.log("[DEBUG] Navigating to redirect URL...");
             window.location.href = "https://fpzard-eng.github.io/Volleyball-Revengers/";
         }, 2000);
     }
