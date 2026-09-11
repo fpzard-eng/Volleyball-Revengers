@@ -138,32 +138,22 @@ function getPlayerData(playFabId) {
 function getPlayFabUserByDiscordId(discordId) {
     return new Promise((resolve) => {
         const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
-        const expectedCustomId = "DISCORD_" + cleanDiscordId;
-
-        PlayFab.PlayFabServer.GetAccountInfo({
-            CustomId: expectedCustomId
+        PlayFab.PlayFabServer.GetTitleInternalData({
+            Keys: [`DiscordUserMap_${cleanDiscordId}`]
         }, (error, result) => {
-            if (!error && result && result.data && result.data.UserInfo) {
-                return resolve({ user: result.data.UserInfo, reason: 'SUCCESS' });
+            const mappedPlayFabId = result?.data?.Data?.[`DiscordUserMap_${cleanDiscordId}`];
+
+            if (error || !mappedPlayFabId) {
+                return resolve({ user: null, reason: 'NOT_LINKED' });
             }
 
-            PlayFab.PlayFabServer.GetTitleInternalData({
-                Keys: [`DiscordUserMap_${cleanDiscordId}`]
-            }, (internalErr, internalResult) => {
-                const fallbackPlayFabId = internalResult?.data?.Data?.[`DiscordUserMap_${cleanDiscordId}`];
-
-                if (!fallbackPlayFabId) {
-                    return resolve({ user: null, reason: 'NOT_LINKED' });
+            PlayFab.PlayFabServer.GetUserAccountInfo({
+                PlayFabId: mappedPlayFabId
+            }, (accErr, accResult) => {
+                if (accErr || !accResult || !accResult.data) {
+                    return resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId: mappedPlayFabId });
                 }
-
-                PlayFab.PlayFabServer.GetUserAccountInfo({
-                    PlayFabId: fallbackPlayFabId
-                }, (accErr, accResult) => {
-                    if (accErr || !accResult || !accResult.data) {
-                        return resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId: fallbackPlayFabId });
-                    }
-                    resolve({ user: accResult.data.UserInfo, reason: 'SUCCESS' });
-                });
+                resolve({ user: accResult.data.UserInfo, reason: 'SUCCESS' });
             });
         });
     });
