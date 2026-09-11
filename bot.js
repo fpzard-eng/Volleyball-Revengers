@@ -42,7 +42,6 @@ const client = new Client({
 // --- Register Slash Commands ---
 const commands = [
     new SlashCommandBuilder().setName('website').setDescription('Get the official Volleyball Revengers website link'),
-    new SlashCommandBuilder().setName('link-to-account').setDescription('Link your Discord account to your Volleyball Revengers profile'),
     new SlashCommandBuilder()
         .setName('link')
         .setDescription('Link your Discord using a 6-digit code generated in-game')
@@ -224,11 +223,7 @@ client.on('interactionCreate', async interaction => {
     if (commandName === 'website') {
         await interaction.reply({ content: '🌐 **Volleyball Revengers Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
     }
-
-    if (commandName === 'link-to-account') {
-        await interaction.reply({ content: '🔗 **Link your Discord to Volleyball Revengers:** https://fpzard-eng.github.io/Volleyball-Revengers/link-discord' });
-    }
-
+    
     if (commandName === 'link') {
         const rawCode = interaction.options.getString('code');
         const cleanCode = rawCode.replace(/\D/g, '');
