@@ -43,6 +43,10 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder().setName('website').setDescription('Get the official Volleyball Revengers website link'),
     new SlashCommandBuilder().setName('link-to-account').setDescription('Link your Discord account to your Volleyball Revengers profile'),
+    new SlashCommandBuilder()
+        .setName('link')
+        .setDescription('Link your Discord using a 6-digit code generated in-game')
+        .addStringOption(opt => opt.setName('code').setDescription('The 6-digit link code (e.g. 294-617 or 294617)').setRequired(true)),
     new SlashCommandBuilder().setName('account').setDescription('View profile, stats, physical attributes, and PlayFab info')
         .addUserOption(opt => opt.setName('target').setDescription('Player profile to view (optional)').setRequired(false)),
     new SlashCommandBuilder().setName('club').setDescription('View club details, rank, W-L ratio, and members'),
@@ -84,7 +88,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
 // --- Helper Promises for PlayFab API ---
 function getPlayFabUserByDiscordId(discordId) {
     return new Promise((resolve) => {
-        // Sanitize incoming discordId string
         const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
 
         PlayFab.PlayFabServer.GetTitleInternalData({
@@ -103,6 +106,27 @@ function getPlayFabUserByDiscordId(discordId) {
                 if (accErr || !accResult || !accResult.data) resolve(null);
                 else resolve(accResult.data.UserInfo);
             });
+        });
+    });
+}
+
+function executeLinkCloudScript(code, discordUser) {
+    return new Promise((resolve) => {
+        PlayFab.PlayFabServer.ExecuteCloudScript({
+            FunctionName: "LinkDiscord",
+            FunctionParameter: {
+                Code: code,
+                DiscordUserId: discordUser.id,
+                DiscordUsername: discordUser.username
+            }
+        }, (error, result) => {
+            if (error) {
+                resolve({ success: false, message: error.errorMessage || 'PlayFab API error.' });
+            } else if (result && result.data && result.data.FunctionResult) {
+                resolve(result.data.FunctionResult);
+            } else {
+                resolve({ success: false, message: 'Invalid response from PlayFab CloudScript.' });
+            }
         });
     });
 }
@@ -135,23 +159,26 @@ function getPlayerData(playFabId) {
 async function enforceAccountLink(interaction, targetUser = null) {
     const userToVerify = targetUser || interaction.user;
     const playfabUser = await getPlayFabUserByDiscordId(userToVerify.id);
+    
     if (!playfabUser) {
         const isSelf = userToVerify.id === interaction.user.id;
         const unlinkedEmbed = new EmbedBuilder()
             .setTitle('⚠️ Account Not Linked')
             .setDescription(isSelf 
-                ? 'You must link your Discord account with Volleyball Revengers to use this command!' 
+                ? 'You must link your Discord account with Volleyball Revengers to use this command! Use `/link <code>` with your in-game code.' 
                 : `**${userToVerify.username}** has not linked their Discord account to Volleyball Revengers yet!`)
             .setColor('#FF4B4B')
-            .addFields({ 
-                name: '🔗 Link Your Account Here', 
-                value: 'https://fpzard-eng.github.io/Volleyball-Revengers/link-discord' 
-            })
             .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
             
-        await interaction.reply({ embeds: [unlinkedEmbed], ephemeral: true });
+        if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ embeds: [unlinkedEmbed] });
+        } else {
+            await interaction.reply({ embeds: [unlinkedEmbed], ephemeral: true });
+        }
+        
         return null;
     }
+    
     return playfabUser;
 }
 
@@ -189,6 +216,40 @@ client.on('interactionCreate', async interaction => {
 
     if (commandName === 'link-to-account') {
         await interaction.reply({ content: '🔗 **Link your Discord to Volleyball Revengers:** https://fpzard-eng.github.io/Volleyball-Revengers/link-discord' });
+    }
+
+    if (commandName === 'link') {
+        const rawCode = interaction.options.getString('code');
+        const cleanCode = rawCode.replace(/\D/g, '');
+
+        if (cleanCode.length !== 6) {
+            return interaction.reply({
+                content: '❌ Invalid code format! Please enter a 6-digit code (e.g. `294-617` or `294617`).',
+                ephemeral: true
+            });
+        }
+
+        await interaction.deferReply({ ephemeral: true });
+
+        const result = await executeLinkCloudScript(cleanCode, interaction.user);
+
+        if (result.success) {
+            const successEmbed = new EmbedBuilder()
+                .setTitle('🎉 Account Successfully Linked!')
+                .setDescription(`Your Discord account **${interaction.user.username}** has been linked to Volleyball Revengers player ID \`${result.linkedPlayerId}\`.`)
+                .setColor('#00FF7F')
+                .setFooter({ text: 'Volleyball Revengers • Profile Linker' });
+
+            await interaction.editReply({ embeds: [successEmbed] });
+        } else {
+            const failEmbed = new EmbedBuilder()
+                .setTitle('❌ Account Link Failed')
+                .setDescription(result.message || 'The code entered is invalid or expired. Please generate a new code in-game.')
+                .setColor('#FF4B4B')
+                .setFooter({ text: 'Volleyball Revengers • Profile Linker' });
+
+            await interaction.editReply({ embeds: [failEmbed] });
+        }
     }
 
     if (commandName === 'account') {
