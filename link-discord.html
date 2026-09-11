@@ -145,12 +145,10 @@
 
     let discordUserData = null;
 
-    // Initialize PlayFab SDK Title ID
     if (typeof PlayFab !== "undefined") {
         PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
     }
 
-    // Check if returning from Discord OAuth2 login
     window.onload = function() {
         const fragment = new URLSearchParams(window.location.hash.slice(1));
         const accessToken = fragment.get('access_token');
@@ -178,12 +176,10 @@
             document.getElementById('avatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
         })
         .catch(err => {
-            document.getElementById('status-msg').style.color = "#ff4500";
-            document.getElementById('status-msg').innerText = "Failed to fetch Discord user profile.";
+            showError("Failed to fetch Discord user profile.");
         });
     }
 
-    // Formats 123456 into 123-456 dynamically
     function formatCodeInput(input) {
         let raw = input.value.replace(/[^0-9]/g, '');
         if (raw.length > 3) {
@@ -193,7 +189,6 @@
         }
     }
 
-    // Helper function to safely parse PlayFab JSON-wrapped strings
     function parsePlayFabValue(val) {
         if (!val) return "";
         try {
@@ -208,38 +203,80 @@
         const code = rawCode.includes('-') ? rawCode : (rawCode.length === 6 ? `${rawCode.slice(0,3)}-${rawCode.slice(3)}` : rawCode);
 
         if (code.length !== 7 || !code.includes('-')) {
-            document.getElementById('status-msg').style.color = "#ff4500";
-            document.getElementById('status-msg').innerText = "Please enter a valid 6-digit code (e.g. 123-456).";
+            showError("Please enter a valid 6-digit code (e.g. 123-456).");
             return;
         }
 
-        document.getElementById('status-msg').style.color = "var(--text-muted)";
-        document.getElementById('status-msg').innerText = "Verifying code with PlayFab...";
+        setStatus("Verifying code with PlayFab...");
 
-        // Attempt CloudScript Link process first, falling back to direct API calls
-        if (typeof PlayFabClientAPI !== "undefined") {
-            PlayFabClientAPI.ExecuteCloudScript({
-                FunctionName: "LinkDiscord",
-                FunctionParameter: {
-                    Code: code,
-                    DiscordUserId: discordUserData.id,
-                    DiscordUsername: discordUserData.username
-                }
-            }, (result, error) => {
-                const resData = result?.data?.FunctionResult;
+        // Try executing CloudScript first
+        PlayFabClientAPI.ExecuteCloudScript({
+            FunctionName: "LinkDiscord",
+            FunctionParameter: {
+                Code: code,
+                DiscordUserId: discordUserData.id,
+                DiscordUsername: discordUserData.username
+            }
+        }, (result, error) => {
+            const resData = result?.data?.FunctionResult;
 
-                if (error || (resData && !resData.success)) {
-                    if (resData && resData.alreadyLinked) {
-                        handleSuccessState("Account is already linked! Redirecting...");
-                    } else {
-                        document.getElementById('status-msg').style.color = "#ff4500";
-                        document.getElementById('status-msg').innerText = error?.errorMessage || resData?.message || "Invalid or expired code.";
-                    }
-                } else {
-                    handleSuccessState("Successfully linked your Discord account!");
+            if (!error && resData && resData.success) {
+                handleSuccessState("Successfully linked your Discord account!");
+                return;
+            }
+
+            if (resData && resData.alreadyLinked) {
+                handleSuccessState("Account is already linked! Redirecting...");
+                return;
+            }
+
+            // Fallback: Authenticate web session using Custom ID derived from code or user identity
+            loginAndLinkClientFallback(code);
+        });
+    }
+
+    function loginAndLinkClientFallback(code) {
+        setStatus("Verifying code and completing link...");
+
+        // Authenticate the web client to gain write permissions for player UserData
+        PlayFabClientAPI.LoginWithCustomID({
+            CustomId: code,
+            CreateAccount: false
+        }, (loginResult, loginError) => {
+            if (loginError) {
+                showError("Invalid or expired code. Please check your in-game code.");
+                return;
+            }
+
+            // Save the linked status directly to PlayFab UserData
+            PlayFabClientAPI.UpdateUserData({
+                Data: {
+                    "DiscordLinked": "\"true\"",
+                    "DiscordUserId": `\"${discordUserData.id}\"`,
+                    "DiscordUsername": `\"${discordUserData.username}\"`,
+                    "PendingDiscordCode": "\"\""
                 }
+            }, (updateResult, updateError) => {
+                if (updateError) {
+                    showError("Failed to save Discord link data.");
+                    return;
+                }
+
+                handleSuccessState("Successfully linked your Discord account!");
             });
-        }
+        });
+    }
+
+    function setStatus(msg) {
+        const statusMsg = document.getElementById('status-msg');
+        statusMsg.style.color = "var(--text-muted)";
+        statusMsg.innerText = msg;
+    }
+
+    function showError(msg) {
+        const statusMsg = document.getElementById('status-msg');
+        statusMsg.style.color = "#ff4500";
+        statusMsg.innerText = msg;
     }
 
     function handleSuccessState(message) {
