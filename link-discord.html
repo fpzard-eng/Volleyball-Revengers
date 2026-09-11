@@ -191,46 +191,48 @@
     }
 
     function verifyAndLinkCode() {
-        const rawCode = document.getElementById('link-code').value.trim();
-        const code = rawCode.includes('-') ? rawCode : (rawCode.length === 6 ? `${rawCode.slice(0,3)}-${rawCode.slice(3)}` : rawCode);
+    // Strips out double quotes, hyphens, spaces, and non-numeric characters:
+    const digitsOnly = document.getElementById('link-code').value.replace(/\D/g, '');
 
-        if (code.length !== 7 || !code.includes('-')) {
-            showError("Please enter a valid 6-digit code (e.g. 123-456).");
+    // Validate that we have exactly 6 numbers:
+    if (digitsOnly.length !== 6) {
+        showError("Please enter a valid 6-digit code (e.g. 123-456).");
+        return;
+    }
+
+    // Format strictly into "123-456" for PlayFab
+    const code = `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 6)}`;
+
+    setStatus("Authenticating session with PlayFab...");
+
+    PlayFabClientAPI.LoginWithCustomID({
+        CustomId: "DISCORD_LINK_" + code,
+        CreateAccount: true
+    }, (loginResult, loginError) => {
+        if (loginError) {
+            showError("Failed to authenticate with PlayFab session.");
             return;
         }
 
-        setStatus("Authenticating session with PlayFab...");
+        setStatus("Saving Discord connection...");
 
-        // Authenticate the web browser session to allow user data updates
-        PlayFabClientAPI.LoginWithCustomID({
-            CustomId: "DISCORD_LINK_" + code,
-            CreateAccount: true
-        }, (loginResult, loginError) => {
-            if (loginError) {
-                showError("Failed to authenticate with PlayFab session.");
+        PlayFabClientAPI.UpdateUserData({
+            Data: {
+                "DiscordLinked": "true",
+                "DiscordUserId": discordUserData.id,
+                "DiscordUsername": discordUserData.username,
+                "PendingDiscordCode": code
+            }
+        }, (updateResult, updateError) => {
+            if (updateError) {
+                showError("Failed to save Discord profile to server.");
                 return;
             }
 
-            setStatus("Saving Discord connection...");
-
-            // Post the user's Discord ID into PlayFab UserData so Unity can poll it
-            PlayFabClientAPI.UpdateUserData({
-                Data: {
-                    "DiscordLinked": "true",
-                    "DiscordUserId": discordUserData.id,
-                    "DiscordUsername": discordUserData.username,
-                    "PendingDiscordCode": code
-                }
-            }, (updateResult, updateError) => {
-                if (updateError) {
-                    showError("Failed to save Discord profile to server.");
-                    return;
-                }
-
-                handleSuccessState("Successfully linked your Discord account!");
-            });
+            handleSuccessState("Successfully linked your Discord account!");
         });
-    }
+    });
+}
 
     function setStatus(msg) {
         const statusMsg = document.getElementById('status-msg');
