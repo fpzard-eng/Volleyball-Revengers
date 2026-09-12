@@ -2,10 +2,7 @@ const PLAYFAB_TITLE_ID = "1E90D8";
 const DISCORD_CLIENT_ID = "1547808053078925332";
 const GUEST_ID_KEY = "vbr_guest_custom_id";
 const DISCORD_SESSION_KEY = "vbr_discord_session_user";
-
-// REPLACE THIS WITH YOUR HOSTED BOT SERVER URL (e.g., Render, Railway, Heroku)
-// If running locally for testing, use "http://localhost:3000"
-const BOT_SERVER_URL = "https://your-bot-server-url.com"; 
+const BOT_SERVER_URL = "https://vbr-assistant-coach.onrender.com";
 
 /**
  * Generates or retrieves a local guest identifier.
