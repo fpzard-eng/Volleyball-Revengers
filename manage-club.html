@@ -187,8 +187,25 @@
         </div>
     </header>
 
+    <!-- Requirement Notice / Access Restricted Overlay -->
+    <div id="access-denied-container" class="hidden max-w-4xl mx-auto my-12 p-8 glass-panel border border-rose-500/40 rounded-2xl text-center space-y-4">
+        <div class="w-16 h-16 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto text-2xl">
+            <i class="fa-solid fa-lock"></i>
+        </div>
+        <h2 class="text-2xl font-black text-white" id="access-denied-title">Club Management Restricted</h2>
+        <p class="text-sm text-gray-300 max-w-lg mx-auto" id="access-denied-desc">
+            To manage a club, you must have your Discord account linked and be designated as the Club Owner.
+        </p>
+        <div class="pt-2">
+            <button id="access-action-btn" onclick="redirectToDiscordLogin()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition inline-flex items-center gap-2">
+                <i class="fa-brands fa-discord text-base"></i>
+                <span id="access-action-text">Link Discord Account</span>
+            </button>
+        </div>
+    </div>
+
     <!-- Main Content Area -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <main id="main-content" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         
         <!-- Club Banner / Announcement Header -->
         <div class="relative overflow-hidden rounded-2xl glass-panel border border-cyan-500/30 p-6 sm:p-8">
@@ -587,6 +604,8 @@
                     document.getElementById('header-playfab-id').innerText = "Offline";
                     document.getElementById('playfab-status-dot').className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500";
                     document.getElementById('playfab-ping-dot').className = "hidden";
+                    
+                    renderAccessDenied("Authentication Failed", "Unable to establish PlayFab session. Please log in.");
                 }
             );
         };
@@ -615,14 +634,20 @@
 
         // PLAYFAB FETCH USER CLUB & DATA
         function loadUserClubAndRoster() {
-            // Fetch User Internal Data to inspect active Club ID
+            // Check requirement 1: Must have Discord linked
+            if (currentUser.authType !== 'discord' || !currentUser.discordUser) {
+                renderAccessDenied("Discord Account Required", "You must link your Discord account to manage your club.");
+                return;
+            }
+
+            // Fetch User Internal Data to inspect active Club ID and data
             PlayFabClientSDK.GetUserData({
                 PlayFabId: currentUser.playFabId,
                 Keys: ["ClubData", "ClubID"]
             }, (result, error) => {
                 if (error) {
                     console.error("[PlayFab UserData Error]", error);
-                    fallbackToDefaultClubData();
+                    renderAccessDenied("Error Loading Club", "Could not fetch your club details from PlayFab.");
                     return;
                 }
 
@@ -635,13 +660,26 @@
                         activityLogs = parsed.logs || [];
                     } catch(e) {
                         console.warn("[Parse ClubData Error]", e);
-                        fallbackToDefaultClubData();
+                        renderAccessDenied("No Club Found", "You do not currently belong to or own any club.");
+                        return;
                     }
                 } else {
-                    fallbackToDefaultClubData();
+                    renderAccessDenied("No Club Found", "You have not created or joined a club yet.");
+                    return;
                 }
 
                 determineUserRole();
+
+                // Check requirement 2: Must be Club Owner
+                if (currentUser.roleInClub !== 'Owner') {
+                    renderAccessDenied("Owner Access Only", "You must be the Club Owner to access club management features.", false);
+                    return;
+                }
+
+                // Show main portal
+                document.getElementById('access-denied-container').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+
                 renderClubInfo();
                 renderMembersTable();
                 renderActivityLogs();
@@ -649,30 +687,21 @@
             });
         }
 
-        // FALLBACK TO INITIAL CLUB SETUP IF NOT PRESENT IN PLAYFAB
-        function fallbackToDefaultClubData() {
-            activeClub = {
-                id: "CLUB_DEFAULT",
-                name: "Tokyo Spikers",
-                tag: "TSP",
-                motto: "Dominate the sky, control the court. Practice every Tuesday!",
-                privacy: "Public",
-                region: "US-East (Virginia)",
-                wins: 12,
-                losses: 4,
-                rank: "Diamond I",
-                maxRoster: 12
-            };
+        // DISPLAY RESTRICTION NOTICE
+        function renderAccessDenied(title, description, showDiscordBtn = true) {
+            document.getElementById('main-content').classList.add('hidden');
+            const container = document.getElementById('access-denied-container');
+            container.classList.remove('hidden');
 
-            membersList = [
-                { id: currentUser.playFabId || "PF-LOCAL", name: currentUser.discordUser?.username || "RevengerCaptain", role: "Owner", joinDate: new Date().toISOString().split('T')[0], status: "Online" },
-                { id: "PF-2049", name: "SpikeMaster_VR", role: "Co-Leader", joinDate: "2026-02-01", status: "In-Game" },
-                { id: "PF-3812", name: "SetterPro99", role: "Co-Leader", joinDate: "2026-02-10", status: "Offline" }
-            ];
+            document.getElementById('access-denied-title').innerText = title;
+            document.getElementById('access-denied-desc').innerText = description;
 
-            activityLogs = [
-                { text: `<strong>${currentUser.discordUser?.username || 'Player'}</strong> initialized club environment.`, time: "Just now", type: "join" }
-            ];
+            const btn = document.getElementById('access-action-btn');
+            if (!showDiscordBtn) {
+                btn.classList.add('hidden');
+            } else {
+                btn.classList.remove('hidden');
+            }
         }
 
         // DETERMINE ROLE & SET INTERFACE PERMISSIONS
