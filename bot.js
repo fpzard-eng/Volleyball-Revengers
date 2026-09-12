@@ -26,11 +26,12 @@ setInterval(() => {
     }
 }, 300000);
 
-// --- Configure PlayFab Credentials ---
+// Configure PlayFab Credentials
+const PlayFab = require('playfab-sdk');
+const PlayFabAdmin = require('playfab-sdk/Scripts/PlayFab/PlayFabAdmin.js');
 PlayFab.settings.titleId = process.env.PLAYFAB_TITLE_ID;
 PlayFab.settings.developerSecretKey = process.env.PLAYFAB_SECRET_KEY;
 PlayFab.settings.productionUrl = `https://${process.env.PLAYFAB_TITLE_ID}.playfabapi.com`;
-const PlayFabAdmin = PlayFab.PlayFabAdmin;
 
 // --- Initialize Discord Client ---
 const client = new Client({
