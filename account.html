@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings | Volleyball Revengers</title>
+    <!-- PlayFab JS SDK -->
+    <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
+    <!-- Shared PlayFab Auth Module -->
+    <script src="playfab-auth.js"></script>
+    <style>
+        :root {
+            --bg-main: #060709;
+            --bg-card: rgba(18, 22, 31, 0.85);
+            --bg-card-hover: rgba(28, 34, 48, 0.95);
+            --bg-nav: rgba(10, 12, 16, 0.9);
+            --text-main: #ffffff;
+            --text-muted: #9ba3b4;
+            --border-color: rgba(255, 255, 255, 0.15);
+            --border-glow: rgba(30, 144, 216, 0.6);
+            --accent-glow: rgba(30, 144, 216, 0.4);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.8), 0 8px 20px rgba(0, 0, 0, 0.6);
+            --shadow-hero: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 50px rgba(30, 144, 216, 0.35);
+            --shadow-btn: 0 12px 30px rgba(30, 144, 216, 0.5);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.85);
+            --holo-gradient: linear-gradient(135deg, #1E90D8 0%, #ffffff 50%, #1E90D8 100%);
+            --btn-gradient: linear-gradient(135deg, #1E90D8 0%, #1572a8 100%);
+            --btn-hover: linear-gradient(135deg, #24a0f0 0%, #1a82c4 100%);
+            --badge-bg: rgba(30, 144, 216, 0.15);
+            --badge-border: rgba(30, 144, 216, 0.4);
+            --danger-glow: rgba(220, 38, 38, 0.4);
+            --danger-btn: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            --danger-btn-hover: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+        }
+        [data-theme="light"] {
+            --bg-main: #f9f3f3;
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --bg-card-hover: rgba(255, 255, 255, 1);
+            --bg-nav: rgba(250, 245, 245, 0.95);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: rgba(0, 0, 0, 0.15);
+            --border-glow: rgba(220, 38, 38, 0.6);
+            --accent-glow: rgba(220, 38, 38, 0.3);
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.05);
+            --shadow-hero: 0 25px 50px rgba(0, 0, 0, 0.15), 0 0 40px rgba(220, 38, 38, 0.25);
+            --shadow-btn: 0 12px 30px rgba(220, 38, 38, 0.35);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.1);
+            --holo-gradient: linear-gradient(135deg, #dc2626 0%, #000000 50%, #dc2626 100%);
+            --btn-gradient: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            --btn-hover: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            --badge-bg: rgba(220, 38, 38, 0.1);
+            --badge-border: rgba(220, 38, 38, 0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: -15%; left: 50%; transform: translateX(-50%); width: 85vw; height: 550px; background: radial-gradient(circle, var(--accent-glow) 0%, rgba(0,0,0,0) 70%); pointer-events: none; z-index: 0; }
+
+        .holo-text { background: var(--holo-gradient); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: holoGlow 4s linear infinite; font-weight: 900; }
+        @keyframes holoGlow { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+
+        header { display: flex; justify-content: space-between; align-items: center; padding: 14px 32px; background: var(--bg-nav); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 9999; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4); }
+        .header-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .header-logo-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-color); filter: drop-shadow(0 0 10px var(--accent-glow)); }
+        .logo-text { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
+
+        .nav-actions { display: flex; align-items: center; gap: 1.0rem; position: relative; }
+        .theme-toggle-container { display: flex; align-items: center; position: relative; width: 70px; height: 34px; padding: 2px; border-radius: 9999px; border: 1px solid var(--border-color); background: rgba(100, 100, 100, 0.2); box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4); cursor: pointer; user-select: none; }
+        .theme-toggle-option { flex: 1; text-align: center; font-size: 0.8rem; z-index: 2; pointer-events: none; }
+        .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--btn-gradient, #4f46e5); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; }
+        [data-theme="light"] .theme-toggle-slider { transform: translateX(36px); }
+
+        .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.95rem; font-weight: 800; border-radius: 10px; outline: none; box-shadow: var(--shadow-card); cursor: pointer; z-index: 10000; display: flex; align-items: center; gap: 6px; }
+        .menu-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
+
+        .nav-menu { display: none; position: absolute; top: calc(100% + 14px); right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: var(--shadow-widget); width: 240px; padding: 12px; flex-direction: column; gap: 6px; z-index: 9998; transform-origin: top right; }
+        .nav-menu.active { display: flex; animation: menuDropdownFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes menuDropdownFade { from { opacity: 0; transform: scale(0.95) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .nav-menu-header { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); padding: 6px 12px 4px 12px; font-weight: 800; opacity: 0.7; }
+        .nav-menu a { color: var(--text-muted); padding: 10px 14px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 12px; border-radius: 10px; transition: all 0.2s ease; }
+        .nav-menu a span.menu-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+        .nav-menu a:hover { background: var(--badge-bg); color: var(--text-main); border-color: var(--border-glow); transform: translateX(4px); }
+        .nav-menu hr { border: none; border-top: 1px solid var(--border-color); margin: 6px 4px; }
+
+        .container { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 50px 20px; text-align: center; z-index: 1; width: 100%; max-width: 900px; margin: 0 auto; }
+        .account-card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 40px; width: 100%; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; text-align: left; }
+        .account-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); }
+
+        .profile-header { display: flex; align-items: center; gap: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border-color); margin-bottom: 30px; flex-wrap: wrap; }
+        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--border-glow); object-fit: cover; box-shadow: 0 0 20px var(--accent-glow); }
+        .profile-details { flex: 1; }
+        .profile-name { font-size: 1.8rem; font-weight: 900; margin-bottom: 4px; }
+        .profile-id { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 35px; }
+        .info-box { background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; }
+        .info-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .info-value { font-size: 1.1rem; font-weight: 800; color: var(--text-main); word-break: break-all; }
+
+        .action-row { display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .logout-btn { background: var(--danger-btn); color: #ffffff; border: none; padding: 14px 28px; font-size: 0.95rem; font-weight: 800; border-radius: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px var(--danger-glow); transition: all 0.2s ease; }
+        .logout-btn:hover { background: var(--danger-btn-hover); transform: translateY(-2px); box-shadow: 0 6px 20px var(--danger-glow); }
+
+        footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; box-shadow: 0 -10px 40px rgba(0,0,0,0.6); }
+        .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 15px; font-weight: 700; font-size: 0.9rem; }
+        .footer-links a:hover { color: var(--text-main); }
+        .copyright { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; opacity: 0.6; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="home.html" class="header-brand">
+            <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
+            <span class="logo-text holo-text">Volleyball Revengers</span>
+        </a>
+        <div class="nav-actions">
+            <div class="theme-toggle-container" id="themeToggleBtn" title="Toggle Dark/Light Mode">
+                <div class="theme-toggle-slider"></div>
+                <span class="theme-toggle-option">🌙</span>
+                <span class="theme-toggle-option">☀️</span>
+            </div>
+            <button class="menu-btn" id="menuToggleBtn">
+                <span style="font-size: 1.1rem;">☰</span>
+            </button>
+            <div class="nav-menu" id="navMenu">
+                <div class="nav-menu-header">Navigation</div>
+                <a href="home.html"><span class="menu-icon">🏠</span> Home</a>
+                <a href="link-discord.html"><span class="menu-icon">💾</span> Link Discord</a>
+                <a href="updates.html"><span class="menu-icon">🚀</span> Update Log</a>
+                <hr>
+                <div class="nav-menu-header">Community</div>
+                <a href="https://discord.gg/xG6QcTbfp2" target="_blank"><span class="menu-icon">💬</span> Discord</a>
+                <hr>
+                <div class="nav-menu-header">Legal & Info</div>
+                <a href="privacy.html"><span class="menu-icon">🛡️</span> Privacy Policy</a>
+                <a href="terms.html"><span class="menu-icon">📄</span> Terms of Service</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="account-card">
+            <div class="profile-header">
+                <img id="userAvatar" src="logo.png" alt="Profile Avatar" class="profile-avatar">
+                <div class="profile-details">
+                    <div id="userName" class="profile-name holo-text">Loading Player...</div>
+                    <div id="playFabIdDisplay" class="profile-id">PlayFab ID: --</div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="info-label">Authentication Method</div>
+                    <div id="authTypeDisplay" class="info-value">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Discord Tag</div>
+                    <div id="discordTagDisplay" class="info-value">Not Linked</div>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <button class="logout-btn" onclick="executeLogout()">
+                    <span>🚪</span> Log Out
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-links">
+            <a href="privacy.html">Privacy</a>
+            <a href="terms.html">Terms</a>
+            <a href="https://discord.gg/xG6QcTbfp2">Discord</a>
+            <a href="mailto:mugenrevolutionstudios@gmail.com">Contact</a>
+        </div>
+        <div class="copyright">&copy; 2026 Mugen Revolution Studios. All rights reserved.</div>
+    </footer>
+
+    <script>
+        // Navigation toggle
+        const menuBtn = document.getElementById('menuToggleBtn');
+        const navMenu = document.getElementById('navMenu');
+        menuBtn.addEventListener('click', (e) => { e.stopPropagation(); navMenu.classList.toggle('active'); });
+        document.addEventListener('click', (e) => {
+            if (!navMenu.contains(e.target) && !menuBtn.contains(e.target)) navMenu.classList.remove('active');
+        });
+
+        // Theme toggle
+        const themeBtn = document.getElementById('themeToggleBtn');
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('preferred-theme', newTheme);
+        }
+        themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
+
+        // Page Load Session Population
+        window.onload = function() {
+            initPlayFabSession(
+                (result, authType, discordUser) => {
+                    document.getElementById("playFabIdDisplay").innerText = `PlayFab ID: ${result.PlayFabId || 'Unknown'}`;
+                    document.getElementById("authTypeDisplay").innerText = authType ? authType.toUpperCase() : 'Guest / Session';
+
+                    if (authType === "discord" && discordUser) {
+                        document.getElementById("userName").innerText = discordUser.username;
+                        document.getElementById("discordTagDisplay").innerText = `@${discordUser.username}`;
+                        if (discordUser.avatar) {
+                            document.getElementById("userAvatar").src = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
+                        }
+                    } else {
+                        document.getElementById("userName").innerText = "Guest Player";
+                        document.getElementById("discordTagDisplay").innerText = "Not Connected";
+                    }
+                },
+                (error) => {
+                    // Redirect to home if session invalid
+                    window.location.href = "home.html";
+                }
+            );
+        };
+
+        // Logout Logic
+        function executeLogout() {
+            // Clear local session storage
+            localStorage.removeItem("playfab_session_ticket");
+            localStorage.removeItem("discord_oauth_token");
+            localStorage.removeItem("discord_user_data");
+            sessionStorage.clear();
+
+            // Redirect to home page
+            window.location.href = "home.html";
+        }
+    </script>
+</body>
+</html>
