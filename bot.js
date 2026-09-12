@@ -25,9 +25,8 @@ setInterval(() => {
     }
 }, 300000);
 
-const PlayFab = require('playfab-sdk/Scripts/PlayFab/PlayFab.js');
-const PlayFabAdmin = require('playfab-sdk/Scripts/PlayFab/PlayFabAdmin.js');
-const PlayFabServer = require('playfab-sdk/Scripts/PlayFab/PlayFabServer.js');
+const PlayFab = require('playfab-sdk');
+const PlayFabServer = PlayFab.PlayFabServer;
 
 PlayFab.settings.titleId = process.env.PLAYFAB_TITLE_ID;
 PlayFab.settings.developerSecretKey = process.env.PLAYFAB_SECRET_KEY;
@@ -115,14 +114,14 @@ function executeLinkCloudScript(code, discordUser) {
 
 function getPlayerStats(playFabId) {
     return new Promise((resolve) => {
-        PlayFabAdmin.GetAdminUserStatistics({ PlayFabId: playFabId }, (error, result) => {
+        PlayFabServer.GetPlayerStatistics({ PlayFabId: playFabId }, (error, result) => {
             if (error || !result || !result.data) {
-                console.error("[PlayFab Admin Stats Error]:", error);
+                console.error("[PlayFab Server Stats Error]:", error);
                 return resolve({});
             }
-            
+
             const stats = {};
-            (result.data.UserStatistics || []).forEach(stat => {
+            (result.data.Statistics || []).forEach(stat => {
                 stats[stat.StatisticName] = stat.Value;
             });
             resolve(stats);
@@ -130,16 +129,18 @@ function getPlayerStats(playFabId) {
     });
 }
 
-
-
 function getPlayerData(playFabId) {
     return new Promise((resolve) => {
-        PlayFab.PlayFabServer.GetUserData({ PlayFabId: playFabId }, (error, result) => {
-            if (error || !result || !result.data) resolve({});
-            else resolve(result.data.Data || {});
+        PlayFabServer.GetUserData({ PlayFabId: playFabId }, (error, result) => {
+            if (error || !result || !result.data) {
+                console.error("[PlayFab User Data Error]:", error);
+                return resolve({});
+            }
+            resolve(result.data.Data || {});
         });
     });
 }
+
 
 function getPlayFabUserByDiscordId(discordId) {
     return new Promise((resolve) => {
