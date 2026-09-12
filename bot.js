@@ -19,7 +19,6 @@ PlayFab.settings.titleId = process.env.PLAYFAB_TITLE_ID;
 PlayFab.settings.developerSecretKey = process.env.PLAYFAB_SECRET_KEY;
 PlayFab.settings.productionUrl = `https://${process.env.PLAYFAB_TITLE_ID}.playfabapi.com`;
 
-// --- Initialize Discord Client ---
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -28,7 +27,6 @@ const client = new Client({
     ]
 });
 
-// --- Keep-Alive & API/Notification HTTP Web Server ---
 const PORT = process.env.PORT || 10000;
 const server = http.createServer(async (req, res) => {
     const headers = {
@@ -43,47 +41,48 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-if (req.method === 'POST' && req.url === '/api/login-server-custom-id') {
-    let body = '';
-    req.on('data', chunk => { body += chunk.toString(); });
-    req.on('end', async () => {
-        try {
-            const { discordId } = JSON.parse(body || '{}');
+    if (req.method === 'POST' && req.url === '/api/login-server-custom-id') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', async () => {
+            try {
+                const { discordId } = JSON.parse(body || '{}');
 
-            if (!discordId) {
-                res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
-                return res.end(JSON.stringify({ success: false, error: 'Missing discordId parameter.' }));
-            }
-
-            PlayFabServer.LoginWithServerCustomID({
-                TitleId: process.env.PLAYFAB_TITLE_ID,
-                ServerCustomId: `DISCORD_${discordId}`,
-                CreateAccount: true
-            }, (error, result) => {
-                if (error || !result?.data) {
-                    console.error('[PlayFab Server Auth Error]:', error);
+                if (!discordId) {
                     res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
-                    return res.end(JSON.stringify({ success: false, error: error?.errorMessage || 'Login failed' }));
+                    return res.end(JSON.stringify({ success: false, error: 'Missing discordId parameter.' }));
                 }
 
-                res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
-                return res.end(JSON.stringify({
-                    success: true,
-                    sessionTicket: result.data.SessionTicket,
-                    playFabId: result.data.PlayFabId,
-                    entityToken: result.data.EntityToken
-                }));
-            });
-        } catch (err) {
-            console.error('[Server Auth Exception]:', err);
-            res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: err.message }));
-        }
-    });
-    return;
-}
+                PlayFabServer.LoginWithServerCustomId({
+                    ServerCustomId: `DISCORD_${discordId}`,
+                    CreateAccount: true
+                }, (error, result) => {
+                    if (error || !result?.data) {
+                        console.error('[PlayFab Server Auth Error]:', error);
+                        res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
+                        return res.end(JSON.stringify({ 
+                            success: false, 
+                            error: error?.errorMessage || 'Login failed' 
+                        }));
+                    }
 
-    // 2. API Endpoint: Fetch player profile and stats by Discord ID
+                    res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({
+                        success: true,
+                        sessionTicket: result.data.SessionTicket,
+                        playFabId: result.data.PlayFabId,
+                        entityToken: result.data.EntityToken
+                    }));
+                });
+            } catch (err) {
+                console.error('[Server Auth Exception]:', err);
+                res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
     if (req.method === 'GET' && req.url.startsWith('/api/user-info')) {
         try {
             const urlParams = new URLSearchParams(req.url.split('?')[1]);
@@ -121,14 +120,12 @@ if (req.method === 'POST' && req.url === '/api/login-server-custom-id') {
         }
     }
 
-    // Default health endpoint
     res.writeHead(200, { ...headers, 'Content-Type': 'text/plain' });
     res.end('VBR Assistant Coach Bot is running 24/7!');
 }).listen(PORT, () => {
     console.log(`🌐 Webhook server listening on port ${PORT}`);
 });
 
-// Self-ping interval (5 minutes)
 setInterval(() => {
     const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
     if (renderAppUrl) {
@@ -139,7 +136,6 @@ setInterval(() => {
     }
 }, 300000);
 
-// --- Slash Command Definitions ---
 const commands = [
     new SlashCommandBuilder().setName('website').setDescription('Get the official Volleyball Revengers website link'),
     new SlashCommandBuilder()
