@@ -162,10 +162,6 @@
             <div class="section-title">Account Details</div>
             <div class="info-grid">
                 <div class="info-box">
-                    <div class="info-label">Authentication Method</div>
-                    <div id="authTypeDisplay" class="info-value">--</div>
-                </div>
-                <div class="info-box">
                     <div class="info-label">Discord Tag</div>
                     <div id="discordTagDisplay" class="info-value">Not Linked</div>
                 </div>
@@ -275,7 +271,6 @@
                     (result, authType, discordUser) => {
                         const playFabId = result?.data?.PlayFabId || result?.PlayFabId || "Unknown";
                         document.getElementById("playFabIdDisplay").innerText = `PlayFab ID: ${playFabId}`;
-                        document.getElementById("authTypeDisplay").innerText = authType ? authType.toUpperCase() : 'Guest / Session';
 
                         const sessionTicket = localStorage.getItem("playfab_session_ticket") || result?.data?.SessionTicket || result?.SessionTicket;
                         if (sessionTicket && typeof PlayFab !== 'undefined') {
