@@ -468,9 +468,10 @@ client.on('interactionCreate', async interaction => {
                 await interaction.reply({ content: '❌ Failed to send the message. Make sure I have permission to speak in that channel.', ephemeral: true });
             }
         }
-    } catch (cmdErr) {
+    }     
+} catch (cmdErr) {
         console.error(`[Command Error] Command ${commandName} failed:`, cmdErr);
-        const errEmbed = new EmbedBuilder()
+const errEmbed = new EmbedBuilder()
             .setTitle('❌ Command Failure')
             .setDescription('An internal error occurred while processing this command.')
             .setColor('#FF4B4B');
