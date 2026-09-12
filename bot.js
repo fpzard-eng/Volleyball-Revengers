@@ -1,7 +1,16 @@
 require('dotenv').config();
 const http = require('http');
 const https = require('https');
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
+const { 
+    Client, 
+    GatewayIntentBits, 
+    REST, 
+    Routes, 
+    SlashCommandBuilder, 
+    EmbedBuilder, 
+    PermissionFlagsBits, 
+    ChannelType 
+} = require('discord.js');
 
 const PlayFab = require('playfab-sdk');
 const PlayFabServer = PlayFab.PlayFabServer;
@@ -22,14 +31,14 @@ const client = new Client({
 // --- Keep-Alive & API/Notification HTTP Web Server ---
 const PORT = process.env.PORT || 10000;
 const server = http.createServer(async (req, res) => {
-    // Enable CORS for frontend website calls
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+    };
 
-    // Handle CORS preflight options check
     if (req.method === 'OPTIONS') {
-        res.writeHead(204);
+        res.writeHead(204, headers);
         res.end();
         return;
     }
@@ -40,9 +49,9 @@ const server = http.createServer(async (req, res) => {
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', async () => {
             try {
-                const { discordId, message } = JSON.parse(body);
+                const { discordId, message } = JSON.parse(body || '{}');
                 if (discordId && message) {
-                    const user = await client.users.fetch(discordId);
+                    const user = await client.users.fetch(discordId).catch(() => null);
                     if (user) {
                         const dmEmbed = new EmbedBuilder()
                             .setTitle('🏐 Volleyball Revengers Notification')
@@ -52,32 +61,32 @@ const server = http.createServer(async (req, res) => {
                         await user.send({ embeds: [dmEmbed] });
                     }
                 }
-                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true }));
             } catch (err) {
                 console.error('[HTTP Server Error] Failed to send DM:', err);
-                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err.message }));
             }
         });
         return;
     }
 
-    // 2. API Endpoint: Fetch player profile and stats by Discord ID (used by account.html)
+    // 2. API Endpoint: Fetch player profile and stats by Discord ID
     if (req.method === 'GET' && req.url.startsWith('/api/user-info')) {
         try {
             const urlParams = new URLSearchParams(req.url.split('?')[1]);
             const discordId = urlParams.get('discordId');
 
             if (!discordId) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
                 return res.end(JSON.stringify({ success: false, error: 'Missing discordId parameter.' }));
             }
 
-            const { user, reason, playFabId } = await getPlayFabUserByDiscordId(discordId);
+            const { user, reason } = await getPlayFabUserByDiscordId(discordId);
 
             if (!user) {
-                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.writeHead(404, { ...headers, 'Content-Type': 'application/json' });
                 return res.end(JSON.stringify({ success: false, reason }));
             }
 
@@ -86,7 +95,7 @@ const server = http.createServer(async (req, res) => {
                 getPlayerData(user.PlayFabId)
             ]);
 
-            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
             return res.end(JSON.stringify({
                 success: true,
                 playFabId: user.PlayFabId,
@@ -96,48 +105,46 @@ const server = http.createServer(async (req, res) => {
             }));
         } catch (apiErr) {
             console.error('[API Error] User info endpoint failed:', apiErr);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
             return res.end(JSON.stringify({ success: false, error: apiErr.message }));
         }
     }
 
-    // Default status route for keep-alive checks
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    // Default health endpoint
+    res.writeHead(200, { ...headers, 'Content-Type': 'text/plain' });
     res.end('VBR Assistant Coach Bot is running 24/7!');
 }).listen(PORT, () => {
-    console.log(`🌐 Keep-alive & Webhook server listening on port ${PORT}`);
+    console.log(`🌐 Webhook server listening on port ${PORT}`);
 });
 
-// Self-ping every 5 minutes to prevent host sleeping
+// Self-ping interval (5 minutes)
 setInterval(() => {
     const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
     if (renderAppUrl) {
         const requester = renderAppUrl.startsWith('https') ? https : http;
         requester.get(renderAppUrl, (res) => {
-            console.log(`[Heartbeat] Ping sent to ${renderAppUrl} - Status: ${res.statusCode}`);
-        }).on('error', (err) => {
-            console.error(`[Heartbeat Error] ${err.message}`);
-        });
+            console.log(`[Heartbeat] Ping sent - Status: ${res.statusCode}`);
+        }).on('error', (err) => console.error(`[Heartbeat Error] ${err.message}`));
     }
 }, 300000);
 
-// --- Register Slash Commands ---
+// --- Slash Command Definitions ---
 const commands = [
     new SlashCommandBuilder().setName('website').setDescription('Get the official Volleyball Revengers website link'),
     new SlashCommandBuilder()
         .setName('link')
         .setDescription('Link your Discord using a 6-digit code generated in-game')
-        .addStringOption(opt => opt.setName('code').setDescription('The 6-digit link code (e.g. 294-617 or 294617)').setRequired(true)),
+        .addStringOption(opt => opt.setName('code').setDescription('The 6-digit link code (e.g. 294-617)').setRequired(true)),
     new SlashCommandBuilder()
         .setName('is-linked')
         .setDescription('Check if a Discord account is linked to PlayFab')
         .addUserOption(opt => opt.setName('target').setDescription('Discord user to check (optional)').setRequired(false)),
-    new SlashCommandBuilder().setName('account').setDescription('View profile, stats, physical attributes, and PlayFab info')
+    new SlashCommandBuilder().setName('account').setDescription('View profile, stats, and physical attributes')
         .addUserOption(opt => opt.setName('target').setDescription('Player profile to view (optional)').setRequired(false)),
     new SlashCommandBuilder().setName('club').setDescription('View club details, rank, W-L ratio, and members')
         .addStringOption(opt => opt.setName('name').setDescription('Name of the club to view').setRequired(false)),
     new SlashCommandBuilder().setName('club-info').setDescription('Learn information about what clubs are in Volleyball Revengers'),
-    new SlashCommandBuilder().setName('nt-info').setDescription('Learn about the National Tournament coming in full release'),
+    new SlashCommandBuilder().setName('nt-info').setDescription('Learn about the National Tournament'),
     new SlashCommandBuilder().setName('online-players').setDescription('Show the current online player count'),
     new SlashCommandBuilder().setName('party-request').setDescription('Send a party request').addUserOption(opt => opt.setName('target').setDescription('Player to invite').setRequired(true)),
     new SlashCommandBuilder().setName('accept-party').setDescription('Accept incoming party request').addStringOption(opt => opt.setName('party_id').setDescription('Party ID').setRequired(true)),
@@ -158,7 +165,7 @@ const commands = [
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addChannelOption(opt => opt.setName('channel').setDescription('Target channel').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setRequired(true))
         .addStringOption(opt => opt.setName('message').setDescription('Message text').setRequired(true))
-].map(command => command.toJSON());
+].map(cmd => cmd.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
 
@@ -175,7 +182,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
     }
 })();
 
-// --- PlayFab Wrapper Helpers ---
+// --- PlayFab Helpers ---
 function callCloudScript(functionName, functionParameter, playFabId) {
     return new Promise((resolve) => {
         PlayFabServer.ExecuteCloudScript({
@@ -184,12 +191,12 @@ function callCloudScript(functionName, functionParameter, playFabId) {
             PlayFabId: playFabId
         }, (error, result) => {
             if (error) {
-                console.error(`[PlayFab CloudScript Error] ${functionName}:`, error);
+                console.error(`[PlayFab Error] ${functionName}:`, error);
                 resolve({ success: false, error: error.errorMessage || 'API error.' });
-            } else if (result && result.data && result.data.FunctionResult) {
+            } else if (result?.data?.FunctionResult) {
                 resolve(result.data.FunctionResult);
             } else {
-                resolve({ success: false, error: 'Execution returned an invalid response.' });
+                resolve({ success: false, error: 'Invalid execution response.' });
             }
         });
     });
@@ -198,9 +205,9 @@ function callCloudScript(functionName, functionParameter, playFabId) {
 function getPlayerStats(playFabId) {
     return new Promise((resolve) => {
         PlayFabServer.GetPlayerStatistics({ PlayFabId: playFabId }, (error, result) => {
-            if (error || !result || !result.data) return resolve({});
+            if (error || !result?.data) return resolve({});
             const stats = {};
-            (result.data.Statistics || []).forEach(stat => { stats[stat.StatisticName] = stat.Value; });
+            (result.data.Statistics || []).forEach(s => { stats[s.StatisticName] = s.Value; });
             resolve(stats);
         });
     });
@@ -209,7 +216,7 @@ function getPlayerStats(playFabId) {
 function getPlayerData(playFabId) {
     return new Promise((resolve) => {
         PlayFabServer.GetUserData({ PlayFabId: playFabId }, (error, result) => {
-            if (error || !result || !result.data) return resolve({});
+            if (error || !result?.data) return resolve({});
             resolve(result.data.Data || {});
         });
     });
@@ -227,16 +234,14 @@ function getPlayFabUserByDiscordId(discordId) {
                 const mappedPlayFabId = result?.data?.Data?.[`DiscordUserMap_${cleanDiscordId}`];
                 if (!mappedPlayFabId) return resolve({ user: null, reason: 'NOT_LINKED' });
 
-                PlayFabServer.GetUserAccountInfo({
-                    PlayFabId: mappedPlayFabId
-                }, (accErr, accResult) => {
+                PlayFabServer.GetUserAccountInfo({ PlayFabId: mappedPlayFabId }, (accErr, accResult) => {
                     if (accErr || !accResult?.data?.UserInfo) {
                         return resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId: mappedPlayFabId });
                     }
                     resolve({ user: accResult.data.UserInfo, reason: 'SUCCESS' });
                 });
             });
-        } catch (fatalErr) {
+        } catch {
             resolve({ user: null, reason: 'NOT_LINKED' });
         }
     });
@@ -251,19 +256,19 @@ async function enforceAccountLink(interaction, targetUser = null) {
     if (!user) {
         let title = '⚠️ Account Not Linked';
         let description = isSelf 
-            ? 'You have not linked your Discord account to Volleyball Revengers yet! Use `/link <code>` with your in-game code.' 
-            : `**${userToVerify.username}** has not linked their Discord account yet!`;
+            ? 'You have not linked your Discord account yet! Use `/link <code>` with your in-game code.' 
+            : `**${userToVerify.username}** has not linked their Discord account yet.`;
 
         if (reason === 'ACCOUNT_NOT_FOUND') {
             title = '❓ Account Not Found';
-            description = `Linked PlayFab ID \`${playFabId}\` could not be retrieved from the server.`;
+            description = `Linked PlayFab ID \`${playFabId}\` could not be retrieved.`;
         }
 
         const responseEmbed = new EmbedBuilder()
             .setTitle(title)
             .setDescription(description)
             .setColor('#FF4B4B')
-            .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
+            .setFooter({ text: 'Volleyball Revengers • Assistant Coach' });
 
         if (interaction.deferred || interaction.replied) {
             await interaction.editReply({ embeds: [responseEmbed] });
@@ -277,12 +282,15 @@ async function enforceAccountLink(interaction, targetUser = null) {
     return user;
 }
 
-// --- Bot Ready Listener ---
+// --- Process Safety Listeners ---
+process.on('unhandledRejection', error => console.error('[Unhandled Rejection]:', error));
+process.on('uncaughtException', error => console.error('[Uncaught Exception]:', error));
+
+// --- Bot Login & Events ---
 client.once('clientReady', () => {
-    console.log(`🤖 VBR Assistant Coach is online as ${client.user.tag}!`);
+    console.log(`🤖 VBR Assistant Coach online as ${client.user.tag}!`);
 });
 
-// --- Interaction Handler ---
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -290,7 +298,7 @@ client.on('interactionCreate', async interaction => {
 
     try {
         if (commandName === 'website') {
-            await interaction.reply({ content: '🌐 **Volleyball Revengers Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
+            await interaction.reply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
         }
         
         else if (commandName === 'link') {
@@ -299,7 +307,7 @@ client.on('interactionCreate', async interaction => {
 
             if (cleanCode.length !== 6) {
                 return interaction.reply({
-                    content: '❌ Invalid code format! Please enter a 6-digit code (e.g. `294-617` or `294617`).',
+                    content: '❌ Invalid format! Provide a 6-digit code (e.g. `294-617`).',
                     ephemeral: true
                 });
             }
@@ -315,61 +323,20 @@ client.on('interactionCreate', async interaction => {
                         DiscordUsername: String(interaction.user.username)
                     }
                 }, (error, res) => {
-                    if (error || !res?.data?.FunctionResult) resolve({ success: false, message: 'PlayFab API error.' });
+                    if (error || !res?.data?.FunctionResult) resolve({ success: false, message: 'PlayFab execution failed.' });
                     else resolve(res.data.FunctionResult);
                 });
             });
 
-            if (result.success) {
-                const successEmbed = new EmbedBuilder()
-                    .setTitle('🎉 Account Successfully Linked!')
-                    .setDescription(`Your Discord account **${interaction.user.username}** has been linked to Volleyball Revengers player ID \`${result.linkedPlayerId}\`.`)
-                    .setColor('#00FF7F')
-                    .setFooter({ text: 'Volleyball Revengers • Profile Linker' });
+            const embed = new EmbedBuilder()
+                .setTitle(result.success ? '🎉 Account Linked!' : '❌ Link Failed')
+                .setDescription(result.success 
+                    ? `Linked **${interaction.user.username}** to PlayFab ID \`${result.linkedPlayerId}\`.`
+                    : (result.message || 'The code is invalid or expired.'))
+                .setColor(result.success ? '#00FF7F' : '#FF4B4B')
+                .setFooter({ text: 'Volleyball Revengers • Profile Linker' });
 
-                await interaction.editReply({ embeds: [successEmbed] });
-            } else {
-                const failEmbed = new EmbedBuilder()
-                    .setTitle('❌ Account Link Failed')
-                    .setDescription(result.message || 'The code entered is invalid or expired. Please generate a new code in-game.')
-                    .setColor('#FF4B4B')
-                    .setFooter({ text: 'Volleyball Revengers • Profile Linker' });
-
-                await interaction.editReply({ embeds: [failEmbed] });
-            }
-        }
-            
-        else if (commandName === 'is-linked') {
-            await interaction.deferReply();
-            const targetUser = interaction.options.getUser('target') || interaction.user;
-            const isSelf = targetUser.id === interaction.user.id;
-
-            const { user, reason, playFabId } = await getPlayFabUserByDiscordId(targetUser.id);
-
-            if (user) {
-                const displayName = user.TitleInfo?.DisplayName || 'Unknown Player';
-                const linkedEmbed = new EmbedBuilder()
-                    .setTitle('✅ Account Linked')
-                    .setDescription(isSelf 
-                        ? `Your account is linked to PlayFab ID \`${user.PlayFabId}\` (**${displayName}**).`
-                        : `**${targetUser.username}** is linked to PlayFab ID \`${user.PlayFabId}\` (**${displayName}**).`
-                    )
-                    .setColor('#00FF7F')
-                    .setFooter({ text: 'Volleyball Revengers • Profile Status' });
-
-                await interaction.editReply({ embeds: [linkedEmbed] });
-            } else {
-                const notLinkedEmbed = new EmbedBuilder()
-                    .setTitle('❌ Account Not Linked')
-                    .setDescription(isSelf 
-                        ? 'Your Discord account is not linked to PlayFab yet. Use `/link <code>` to link your account.'
-                        : `**${targetUser.username}** has not linked their Discord account yet.`
-                    )
-                    .setColor('#FF4B4B')
-                    .setFooter({ text: 'Volleyball Revengers • Profile Status' });
-
-                await interaction.editReply({ embeds: [notLinkedEmbed] });
-            }
+            await interaction.editReply({ embeds: [embed] });
         }
 
         else if (commandName === 'account') {
@@ -386,19 +353,17 @@ client.on('interactionCreate', async interaction => {
                 getPlayerData(playFabId)
             ]);
 
-            const getStat = (key) => stats[key] ?? 0;
-            const getData = (key) => userData[key]?.Value ?? null;
-
-            const avatarURL = targetDiscordUser?.displayAvatarURL?.({ dynamic: true }) || interaction.user.displayAvatarURL({ dynamic: true });
+            const getStat = (k) => stats[k] ?? 0;
+            const getData = (k) => userData[k]?.Value ?? 'N/A';
 
             const accountEmbed = new EmbedBuilder()
                 .setTitle(`🏐 Player Profile: ${displayName}`)
                 .setColor('#1E90D8')
-                .setThumbnail(avatarURL)
+                .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
                 .addFields(
-                    { name: '🆔 Account Info', value: `**Display Name:** ${displayName}\n**PlayFab ID:** \`${playFabId}\`\n**Player ELO:** ${getStat('PlayerElo')}`, inline: false },
-                    { name: '📏 Physical Attributes', value: `**Height:** ${getStat('PlayerHeight') || getData('PlayerHeight') || 'N/A'}\n**Standing Reach:** ${getStat('StandingReach') || 'N/A'}\n**Wingspan:** ${getStat('Wingspan') || 'N/A'}`, inline: true },
-                    { name: '📊 Performance Stats', value: `**Matches Played:** ${getStat('MatchesPlayed')}\n**Wins:** ${getStat('Wins')}\n**Match MVPs:** ${getStat('MVP')}`, inline: true },
+                    { name: '🆔 Account Info', value: `**Display Name:** ${displayName}\n**PlayFab ID:** \`${playFabId}\`\n**ELO:** ${getStat('PlayerElo')}`, inline: false },
+                    { name: '📏 Physical Attributes', value: `**Height:** ${getStat('PlayerHeight') || getData('PlayerHeight')}\n**Reach:** ${getStat('StandingReach')}\n**Wingspan:** ${getStat('Wingspan')}`, inline: true },
+                    { name: '📊 Performance', value: `**Matches:** ${getStat('MatchesPlayed')}\n**Wins:** ${getStat('Wins')}\n**MVPs:** ${getStat('MVP')}`, inline: true },
                     { name: '🎯 In-Game Actions', value: `**Kills:** ${getStat('Kills')}\n**Blocks:** ${getStat('Blocks')}\n**Assists:** ${getStat('Assists')}`, inline: false }
                 )
                 .setFooter({ text: 'Volleyball Revengers • Player Statistics' })
@@ -407,162 +372,23 @@ client.on('interactionCreate', async interaction => {
             await interaction.editReply({ embeds: [accountEmbed] });
         }
 
-        else if (commandName === 'friend-request') {
-            await interaction.deferReply();
-            const sender = await enforceAccountLink(interaction);
-            if (!sender) return;
-
-            const target = interaction.options.getUser('target');
-            const result = await callCloudScript('sendFriendRequestSignal', { TargetId: target.id }, sender.PlayFabId);
-
-            if (result.success) {
-                await interaction.editReply({ content: `📩 Friend request sent to **${target.username}**!` });
-            } else {
-                await interaction.editReply({ content: `❌ Could not send friend request: ${result.error || result.message}` });
-            }
-        }
-
-        else if (commandName === 'accept-friend') {
-            await interaction.deferReply();
-            const user = await enforceAccountLink(interaction);
-            if (!user) return;
-
-            const target = interaction.options.getUser('target');
-            const result = await callCloudScript('acceptFriendRequestSignal', { TargetId: target.id }, user.PlayFabId);
-
-            if (result.success) {
-                await interaction.editReply({ content: `🤝 You are now friends with **${target.username}**!` });
-            } else {
-                await interaction.editReply({ content: `❌ Error accepting request: ${result.error}` });
-            }
-        }
-
-        else if (commandName === 'decline-friend') {
-            await interaction.deferReply();
-            const user = await enforceAccountLink(interaction);
-            if (!user) return;
-
-            const target = interaction.options.getUser('target');
-            const result = await callCloudScript('declineFriendRequestSignal', { TargetId: target.id }, user.PlayFabId);
-
-            if (result.success) {
-                await interaction.editReply({ content: `❌ Declined friend request from **${target.username}**.` });
-            } else {
-                await interaction.editReply({ content: `❌ Error declining request: ${result.error}` });
-            }
-        }
-
-        else if (commandName === 'block-player') {
-            await interaction.deferReply();
-            const user = await enforceAccountLink(interaction);
-            if (!user) return;
-
-            const target = interaction.options.getUser('target');
-            const result = await callCloudScript('blockPlayerSignal', { TargetId: target.id }, user.PlayFabId);
-
-            if (result.success) {
-                await interaction.editReply({ content: `🚫 **${target.username}** has been blocked and removed from your friends list.` });
-            } else {
-                await interaction.editReply({ content: `❌ Could not block player: ${result.error}` });
-            }
-        }
-
-        else if (commandName === 'make-a-club') {
-            await interaction.deferReply();
-            const user = await enforceAccountLink(interaction);
-            if (!user) return;
-
-            const clubName = interaction.options.getString('name');
-            const clubTag = interaction.options.getString('tag');
-            const rawDates = interaction.options.getString('practice_dates');
-            const practiceDates = rawDates.split(',').map(s => s.trim());
-
-            const result = await callCloudScript('createClub', {
-                ClubName: clubName,
-                ClubTag: clubTag,
-                PracticeDates: practiceDates
-            }, user.PlayFabId);
-
-            if (result.success) {
-                await interaction.editReply({ content: `🎉 **${clubName}** [${clubTag}] has been successfully created!` });
-            } else {
-                await interaction.editReply({ content: `❌ Failed to create club: ${result.error}` });
-            }
-        }
-
-        else if (commandName === 'party-request') {
-            await interaction.deferReply();
-            const user = await enforceAccountLink(interaction);
-            if (!user) return;
-
-            const target = interaction.options.getUser('target');
-            const result = await callCloudScript('inviteToParty', { TargetId: target.id, PartyId: `Party_${user.PlayFabId}` }, user.PlayFabId);
-
-            if (result.success) {
-                await interaction.editReply({ content: `🎉 Party request sent to **${target.username}**!` });
-            } else {
-                await interaction.editReply({ content: `❌ Could not send party invite: ${result.error}` });
-            }
-        }
-
-        else if (commandName === 'club-info') {
-            const embed = new EmbedBuilder()
-                .setTitle('🏆 What are Clubs in Volleyball Revengers?')
-                .setDescription('Clubs allow players to team up, participate in Scrimmages, climb global Leaderboards together, and prepare for official Competitive Tournaments!')
-                .setColor('#1E90D8')
-                .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
-
-            await interaction.reply({ embeds: [embed] });
-        }
-
-        else if (commandName === 'nt-info') {
-            const embed = new EmbedBuilder()
-                .setTitle('🏐 National Tournament (NT) Preview')
-                .setDescription('The **National Tournament** is the pinnacle competitive event in Volleyball Revengers!')
-                .setColor('#FF9900')
-                .addFields(
-                    { name: 'Status', value: '🔒 Coming in Full Release!' },
-                    { name: 'Format', value: 'Bracket-style elimination tournament featuring top-ranked Clubs across all regions.' }
-                )
-                .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
-
-            await interaction.reply({ embeds: [embed] });
-        }
-
-        else if (commandName === 'online-players') {
-            const embed = new EmbedBuilder()
-                .setTitle('🌐 Active Players Online')
-                .setDescription('Currently **0 Players** are active on the courts!')
-                .setColor('#00FF7F')
-                .setFooter({ text: 'Volleyball Revengers Live Status' });
-
-            await interaction.reply({ embeds: [embed] });
-        }
-
-        else if (commandName === 'manage-club') {
-            await interaction.reply({ content: '⚙️ **Manage your club settings here:** https://fpzard-eng.github.io/Volleyball-Revengers/manage-club' });
-        }
-
         else if (commandName === 'msg') {
             if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-                return interaction.reply({ content: '❌ You must have Administrator permissions to use this command.', ephemeral: true });
+                return interaction.reply({ content: '❌ Administrator permission required.', ephemeral: true });
             }
 
             const targetChannel = interaction.options.getChannel('channel');
             const messageText = interaction.options.getString('message');
 
-            try {
-                await targetChannel.send(messageText);
-                await interaction.reply({ content: `✅ Custom message successfully sent to ${targetChannel}!`, ephemeral: true });
-            } catch (error) {
-                await interaction.reply({ content: '❌ Failed to send the message. Check channel permissions.', ephemeral: true });
-            }
+            await targetChannel.send(messageText);
+            await interaction.reply({ content: `✅ Sent to ${targetChannel}!`, ephemeral: true });
         }
+
     } catch (cmdErr) {
-        console.error(`[Command Error] Command ${commandName} failed:`, cmdErr);
+        console.error(`[Command Error] ${commandName}:`, cmdErr);
         const errEmbed = new EmbedBuilder()
             .setTitle('❌ Command Failure')
-            .setDescription('An internal error occurred while processing this command.')
+            .setDescription('An unexpected error occurred while executing this command.')
             .setColor('#FF4B4B');
 
         if (interaction.deferred || interaction.replied) {
@@ -573,5 +399,4 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Log in the client
 client.login(process.env.DISCORD_BOT_TOKEN);
