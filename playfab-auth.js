@@ -37,11 +37,14 @@ function logoutDiscordUser() {
  * Verifies link status with bot backend before logging into PlayFab.
  */
 function executePlayFabDiscordLogin(user, onSuccess, onError) {
-    // Check with backend bot service to verify if Discord user is linked
     fetch(`${BOT_SERVER_URL}/api/user-info?discordId=${user.id}`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`Bot API returned status ${res.status}`);
+            }
+            return res.json();
+        })
         .then(data => {
-            // If bot backend indicates user is NOT linked or not found
             if (!data || !data.success || !data.playFabId) {
                 console.warn("[PlayFab Auth] Discord account is not linked via Bot. Falling back to Guest Account.");
                 localStorage.removeItem(DISCORD_SESSION_KEY);
@@ -49,7 +52,6 @@ function executePlayFabDiscordLogin(user, onSuccess, onError) {
                 return;
             }
 
-            // User is linked: Attach linked PlayFab metadata to the user object
             user.playFabId = data.playFabId;
             user.displayName = data.displayName || user.username;
 
@@ -93,10 +95,8 @@ function initPlayFabSession(onSuccess, onError) {
     const accessToken = fragment.get('access_token');
 
     if (accessToken) {
-        // Clean URL fragment
         history.replaceState(null, "", window.location.pathname + window.location.search);
 
-        // Fetch user from Discord API
         fetch('https://discord.com/api/users/@me', {
             headers: { authorization: `Bearer ${accessToken}` }
         })
@@ -104,10 +104,7 @@ function initPlayFabSession(onSuccess, onError) {
         .then(user => {
             if (!user || !user.id) throw new Error("Invalid Discord user payload.");
 
-            // Save session to localStorage for persistence across reloads
             localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(user));
-
-            // Execute PlayFab login check
             executePlayFabDiscordLogin(user, onSuccess, onError);
         })
         .catch(err => {
