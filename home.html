@@ -393,9 +393,8 @@ function initializeHomePageSession() {
             const authContainer = document.getElementById("auth-status-container");
             const linkDiscordNavItem = document.getElementById("linkDiscordNavItem");
 
-            // Check if user is logged in / authenticated via Discord
+            // Check if user is logged in via Discord
             if (authType === "discord" && discordUser) {
-                // USER IS LOGGED IN: Change click behavior to redirect to Account page
                 if (authContainer) {
                     authContainer.innerHTML = `
                         <button class="discord-login-btn" id="accountBtn" onclick="window.location.href='account'">
@@ -404,10 +403,18 @@ function initializeHomePageSession() {
                     `;
                 }
 
-                // Hide or update 'Link Discord' navigation item if already linked
-                if (linkDiscordNavItem) {
-                    linkDiscordNavItem.style.display = "none";
-                }
+                fetch(`/api/user-info?discordId=${discordUser.id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (linkDiscordNavItem) {
+                            linkDiscordNavItem.style.display = (data.success || data.linked) ? "none" : "flex";
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Failed to verify Discord link status:", err);
+                        if (linkDiscordNavItem) linkDiscordNavItem.style.display = "none";
+                    });
+
             } else {
                 // USER IS GUEST / UNLINKED: Show Login with Discord button
                 if (authContainer) {
@@ -437,7 +444,6 @@ function initializeHomePageSession() {
                 `;
             }
 
-            // Show link button for guests/unauthenticated users
             if (linkDiscordNavItem) {
                 linkDiscordNavItem.style.display = "flex";
             }
