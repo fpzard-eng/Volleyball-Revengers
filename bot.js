@@ -19,10 +19,22 @@ const client = new Client({
     ]
 });
 
-// --- Keep-Alive & Notification HTTP Web Server ---
+// --- Keep-Alive & API/Notification HTTP Web Server ---
 const PORT = process.env.PORT || 10000;
 const server = http.createServer(async (req, res) => {
-    // Handling inbound notifications from PlayFab CloudScript to DM users
+    // Enable CORS for frontend website calls
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Handle CORS preflight options check
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
+
+    // 1. Handling inbound notifications from PlayFab CloudScript to DM users
     if (req.method === 'POST' && req.url === '/send-dm') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
@@ -51,13 +63,52 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // 2. API Endpoint: Fetch player profile and stats by Discord ID (used by account.html)
+    if (req.method === 'GET' && req.url.startsWith('/api/user-info')) {
+        try {
+            const urlParams = new URLSearchParams(req.url.split('?')[1]);
+            const discordId = urlParams.get('discordId');
+
+            if (!discordId) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ success: false, error: 'Missing discordId parameter.' }));
+            }
+
+            const { user, reason, playFabId } = await getPlayFabUserByDiscordId(discordId);
+
+            if (!user) {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ success: false, reason }));
+            }
+
+            const [stats, userData] = await Promise.all([
+                getPlayerStats(user.PlayFabId),
+                getPlayerData(user.PlayFabId)
+            ]);
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({
+                success: true,
+                playFabId: user.PlayFabId,
+                displayName: user.TitleInfo?.DisplayName || 'Not Set',
+                stats,
+                userData
+            }));
+        } catch (apiErr) {
+            console.error('[API Error] User info endpoint failed:', apiErr);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ success: false, error: apiErr.message }));
+        }
+    }
+
+    // Default status route for keep-alive checks
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('VBR Assistant Coach Bot is running 24/7!');
 }).listen(PORT, () => {
     console.log(`🌐 Keep-alive & Webhook server listening on port ${PORT}`);
 });
 
-// Self-ping every 5 minutes
+// Self-ping every 5 minutes to prevent host sleeping
 setInterval(() => {
     const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
     if (renderAppUrl) {
@@ -78,9 +129,9 @@ const commands = [
         .setDescription('Link your Discord using a 6-digit code generated in-game')
         .addStringOption(opt => opt.setName('code').setDescription('The 6-digit link code (e.g. 294-617 or 294617)').setRequired(true)),
     new SlashCommandBuilder()
-    .setName('is-linked')
-    .setDescription('Check if a Discord account is linked to PlayFab')
-    .addUserOption(opt => opt.setName('target').setDescription('Discord user to check (optional)').setRequired(false)),
+        .setName('is-linked')
+        .setDescription('Check if a Discord account is linked to PlayFab')
+        .addUserOption(opt => opt.setName('target').setDescription('Discord user to check (optional)').setRequired(false)),
     new SlashCommandBuilder().setName('account').setDescription('View profile, stats, physical attributes, and PlayFab info')
         .addUserOption(opt => opt.setName('target').setDescription('Player profile to view (optional)').setRequired(false)),
     new SlashCommandBuilder().setName('club').setDescription('View club details, rank, W-L ratio, and members')
@@ -227,7 +278,7 @@ async function enforceAccountLink(interaction, targetUser = null) {
 }
 
 // --- Bot Ready Listener ---
-client.once('clientReady', () => {
+client.once('ready', () => {
     console.log(`🤖 VBR Assistant Coach is online as ${client.user.tag}!`);
 });
 
@@ -288,38 +339,38 @@ client.on('interactionCreate', async interaction => {
             }
         }
             
-            else if (commandName === 'is-linked') {
-    await interaction.deferReply();
-    const targetUser = interaction.options.getUser('target') || interaction.user;
-    const isSelf = targetUser.id === interaction.user.id;
+        else if (commandName === 'is-linked') {
+            await interaction.deferReply();
+            const targetUser = interaction.options.getUser('target') || interaction.user;
+            const isSelf = targetUser.id === interaction.user.id;
 
-    const { user, reason, playFabId } = await getPlayFabUserByDiscordId(targetUser.id);
+            const { user, reason, playFabId } = await getPlayFabUserByDiscordId(targetUser.id);
 
-    if (user) {
-        const displayName = user.TitleInfo?.DisplayName || 'Unknown Player';
-        const linkedEmbed = new EmbedBuilder()
-            .setTitle('✅ Account Linked')
-            .setDescription(isSelf 
-                ? `Your account is linked to PlayFab ID \`${user.PlayFabId}\` (**${displayName}**).`
-                : `**${targetUser.username}** is linked to PlayFab ID \`${user.PlayFabId}\` (**${displayName}**).`
-            )
-            .setColor('#00FF7F')
-            .setFooter({ text: 'Volleyball Revengers • Profile Status' });
+            if (user) {
+                const displayName = user.TitleInfo?.DisplayName || 'Unknown Player';
+                const linkedEmbed = new EmbedBuilder()
+                    .setTitle('✅ Account Linked')
+                    .setDescription(isSelf 
+                        ? `Your account is linked to PlayFab ID \`${user.PlayFabId}\` (**${displayName}**).`
+                        : `**${targetUser.username}** is linked to PlayFab ID \`${user.PlayFabId}\` (**${displayName}**).`
+                    )
+                    .setColor('#00FF7F')
+                    .setFooter({ text: 'Volleyball Revengers • Profile Status' });
 
-        await interaction.editReply({ embeds: [linkedEmbed] });
-    } else {
-        const notLinkedEmbed = new EmbedBuilder()
-            .setTitle('❌ Account Not Linked')
-            .setDescription(isSelf 
-                ? 'Your Discord account is not linked to PlayFab yet. Use `/link <code>` to link your account.'
-                : `**${targetUser.username}** has not linked their Discord account yet.`
-            )
-            .setColor('#FF4B4B')
-            .setFooter({ text: 'Volleyball Revengers • Profile Status' });
+                await interaction.editReply({ embeds: [linkedEmbed] });
+            } else {
+                const notLinkedEmbed = new EmbedBuilder()
+                    .setTitle('❌ Account Not Linked')
+                    .setDescription(isSelf 
+                        ? 'Your Discord account is not linked to PlayFab yet. Use `/link <code>` to link your account.'
+                        : `**${targetUser.username}** has not linked their Discord account yet.`
+                    )
+                    .setColor('#FF4B4B')
+                    .setFooter({ text: 'Volleyball Revengers • Profile Status' });
 
-        await interaction.editReply({ embeds: [notLinkedEmbed] });
-    }
-}
+                await interaction.editReply({ embeds: [notLinkedEmbed] });
+            }
+        }
 
         else if (commandName === 'account') {
             await interaction.deferReply();
