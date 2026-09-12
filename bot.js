@@ -43,34 +43,45 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // 1. Handling inbound notifications from PlayFab CloudScript to DM users
-    if (req.method === 'POST' && req.url === '/send-dm') {
-        let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
-        req.on('end', async () => {
-            try {
-                const { discordId, message } = JSON.parse(body || '{}');
-                if (discordId && message) {
-                    const user = await client.users.fetch(discordId).catch(() => null);
-                    if (user) {
-                        const dmEmbed = new EmbedBuilder()
-                            .setTitle('🏐 Volleyball Revengers Notification')
-                            .setDescription(message)
-                            .setColor('#1E90D8')
-                            .setTimestamp();
-                        await user.send({ embeds: [dmEmbed] });
-                    }
-                }
-                res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true }));
-            } catch (err) {
-                console.error('[HTTP Server Error] Failed to send DM:', err);
-                res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, error: err.message }));
+if (req.method === 'POST' && req.url === '/api/login-server-custom-id') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+        try {
+            const { discordId } = JSON.parse(body || '{}');
+
+            if (!discordId) {
+                res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ success: false, error: 'Missing discordId parameter.' }));
             }
-        });
-        return;
-    }
+
+            PlayFabServer.LoginWithServerCustomID({
+                TitleId: process.env.PLAYFAB_TITLE_ID,
+                ServerCustomId: `DISCORD_${discordId}`,
+                CreateAccount: true
+            }, (error, result) => {
+                if (error || !result?.data) {
+                    console.error('[PlayFab Server Auth Error]:', error);
+                    res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ success: false, error: error?.errorMessage || 'Login failed' }));
+                }
+
+                res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({
+                    success: true,
+                    sessionTicket: result.data.SessionTicket,
+                    playFabId: result.data.PlayFabId,
+                    entityToken: result.data.EntityToken
+                }));
+            });
+        } catch (err) {
+            console.error('[Server Auth Exception]:', err);
+            res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+    });
+    return;
+}
 
     // 2. API Endpoint: Fetch player profile and stats by Discord ID
     if (req.method === 'GET' && req.url.startsWith('/api/user-info')) {
