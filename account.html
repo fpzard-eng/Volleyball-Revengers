@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings | Volleyball Revengers</title>
-   <!-- PlayFab JS SDK -->
+    <!-- PlayFab JS SDK -->
     <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
     <!-- Shared PlayFab Auth Module -->
     <script src="playfab-auth.js"></script>
@@ -247,6 +247,8 @@
     </footer>
 
     <script>
+    const BOT_SERVER_URL = "https://vbr-assistant-coach.onrender.com";
+
     // Navigation toggle
     const menuBtn = document.getElementById('menuToggleBtn');
     const navMenu = document.getElementById('navMenu');
@@ -327,9 +329,13 @@
         });
     }
 
-    function renderStats(statsMap) {
+    function renderStats(statsMap, userDataMap = {}) {
         document.getElementById("statPlayerElo").innerText = statsMap["PlayerElo"] ?? "--";
-        document.getElementById("statPlayerHeight").innerText = statsMap["PlayerHeight"] != null ? `${statsMap["PlayerHeight"]} cm` : "--";
+        
+        // Match bot behavior: Check Statistics first, fallback to UserData (Read-Only Data)
+        const heightVal = statsMap["PlayerHeight"] ?? userDataMap["PlayerHeight"];
+        document.getElementById("statPlayerHeight").innerText = heightVal != null ? `${heightVal} cm` : "--";
+        
         document.getElementById("statStandingReach").innerText = statsMap["StandingReach"] != null ? `${statsMap["StandingReach"]} cm` : "--";
         document.getElementById("statWingspan").innerText = statsMap["Wingspan"] != null ? `${statsMap["Wingspan"]} cm` : "--";
         
@@ -348,24 +354,51 @@
     }
 
     function loadPlayerStatistics(discordId) {
-        PlayFabClientSDK.GetPlayerStatistics({
-            StatisticNames: [
-                "PlayerElo", "PlayerHeight", "StandingReach", "Wingspan",
-                "RightHanded", "MVP", "Wins", "MatchesPlayed",
-                "Assists", "Blocks", "Kills"
-            ]
-        }, (result, error) => {
-            if (result && result.data && result.data.Statistics && result.data.Statistics.length > 0) {
-                const statsMap = {};
-                result.data.Statistics.forEach(stat => { statsMap[stat.StatisticName] = stat.Value; });
-                renderStats(statsMap);
+        // Run both Statistics and UserData requests concurrently like bot.js /account
+        const fetchStats = new Promise((resolve) => {
+            PlayFabClientSDK.GetPlayerStatistics({
+                StatisticNames: [
+                    "PlayerElo", "PlayerHeight", "StandingReach", "Wingspan",
+                    "RightHanded", "MVP", "Wins", "MatchesPlayed",
+                    "Assists", "Blocks", "Kills"
+                ]
+            }, (result, error) => {
+                if (result && result.data && result.data.Statistics) {
+                    const statsMap = {};
+                    result.data.Statistics.forEach(stat => { statsMap[stat.StatisticName] = stat.Value; });
+                    resolve(statsMap);
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+
+        const fetchUserData = new Promise((resolve) => {
+            PlayFabClientSDK.GetUserData({
+                Keys: ["PlayerHeight"]
+            }, (result, error) => {
+                if (result && result.data && result.data.Data) {
+                    const dataMap = {};
+                    for (const key in result.data.Data) {
+                        dataMap[key] = result.data.Data[key].Value;
+                    }
+                    resolve(dataMap);
+                } else {
+                    resolve({});
+                }
+            });
+        });
+
+        Promise.all([fetchStats, fetchUserData]).then(([statsMap, userDataMap]) => {
+            if (statsMap && Object.keys(statsMap).length > 0) {
+                renderStats(statsMap, userDataMap);
             } else if (discordId) {
                 // Fetch stats via Bot API fallback if PlayFab client stats return empty
-                fetch(`/api/user-info?discordId=${discordId}`)
+                fetch(`${BOT_SERVER_URL}/api/user-info?discordId=${discordId}`)
                     .then(res => res.json())
                     .then(data => {
                         if (data.success && data.stats) {
-                            renderStats(data.stats);
+                            renderStats(data.stats, data.userData || {});
                             if (data.displayName && data.displayName !== 'Not Set') {
                                 document.getElementById("playFabDisplayName").innerText = data.displayName;
                             }
