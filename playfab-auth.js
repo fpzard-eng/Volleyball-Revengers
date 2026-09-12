@@ -3,7 +3,7 @@ const DISCORD_CLIENT_ID = "1547808053078925332";
 const GUEST_ID_KEY = "vbr_guest_custom_id";
 const DISCORD_SESSION_KEY = "vbr_discord_session_user";
 
-// Explicit backend host
+// Render Backend Bot Endpoint
 const BOT_SERVER_URL = "https://vbr-assistant-coach.onrender.com";
 
 /**
@@ -36,7 +36,7 @@ function logoutDiscordUser() {
 }
 
 /**
- * Helper to verify Discord link status via backend Bot service and log into PlayFab.
+ * Verifies link status against backend Bot API and logs into PlayFab.
  */
 function executePlayFabDiscordLogin(user, onSuccess, onError) {
     const apiUrl = `${BOT_SERVER_URL}/api/user-info?discordId=${user.id}`;
@@ -47,25 +47,26 @@ function executePlayFabDiscordLogin(user, onSuccess, onError) {
             return res.json();
         })
         .then(data => {
-            if (data && (data.success || data.linked || data.playFabId)) {
+            // Confirm linked status returned by backend bot service
+            if (data && (data.success || data.linked || data.playFabId || data.stats)) {
                 user.playFabId = data.playFabId || (data.user ? data.user.PlayFabId : null);
                 user.displayName = data.displayName || user.username;
                 loginWithPlayFabCustomId(user, onSuccess, onError);
             } else {
-                console.warn("[PlayFab Auth] Account is NOT linked via bot. Logging in as Guest.");
+                console.warn("[PlayFab Auth] Account not linked according to bot service. Falling back to Guest.");
                 localStorage.removeItem(DISCORD_SESSION_KEY);
                 loginAsGuest(onSuccess, onError);
             }
         })
         .catch(err => {
-            console.error("[PlayFab Auth] Backend verification failed at " + apiUrl, err);
+            console.error("[PlayFab Auth] Verification error at " + apiUrl, err);
             localStorage.removeItem(DISCORD_SESSION_KEY);
             loginAsGuest(onSuccess, onError);
         });
 }
 
 /**
- * Internal PlayFab Login helper for Discord Session
+ * Logs into PlayFab using WEB_LINK_SESSION_<DiscordUserId>
  */
 function loginWithPlayFabCustomId(user, onSuccess, onError) {
     const discordCustomId = "WEB_LINK_SESSION_" + user.id;
@@ -77,10 +78,14 @@ function loginWithPlayFabCustomId(user, onSuccess, onError) {
 
     PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
         if (error) {
-            console.warn("[PlayFab Auth] PlayFab login error for Discord user. Falling back to Guest.", error);
+            console.warn("[PlayFab Auth] PlayFab LoginWithCustomID failed for linked user. Falling back to Guest.", error);
             localStorage.removeItem(DISCORD_SESSION_KEY);
             loginAsGuest(onSuccess, onError);
         } else {
+            // Save valid PlayFab Session Ticket to local storage
+            if (result && result.data && result.data.SessionTicket) {
+                localStorage.setItem("playfab_session_ticket", result.data.SessionTicket);
+            }
             if (onSuccess) onSuccess(result, "discord", user);
         }
     });
@@ -97,7 +102,7 @@ function initPlayFabSession(onSuccess, onError) {
 
     PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
 
-    // STEP 1: Check URL hash for new OAuth access token
+    // STEP 1: Check URL hash for OAuth access token
     const fragment = new URLSearchParams(window.location.hash.slice(1));
     const accessToken = fragment.get('access_token');
 
@@ -121,7 +126,7 @@ function initPlayFabSession(onSuccess, onError) {
         return;
     }
 
-    // STEP 2: Check localStorage for existing Discord session
+    // STEP 2: Check localStorage for existing session
     const savedSession = localStorage.getItem(DISCORD_SESSION_KEY);
     if (savedSession) {
         try {
@@ -154,6 +159,9 @@ function loginAsGuest(onSuccess, onError) {
         if (error) {
             if (onError) onError(error);
         } else {
+            if (result && result.data && result.data.SessionTicket) {
+                localStorage.setItem("playfab_session_ticket", result.data.SessionTicket);
+            }
             if (onSuccess) onSuccess(result, "guest", null);
         }
     });
