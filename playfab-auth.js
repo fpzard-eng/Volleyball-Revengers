@@ -17,6 +17,22 @@ function getOrCreateGuestId() {
 }
 
 /**
+ * Queries the Bot API to check if a Discord account is linked to PlayFab.
+ * @param {string} discordId 
+ * @returns {Promise<Object>} API response payload
+ */
+async function checkDiscordLinkStatus(discordId) {
+    try {
+        const response = await fetch(`/api/user-info?discordId=${discordId}`);
+        const data = await response.json();
+        return data;
+    } catch (err) {
+        console.error("[PlayFab Auth] Error checking Bot API link status:", err);
+        return { success: false, linked: false };
+    }
+}
+
+/**
  * Redirects the user to Discord OAuth authorization.
  */
 function redirectToDiscordLogin() {
@@ -34,7 +50,7 @@ function logoutDiscordUser() {
 }
 
 /**
- * Helper to log into PlayFab using a Discord User Object.
+ * Helper to log into PlayFab using a Discord User Object and verify via Bot API.
  */
 function executePlayFabDiscordLogin(user, onSuccess, onError) {
     const discordCustomId = "WEB_LINK_SESSION_" + user.id;
@@ -44,12 +60,17 @@ function executePlayFabDiscordLogin(user, onSuccess, onError) {
         CustomId: discordCustomId
     };
 
-    PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
+    PlayFabClientSDK.LoginWithCustomID(loginRequest, async (result, error) => {
         if (error) {
             console.warn("[PlayFab Auth] Discord PlayFab login failed. Removing saved session & using Guest.", error);
             localStorage.removeItem(DISCORD_SESSION_KEY);
             loginAsGuest(onSuccess, onError);
         } else {
+            // Check link status with backend bot service
+            const botInfo = await checkDiscordLinkStatus(user.id);
+            user.isLinked = !!(botInfo.success || botInfo.linked);
+            user.botData = botInfo;
+
             if (onSuccess) onSuccess(result, "discord", user);
         }
     });
