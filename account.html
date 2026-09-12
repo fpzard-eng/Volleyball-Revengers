@@ -266,48 +266,49 @@
         themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-      window.onload = function() {
-    const checkPlayFabReady = setInterval(() => {
-        if (typeof PlayFabClientAPI !== 'undefined' && typeof initPlayFabSession === 'function') {
-            clearInterval(checkPlayFabReady);
-            
-            initPlayFabSession(
-                (result, authType, discordUser) => {
-                    document.getElementById("playFabIdDisplay").innerText = `PlayFab ID: ${result.PlayFabId || 'Unknown'}`;
-                    document.getElementById("authTypeDisplay").innerText = authType ? authType.toUpperCase() : 'Guest / Session';
+        window.onload = function() {
+            const checkPlayFabReady = setInterval(() => {
+                // Corrected namespace reference to PlayFabClientSDK
+                if (typeof PlayFabClientSDK !== 'undefined' && typeof initPlayFabSession === 'function') {
+                    clearInterval(checkPlayFabReady);
+                    
+                    initPlayFabSession(
+                        (result, authType, discordUser) => {
+                            document.getElementById("playFabIdDisplay").innerText = `PlayFab ID: ${result.PlayFabId || 'Unknown'}`;
+                            document.getElementById("authTypeDisplay").innerText = authType ? authType.toUpperCase() : 'Guest / Session';
 
-                    PlayFabClientAPI.GetAccountInfo({}, (accResult, accError) => {
-                        if (accResult && accResult.data && accResult.data.AccountInfo) {
-                            const displayName = accResult.data.AccountInfo.TitleInfo?.DisplayName || accResult.data.AccountInfo.Username || "Not Set";
-                            document.getElementById("playFabDisplayName").innerText = displayName;
+                            PlayFabClientSDK.GetAccountInfo({}, (accResult, accError) => {
+                                if (accResult && accResult.data && accResult.data.AccountInfo) {
+                                    const displayName = accResult.data.AccountInfo.TitleInfo?.DisplayName || accResult.data.AccountInfo.Username || "Not Set";
+                                    document.getElementById("playFabDisplayName").innerText = displayName;
+                                }
+                            });
+
+                            if (authType === "discord" && discordUser) {
+                                document.getElementById("userName").innerText = discordUser.username;
+                                document.getElementById("discordTagDisplay").innerText = `@${discordUser.username}`;
+                                if (discordUser.avatar) {
+                                    document.getElementById("userAvatar").src = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
+                                }
+                            } else {
+                                document.getElementById("userName").innerText = "Guest Player";
+                                document.getElementById("discordTagDisplay").innerText = "Not Connected";
+                            }
+
+                            loadUserInventory();
+                            loadPlayerStatistics();
+                        },
+                        (error) => {
+                            window.location.href = "home";
                         }
-                    });
-
-                    if (authType === "discord" && discordUser) {
-                        document.getElementById("userName").innerText = discordUser.username;
-                        document.getElementById("discordTagDisplay").innerText = `@${discordUser.username}`;
-                        if (discordUser.avatar) {
-                            document.getElementById("userAvatar").src = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
-                        }
-                    } else {
-                        document.getElementById("userName").innerText = "Guest Player";
-                        document.getElementById("discordTagDisplay").innerText = "Not Connected";
-                    }
-
-                    loadUserInventory();
-                    loadPlayerStatistics();
-                },
-                (error) => {
-                    window.location.href = "home";
+                    );
                 }
-            );
-        }
-    }, 50);
-};
+            }, 50);
+        };
         
         // Fetch User Inventory for Virtual Currencies
         function loadUserInventory() {
-            PlayFabClientAPI.GetUserInventory({}, (result, error) => {
+            PlayFabClientSDK.GetUserInventory({}, (result, error) => {
                 if (result && result.data && result.data.VirtualCurrency) {
                     const acBalance = result.data.VirtualCurrency["AC"] ?? 0;
                     document.getElementById("currencyDisplay").innerText = `${acBalance.toLocaleString()} AC`;
@@ -319,7 +320,7 @@
 
         // Fetch Player Statistics
         function loadPlayerStatistics() {
-            PlayFabClientAPI.GetPlayerStatistics({
+            PlayFabClientSDK.GetPlayerStatistics({
                 StatisticNames: [
                     "PlayerElo",
                     "PlayerHeight",
@@ -346,7 +347,6 @@
                     document.getElementById("statStandingReach").innerText = statsMap["StandingReach"] != null ? `${statsMap["StandingReach"]} cm` : "--";
                     document.getElementById("statWingspan").innerText = statsMap["Wingspan"] != null ? `${statsMap["Wingspan"]} cm` : "--";
                     
-                    // RightHanded (1 = Right-Handed, 0 = Left-Handed)
                     if (statsMap["RightHanded"] !== undefined) {
                         document.getElementById("statRightHanded").innerText = statsMap["RightHanded"] === 1 ? "Right-Handed" : "Left-Handed";
                     } else {
