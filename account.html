@@ -147,7 +147,8 @@
             <div class="profile-header">
                 <img id="userAvatar" src="logo.png" alt="Profile Avatar" class="profile-avatar">
                 <div class="profile-details">
-                    <div id="userName" class="profile-name holo-text">Loading Player...</div>
+                    <div id="userName" class="profile-name holo-text">Loading Discord Username...</div>
+                     <div id="playFabDisplayName" class="profile-id">Loading PlayFab Username...: --</div>
                     <div id="playFabIdDisplay" class="profile-id">PlayFab ID: --</div>
                 </div>
             </div>
@@ -161,6 +162,10 @@
                 </div>
                 <div class="info-box">
                     <div class="info-label">Discord Tag</div>
+                    <div id="discordTagDisplay" class="info-value">Not Linked</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Discord Username</div>
                     <div id="discordTagDisplay" class="info-value">Not Linked</div>
                 </div>
                 <div class="info-box">
@@ -194,31 +199,27 @@
                 </div>
                 <div class="info-box">
                     <div class="info-label">Matches Played</div>
-                    <div id="statMatchesPlayed" class="info-value">0</div>
+                    <div id="statMatchesPlayed" class="info-value">--</div>
                 </div>
                 <div class="info-box">
                     <div class="info-label">Wins</div>
-                    <div id="statWins" class="info-value">0</div>
+                    <div id="statWins" class="info-value">--</div>
                 </div>
                 <div class="info-box">
                     <div class="info-label">MVP</div>
-                    <div id="statMVP" class="info-value">0</div>
+                    <div id="statMVP" class="info-value">--</div>
                 </div>
                 <div class="info-box">
                     <div class="info-label">Kills</div>
-                    <div id="statKills" class="info-value">0</div>
+                    <div id="statKills" class="info-value">--</div>
                 </div>
                 <div class="info-box">
                     <div class="info-label">Assists</div>
-                    <div id="statAssists" class="info-value">0</div>
+                    <div id="statAssists" class="info-value">--</div>
                 </div>
                 <div class="info-box">
                     <div class="info-label">Blocks</div>
-                    <div id="statBlocks" class="info-value">0</div>
-                </div>
-                <div class="info-box">
-                    <div class="info-label">Moderation</div>
-                    <div id="statModeration" class="info-value">0</div>
+                    <div id="statBlocks" class="info-value">--</div>
                 </div>
             </div>
 
@@ -260,37 +261,43 @@
         themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-        // Page Load Session Population
-        window.onload = function() {
-            initPlayFabSession(
-                (result, authType, discordUser) => {
-                    document.getElementById("playFabIdDisplay").innerText = `PlayFab ID: ${result.PlayFabId || 'Unknown'}`;
-                    document.getElementById("authTypeDisplay").innerText = authType ? authType.toUpperCase() : 'Guest / Session';
+       window.onload = function() {
+    initPlayFabSession(
+        (result, authType, discordUser) => {
+            // Display PlayFab ID
+            document.getElementById("playFabIdDisplay").innerText = `PlayFab ID: ${result.PlayFabId || 'Unknown'}`;
+            document.getElementById("authTypeDisplay").innerText = authType ? authType.toUpperCase() : 'Guest / Session';
 
-                    if (authType === "discord" && discordUser) {
-                        document.getElementById("userName").innerText = discordUser.username;
-                        document.getElementById("discordTagDisplay").innerText = `@${discordUser.username}`;
-                        if (discordUser.avatar) {
-                            document.getElementById("userAvatar").src = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
-                        }
-                    } else {
-                        document.getElementById("userName").innerText = "Guest Player";
-                        document.getElementById("discordTagDisplay").innerText = "Not Connected";
-                    }
-
-                    // Fetch Virtual Currency (AC)
-                    loadUserInventory();
-
-                    // Fetch Player Statistics
-                    loadPlayerStatistics();
-                },
-                (error) => {
-                    // Redirect to home if session invalid
-                    window.location.href = "home.html";
+            PlayFabClientAPI.GetAccountInfo({}, (accResult, accError) => {
+                if (accResult && accResult.data && accResult.data.AccountInfo) {
+                    const displayName = accResult.data.AccountInfo.TitleInfo?.DisplayName || accResult.data.AccountInfo.Username || "Not Set";
+                    document.getElementById("playFabDisplayName").innerText = `Display Name: ${displayName}`;
                 }
-            );
-        };
+            });
 
+            // Handle Discord User details
+            if (authType === "discord" && discordUser) {
+                document.getElementById("userName").innerText = discordUser.username;
+                document.getElementById("discordTagDisplay").innerText = `@${discordUser.username}`;
+                
+                if (discordUser.avatar) {
+                    document.getElementById("userAvatar").src = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
+                }
+            } else {
+                document.getElementById("userName").innerText = "Guest Player";
+                document.getElementById("discordTagDisplay").innerText = "Not Connected";
+            }
+
+            // Fetch Virtual Currency & Player Statistics
+            loadUserInventory();
+            loadPlayerStatistics();
+        },
+        (error) => {
+            window.location.href = "home";
+        }
+    );
+};
+        
         // Fetch User Inventory for Virtual Currencies
         function loadUserInventory() {
             PlayFabClientAPI.GetUserInventory({}, (result, error) => {
