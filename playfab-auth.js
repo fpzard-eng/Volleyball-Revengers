@@ -34,49 +34,30 @@ function logoutDiscordUser() {
 }
 
 /**
- * Verifies link status with bot backend before logging into PlayFab.
+ * Attempts login using DISCORD_${user.id}. If no account exists, falls back to guest account.
  */
 function executePlayFabDiscordLogin(user, onSuccess, onError) {
-    fetch(`${BOT_SERVER_URL}/api/user-info?discordId=${user.id}`)
-        .then(res => {
-            if (!res.ok) {
-                throw new Error(`Bot API returned status ${res.status}`);
-            }
-            return res.json();
-        })
-        .then(data => {
-            if (!data || !data.success || !data.playFabId) {
-                console.warn("[PlayFab Auth] Discord account is not linked via Bot. Falling back to Guest Account.");
-                localStorage.removeItem(DISCORD_SESSION_KEY);
-                loginAsGuest(onSuccess, onError);
-                return;
-            }
+    const discordCustomId = `DISCORD_${user.id}`;
+    
+    // Attempt login without auto-creating account to check existence
+    const loginRequest = {
+        TitleId: PLAYFAB_TITLE_ID,
+        CreateAccount: false,
+        CustomId: discordCustomId
+    };
 
-            user.playFabId = data.playFabId;
-            user.displayName = data.displayName || user.username;
-
-            const discordCustomId = "WEB_LINK_SESSION_" + user.id;
-            const loginRequest = {
-                TitleId: PLAYFAB_TITLE_ID,
-                CreateAccount: true,
-                CustomId: discordCustomId
-            };
-
-            PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
-                if (error) {
-                    console.warn("[PlayFab Auth] Discord PlayFab login failed. Removing saved session & using Guest.", error);
-                    localStorage.removeItem(DISCORD_SESSION_KEY);
-                    loginAsGuest(onSuccess, onError);
-                } else {
-                    if (onSuccess) onSuccess(result, "discord", user);
-                }
-            });
-        })
-        .catch(err => {
-            console.error("[PlayFab Auth] Error checking link status from Bot server. Falling back to Guest.", err);
+    PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
+        if (error) {
+            // If account is not found, fall back to guest account creation/login
+            console.warn(`[PlayFab Auth] PlayFab account for ${discordCustomId} not found (${error.errorMessage}). Falling back to Guest Account.`);
             localStorage.removeItem(DISCORD_SESSION_KEY);
             loginAsGuest(onSuccess, onError);
-        });
+        } else {
+            user.playFabId = result.data.PlayFabId;
+            user.displayName = user.username;
+            if (onSuccess) onSuccess(result, "discord", user);
+        }
+    });
 }
 
 /**
