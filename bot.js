@@ -3,28 +3,6 @@ const http = require('http');
 const https = require('https');
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 
-// --- Keep-Alive Web Server ---
-const PORT = process.env.PORT || 10000;
-const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('VBR Assistant Coach Bot is running 24/7!');
-}).listen(PORT, () => {
-    console.log(`🌐 Keep-alive server listening on port ${PORT}`);
-});
-
-// Self-ping every 5 minutes
-setInterval(() => {
-    const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
-    if (renderAppUrl) {
-        const requester = renderAppUrl.startsWith('https') ? https : http;
-        requester.get(renderAppUrl, (res) => {
-            console.log(`[Heartbeat] Ping sent to ${renderAppUrl} - Status: ${res.statusCode}`);
-        }).on('error', (err) => {
-            console.error(`[Heartbeat Error] ${err.message}`);
-        });
-    }
-}, 300000);
-
 const PlayFab = require('playfab-sdk');
 const PlayFabServer = PlayFab.PlayFabServer;
 
@@ -41,6 +19,57 @@ const client = new Client({
     ]
 });
 
+// --- Keep-Alive & Notification HTTP Web Server ---
+const PORT = process.env.PORT || 10000;
+const server = http.createServer(async (req, res) => {
+    // Handling inbound notifications from PlayFab CloudScript to DM users
+    if (req.method === 'POST' && req.url === '/send-dm') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', async () => {
+            try {
+                const { discordId, message } = JSON.parse(body);
+                if (discordId && message) {
+                    const user = await client.users.fetch(discordId);
+                    if (user) {
+                        const dmEmbed = new EmbedBuilder()
+                            .setTitle('🏐 Volleyball Revengers Notification')
+                            .setDescription(message)
+                            .setColor('#1E90D8')
+                            .setTimestamp();
+                        await user.send({ embeds: [dmEmbed] });
+                    }
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                console.error('[HTTP Server Error] Failed to send DM:', err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
+
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('VBR Assistant Coach Bot is running 24/7!');
+}).listen(PORT, () => {
+    console.log(`🌐 Keep-alive & Webhook server listening on port ${PORT}`);
+});
+
+// Self-ping every 5 minutes
+setInterval(() => {
+    const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
+    if (renderAppUrl) {
+        const requester = renderAppUrl.startsWith('https') ? https : http;
+        requester.get(renderAppUrl, (res) => {
+            console.log(`[Heartbeat] Ping sent to ${renderAppUrl} - Status: ${res.statusCode}`);
+        }).on('error', (err) => {
+            console.error(`[Heartbeat Error] ${err.message}`);
+        });
+    }
+}, 300000);
+
 // --- Register Slash Commands ---
 const commands = [
     new SlashCommandBuilder().setName('website').setDescription('Get the official Volleyball Revengers website link'),
@@ -50,20 +79,25 @@ const commands = [
         .addStringOption(opt => opt.setName('code').setDescription('The 6-digit link code (e.g. 294-617 or 294617)').setRequired(true)),
     new SlashCommandBuilder().setName('account').setDescription('View profile, stats, physical attributes, and PlayFab info')
         .addUserOption(opt => opt.setName('target').setDescription('Player profile to view (optional)').setRequired(false)),
-    new SlashCommandBuilder().setName('club').setDescription('View club details, rank, W-L ratio, and members'),
+    new SlashCommandBuilder().setName('club').setDescription('View club details, rank, W-L ratio, and members')
+        .addStringOption(opt => opt.setName('name').setDescription('Name of the club to view').setRequired(false)),
     new SlashCommandBuilder().setName('club-info').setDescription('Learn information about what clubs are in Volleyball Revengers'),
     new SlashCommandBuilder().setName('nt-info').setDescription('Learn about the National Tournament coming in full release'),
     new SlashCommandBuilder().setName('online-players').setDescription('Show the current online player count'),
     new SlashCommandBuilder().setName('party-request').setDescription('Send a party request').addUserOption(opt => opt.setName('target').setDescription('Player to invite').setRequired(true)),
-    new SlashCommandBuilder().setName('accept-party').setDescription('Accept incoming party request').addUserOption(opt => opt.setName('target').setDescription('Player who invited you').setRequired(true)),
-    new SlashCommandBuilder().setName('decline-party').setDescription('Decline incoming party request').addUserOption(opt => opt.setName('target').setDescription('Player who invited you').setRequired(true)),
+    new SlashCommandBuilder().setName('accept-party').setDescription('Accept incoming party request').addStringOption(opt => opt.setName('party_id').setDescription('Party ID').setRequired(true)),
+    new SlashCommandBuilder().setName('decline-party').setDescription('Decline incoming party request').addStringOption(opt => opt.setName('party_id').setDescription('Party ID').setRequired(true)),
     new SlashCommandBuilder().setName('friend-request').setDescription('Send a friend request').addUserOption(opt => opt.setName('target').setDescription('Player to add').setRequired(true)),
     new SlashCommandBuilder().setName('accept-friend').setDescription('Accept incoming friend request').addUserOption(opt => opt.setName('target').setDescription('Player who added you').setRequired(true)),
     new SlashCommandBuilder().setName('decline-friend').setDescription('Decline incoming friend request').addUserOption(opt => opt.setName('target').setDescription('Player who added you').setRequired(true)),
-    new SlashCommandBuilder().setName('make-a-club').setDescription('Create a new club').addStringOption(opt => opt.setName('name').setDescription('Name of new club').setRequired(true)),
+    new SlashCommandBuilder().setName('block-player').setDescription('Block a player').addUserOption(opt => opt.setName('target').setDescription('Player to block').setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('make-a-club')
+        .setDescription('Create a new club (Costs 10,000 Aero-Coins)')
+        .addStringOption(opt => opt.setName('name').setDescription('Name of new club').setRequired(true))
+        .addStringOption(opt => opt.setName('tag').setDescription('3-4 character tag').setRequired(true))
+        .addStringOption(opt => opt.setName('practice_dates').setDescription('Comma separated days (e.g. Mon, Wed, Fri)').setRequired(true)),
     new SlashCommandBuilder().setName('club-request').setDescription('Send a request to join a club').addStringOption(opt => opt.setName('club_name').setDescription('Name of the club').setRequired(true)),
-    new SlashCommandBuilder().setName('join-club').setDescription('Accept an invite to join a club').addStringOption(opt => opt.setName('club_name').setDescription('Name of the club').setRequired(true)),
-    new SlashCommandBuilder().setName('decline-club').setDescription('Decline an invite to join a club').addStringOption(opt => opt.setName('club_name').setDescription('Name of the club').setRequired(true)),
     new SlashCommandBuilder().setName('manage-club').setDescription('Link to manage your club settings'),
     new SlashCommandBuilder().setName('msg').setDescription('Sends custom message (Admin Only)')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
@@ -86,27 +120,21 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
     }
 })();
 
-function executeLinkCloudScript(code, discordUser) {
+// --- PlayFab Wrapper Helpers ---
+function callCloudScript(functionName, functionParameter, playFabId) {
     return new Promise((resolve) => {
-        const payload = {
-            Code: String(code),
-            DiscordUserId: String(discordUser.id),
-            DiscordUsername: String(discordUser.username)
-        };
-
-        PlayFab.PlayFabServer.ExecuteCloudScript({
-            FunctionName: "LinkDiscord",
-            FunctionParameter: payload
+        PlayFabServer.ExecuteCloudScript({
+            FunctionName: functionName,
+            FunctionParameter: functionParameter,
+            PlayFabId: playFabId
         }, (error, result) => {
             if (error) {
-                console.error("[PlayFab Server API Error]:", error);
-                resolve({ success: false, message: error.errorMessage || 'PlayFab API error.' });
+                console.error(`[PlayFab CloudScript Error] ${functionName}:`, error);
+                resolve({ success: false, error: error.errorMessage || 'API error.' });
             } else if (result && result.data && result.data.FunctionResult) {
                 resolve(result.data.FunctionResult);
-            } else if (result && result.data && result.data.Error) {
-                resolve({ success: false, message: result.data.Error.Message || 'CloudScript Execution Error.' });
             } else {
-                resolve({ success: false, message: 'Invalid response from PlayFab CloudScript.' });
+                resolve({ success: false, error: 'Execution returned an invalid response.' });
             }
         });
     });
@@ -115,15 +143,9 @@ function executeLinkCloudScript(code, discordUser) {
 function getPlayerStats(playFabId) {
     return new Promise((resolve) => {
         PlayFabServer.GetPlayerStatistics({ PlayFabId: playFabId }, (error, result) => {
-            if (error || !result || !result.data) {
-                console.error("[PlayFab Server Stats Error]:", error);
-                return resolve({});
-            }
-
+            if (error || !result || !result.data) return resolve({});
             const stats = {};
-            (result.data.Statistics || []).forEach(stat => {
-                stats[stat.StatisticName] = stat.Value;
-            });
+            (result.data.Statistics || []).forEach(stat => { stats[stat.StatisticName] = stat.Value; });
             resolve(stats);
         });
     });
@@ -132,46 +154,34 @@ function getPlayerStats(playFabId) {
 function getPlayerData(playFabId) {
     return new Promise((resolve) => {
         PlayFabServer.GetUserData({ PlayFabId: playFabId }, (error, result) => {
-            if (error || !result || !result.data) {
-                console.error("[PlayFab User Data Error]:", error);
-                return resolve({});
-            }
+            if (error || !result || !result.data) return resolve({});
             resolve(result.data.Data || {});
         });
     });
 }
 
-
 function getPlayFabUserByDiscordId(discordId) {
     return new Promise((resolve) => {
         try {
             const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
-            PlayFab.PlayFabServer.GetTitleInternalData({
+            PlayFabServer.GetTitleInternalData({
                 Keys: [`DiscordUserMap_${cleanDiscordId}`]
             }, (error, result) => {
-                if (error) {
-                    console.error("[PlayFab Error] GetTitleInternalData:", error);
-                    return resolve({ user: null, reason: 'NOT_LINKED' });
-                }
+                if (error) return resolve({ user: null, reason: 'NOT_LINKED' });
 
                 const mappedPlayFabId = result?.data?.Data?.[`DiscordUserMap_${cleanDiscordId}`];
+                if (!mappedPlayFabId) return resolve({ user: null, reason: 'NOT_LINKED' });
 
-                if (!mappedPlayFabId) {
-                    return resolve({ user: null, reason: 'NOT_LINKED' });
-                }
-
-                PlayFab.PlayFabServer.GetUserAccountInfo({
+                PlayFabServer.GetUserAccountInfo({
                     PlayFabId: mappedPlayFabId
                 }, (accErr, accResult) => {
-                    if (accErr || !accResult || !accResult.data || !accResult.data.UserInfo) {
-                        console.error("[PlayFab Error] GetUserAccountInfo:", accErr);
+                    if (accErr || !accResult?.data?.UserInfo) {
                         return resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId: mappedPlayFabId });
                     }
                     resolve({ user: accResult.data.UserInfo, reason: 'SUCCESS' });
                 });
             });
         } catch (fatalErr) {
-            console.error("[Bot Exception] getPlayFabUserByDiscordId failed:", fatalErr);
             resolve({ user: null, reason: 'NOT_LINKED' });
         }
     });
@@ -191,7 +201,7 @@ async function enforceAccountLink(interaction, targetUser = null) {
 
         if (reason === 'ACCOUNT_NOT_FOUND') {
             title = '❓ Account Not Found';
-            description = `Linked PlayFab ID \`${playFabId}\` could not be retrieved from the server. The account may have been removed or lost.`;
+            description = `Linked PlayFab ID \`${playFabId}\` could not be retrieved from the server.`;
         }
 
         const responseEmbed = new EmbedBuilder()
@@ -215,23 +225,6 @@ async function enforceAccountLink(interaction, targetUser = null) {
 // --- Bot Ready Listener ---
 client.once('clientReady', () => {
     console.log(`🤖 VBR Assistant Coach is online as ${client.user.tag}!`);
-});
-
-// --- Connection Recovery & Error Handlers ---
-client.on('shardDisconnect', (event, id) => {
-    console.warn(`[Network Warning] Shard ${id} disconnected. Reconnecting...`);
-});
-
-client.on('shardError', (error, id) => {
-    console.error(`[Network Error] Connection error on shard ${id}:`, error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('[Unhandled Rejection]', reason);
-});
-
-process.on('uncaughtException', (error) => {
-    console.error('[Uncaught Exception]', error);
 });
 
 // --- Interaction Handler ---
@@ -258,7 +251,19 @@ client.on('interactionCreate', async interaction => {
 
             await interaction.deferReply({ ephemeral: true });
 
-            const result = await executeLinkCloudScript(cleanCode, interaction.user);
+            const result = await new Promise((resolve) => {
+                PlayFabServer.ExecuteCloudScript({
+                    FunctionName: "LinkDiscord",
+                    FunctionParameter: {
+                        Code: cleanCode,
+                        DiscordUserId: String(interaction.user.id),
+                        DiscordUsername: String(interaction.user.username)
+                    }
+                }, (error, res) => {
+                    if (error || !res?.data?.FunctionResult) resolve({ success: false, message: 'PlayFab API error.' });
+                    else resolve(res.data.FunctionResult);
+                });
+            });
 
             if (result.success) {
                 const successEmbed = new EmbedBuilder()
@@ -281,7 +286,6 @@ client.on('interactionCreate', async interaction => {
 
         else if (commandName === 'account') {
             await interaction.deferReply();
-
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
@@ -297,21 +301,6 @@ client.on('interactionCreate', async interaction => {
             const getStat = (key) => stats[key] ?? 0;
             const getData = (key) => userData[key]?.Value ?? null;
 
-            const playerElo = getStat('PlayerElo');
-            const matchMVPs = getStat('MVP');
-            const wins = getStat('Wins');
-            const matchesPlayed = getStat('MatchesPlayed');
-            const assists = getStat('Assists');
-            const blocks = getStat('Blocks');
-            const kills = getStat('Kills');
-
-            const playerHeight = getStat('PlayerHeight') || getData('PlayerHeight') || 'N/A';
-            const standingReach = getStat('StandingReach') || 'N/A';
-            const wingspan = getStat('Wingspan') || 'N/A';
-            
-            const rawHandedness = getStat('RightHanded');
-            const handednessText = rawHandedness === 1 ? 'Right-Handed 🖐️' : (rawHandedness === 0 ? 'Left-Handed 🤚' : 'N/A');
-
             const avatarURL = targetDiscordUser?.displayAvatarURL?.({ dynamic: true }) || interaction.user.displayAvatarURL({ dynamic: true });
 
             const accountEmbed = new EmbedBuilder()
@@ -319,33 +308,113 @@ client.on('interactionCreate', async interaction => {
                 .setColor('#1E90D8')
                 .setThumbnail(avatarURL)
                 .addFields(
-                    { name: '🆔 Account Info', value: `**Display Name:** ${displayName}\n**PlayFab ID:** \`${playFabId}\`\n**Player ELO:** ${playerElo}`, inline: false },
-                    { name: '📏 Physical Attributes', value: `**Height:** ${playerHeight}\n**Standing Reach:** ${standingReach}\n**Wingspan:** ${wingspan}\n**Handedness:** ${handednessText}`, inline: true },
-                    { name: '📊 Performance Stats', value: `**Matches Played:** ${matchesPlayed}\n**Wins:** ${wins}\n**Match MVPs:** ${matchMVPs}`, inline: true },
-                    { name: '🎯 In-Game Actions', value: `**Kills:** ${kills}\n**Blocks:** ${blocks}\n**Assists:** ${assists}`, inline: false }
+                    { name: '🆔 Account Info', value: `**Display Name:** ${displayName}\n**PlayFab ID:** \`${playFabId}\`\n**Player ELO:** ${getStat('PlayerElo')}`, inline: false },
+                    { name: '📏 Physical Attributes', value: `**Height:** ${getStat('PlayerHeight') || getData('PlayerHeight') || 'N/A'}\n**Standing Reach:** ${getStat('StandingReach') || 'N/A'}\n**Wingspan:** ${getStat('Wingspan') || 'N/A'}`, inline: true },
+                    { name: '📊 Performance Stats', value: `**Matches Played:** ${getStat('MatchesPlayed')}\n**Wins:** ${getStat('Wins')}\n**Match MVPs:** ${getStat('MVP')}`, inline: true },
+                    { name: '🎯 In-Game Actions', value: `**Kills:** ${getStat('Kills')}\n**Blocks:** ${getStat('Blocks')}\n**Assists:** ${getStat('Assists')}`, inline: false }
                 )
-                .setFooter({ text: 'Volleyball Revengers • Player Statistics', iconURL: client.user.displayAvatarURL() })
+                .setFooter({ text: 'Volleyball Revengers • Player Statistics' })
                 .setTimestamp();
 
             await interaction.editReply({ embeds: [accountEmbed] });
         }
 
-        else if (commandName === 'club') {
+        else if (commandName === 'friend-request') {
+            await interaction.deferReply();
+            const sender = await enforceAccountLink(interaction);
+            if (!sender) return;
+
+            const target = interaction.options.getUser('target');
+            const result = await callCloudScript('sendFriendRequestSignal', { TargetId: target.id }, sender.PlayFabId);
+
+            if (result.success) {
+                await interaction.editReply({ content: `📩 Friend request sent to **${target.username}**!` });
+            } else {
+                await interaction.editReply({ content: `❌ Could not send friend request: ${result.error || result.message}` });
+            }
+        }
+
+        else if (commandName === 'accept-friend') {
             await interaction.deferReply();
             const user = await enforceAccountLink(interaction);
             if (!user) return;
 
-            const embed = new EmbedBuilder()
-                .setTitle(`🏐 Club Info: Spikers United`)
-                .setColor('#1E90D8')
-                .addFields(
-                    { name: 'Leaderboard Rank', value: '#12', inline: true },
-                    { name: 'W - L Ratio', value: '24 W - 8 L (75%)', inline: true },
-                    { name: 'Members', value: '6 / 10 Active Members', inline: false }
-                )
-                .setFooter({ text: 'Volleyball Revengers • Club Manager' });
+            const target = interaction.options.getUser('target');
+            const result = await callCloudScript('acceptFriendRequestSignal', { TargetId: target.id }, user.PlayFabId);
 
-            await interaction.editReply({ embeds: [embed] });
+            if (result.success) {
+                await interaction.editReply({ content: `🤝 You are now friends with **${target.username}**!` });
+            } else {
+                await interaction.editReply({ content: `❌ Error accepting request: ${result.error}` });
+            }
+        }
+
+        else if (commandName === 'decline-friend') {
+            await interaction.deferReply();
+            const user = await enforceAccountLink(interaction);
+            if (!user) return;
+
+            const target = interaction.options.getUser('target');
+            const result = await callCloudScript('declineFriendRequestSignal', { TargetId: target.id }, user.PlayFabId);
+
+            if (result.success) {
+                await interaction.editReply({ content: `❌ Declined friend request from **${target.username}**.` });
+            } else {
+                await interaction.editReply({ content: `❌ Error declining request: ${result.error}` });
+            }
+        }
+
+        else if (commandName === 'block-player') {
+            await interaction.deferReply();
+            const user = await enforceAccountLink(interaction);
+            if (!user) return;
+
+            const target = interaction.options.getUser('target');
+            const result = await callCloudScript('blockPlayerSignal', { TargetId: target.id }, user.PlayFabId);
+
+            if (result.success) {
+                await interaction.editReply({ content: `🚫 **${target.username}** has been blocked and removed from your friends list.` });
+            } else {
+                await interaction.editReply({ content: `❌ Could not block player: ${result.error}` });
+            }
+        }
+
+        else if (commandName === 'make-a-club') {
+            await interaction.deferReply();
+            const user = await enforceAccountLink(interaction);
+            if (!user) return;
+
+            const clubName = interaction.options.getString('name');
+            const clubTag = interaction.options.getString('tag');
+            const rawDates = interaction.options.getString('practice_dates');
+            const practiceDates = rawDates.split(',').map(s => s.trim());
+
+            const result = await callCloudScript('createClub', {
+                ClubName: clubName,
+                ClubTag: clubTag,
+                PracticeDates: practiceDates
+            }, user.PlayFabId);
+
+            if (result.success) {
+                await interaction.editReply({ content: `🎉 **${clubName}** [${clubTag}] has been successfully created!` });
+            } else {
+                await interaction.editReply({ content: `❌ Failed to create club: ${result.error}` });
+            }
+        }
+
+        else if (commandName === 'party-request') {
+            await interaction.deferReply();
+            const user = await enforceAccountLink(interaction);
+            if (!user) return;
+
+            const target = interaction.options.getUser('target');
+            const result = await callCloudScript('inviteToParty', { TargetId: target.id, PartyId: `Party_${user.PlayFabId}` }, user.PlayFabId);
+
+            if (result.success) {
+                await interaction.editReply({ content: `🎉 Party request sent to **${target.username}**!` });
+            } else {
+                await interaction.editReply({ content: `❌ Could not send party invite: ${result.error}` });
+            }
         }
 
         else if (commandName === 'club-info') {
@@ -365,7 +434,7 @@ client.on('interactionCreate', async interaction => {
                 .setColor('#FF9900')
                 .addFields(
                     { name: 'Status', value: '🔒 Coming in Full Release!' },
-                    { name: 'Format', value: 'Bracket-style elimination tournament featuring the top-ranked Clubs across all regions.' }
+                    { name: 'Format', value: 'Bracket-style elimination tournament featuring top-ranked Clubs across all regions.' }
                 )
                 .setFooter({ text: 'Volleyball Revengers • VBR Assistant Coach' });
 
@@ -380,76 +449,6 @@ client.on('interactionCreate', async interaction => {
                 .setFooter({ text: 'Volleyball Revengers Live Status' });
 
             await interaction.reply({ embeds: [embed] });
-        }
-
-        else if (commandName === 'party-request') {
-            await interaction.deferReply();
-            if (!await enforceAccountLink(interaction)) return;
-            const target = interaction.options.getUser('target');
-            await interaction.editReply({ content: `🎉 Party request sent to **${target.username}**!` });
-        }
-
-        else if (commandName === 'accept-party') {
-            await interaction.deferReply();
-            if (!await enforceAccountLink(interaction)) return;
-            const target = interaction.options.getUser('target');
-            await interaction.editReply({ content: `✅ You joined **${target.username}**'s party!` });
-        }
-
-        else if (commandName === 'decline-party') {
-            await interaction.deferReply();
-            if (!await enforceAccountLink(interaction)) return;
-            const target = interaction.options.getUser('target');
-            await interaction.editReply({ content: `❌ You declined **${target.username}**'s party invitation.` });
-        }
-
-        else if (commandName === 'friend-request') {
-            await interaction.deferReply();
-            if (!await enforceAccountLink(interaction)) return;
-            const target = interaction.options.getUser('target');
-            await interaction.editReply({ content: `📩 Friend request sent to **${target.username}**!` });
-        }
-
-        else if (commandName === 'accept-friend') {
-            await interaction.deferReply();
-            if (!await enforceAccountLink(interaction)) return;
-            const target = interaction.options.getUser('target');
-            await interaction.editReply({ content: `🤝 You are now friends with **${target.username}**!` });
-        }
-
-        else if (commandName === 'decline-friend') {
-            await interaction.deferReply();
-            if (!await enforceAccountLink(interaction)) return;
-            const target = interaction.options.getUser('target');
-            await interaction.editReply({ content: `❌ Declined friend request from **${target.username}**.` });
-        }
-
-        else if (commandName === 'make-a-club') {
-            await interaction.deferReply();
-            if (!await enforceAccountLink(interaction)) return;
-            const clubName = interaction.options.getString('name');
-            await interaction.editReply({ content: `🎉 Congratulations! Club **${clubName}** has been successfully created!` });
-        }
-
-        else if (commandName === 'club-request') {
-            await interaction.deferReply();
-            if (!await enforceAccountLink(interaction)) return;
-            const clubName = interaction.options.getString('club_name');
-            await interaction.editReply({ content: `📩 Application sent to join **${clubName}**!` });
-        }
-
-        else if (commandName === 'join-club') {
-            await interaction.deferReply();
-            if (!await enforceAccountLink(interaction)) return;
-            const clubName = interaction.options.getString('club_name');
-            await interaction.editReply({ content: `✅ You have joined **${clubName}**!` });
-        }
-
-        else if (commandName === 'decline-club') {
-            await interaction.deferReply();
-            if (!await enforceAccountLink(interaction)) return;
-            const clubName = interaction.options.getString('club_name');
-            await interaction.editReply({ content: `❌ Declined invite to join **${clubName}**.` });
         }
 
         else if (commandName === 'manage-club') {
@@ -468,8 +467,7 @@ client.on('interactionCreate', async interaction => {
                 await targetChannel.send(messageText);
                 await interaction.reply({ content: `✅ Custom message successfully sent to ${targetChannel}!`, ephemeral: true });
             } catch (error) {
-                console.error('Failed to send message:', error);
-                await interaction.reply({ content: '❌ Failed to send the message. Make sure I have permission to speak in that channel.', ephemeral: true });
+                await interaction.reply({ content: '❌ Failed to send the message. Check channel permissions.', ephemeral: true });
             }
         }
     } catch (cmdErr) {
@@ -489,4 +487,3 @@ client.on('interactionCreate', async interaction => {
 
 // Log in the client
 client.login(process.env.DISCORD_BOT_TOKEN);
-
