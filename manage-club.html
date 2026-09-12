@@ -71,15 +71,6 @@
             box-shadow: 0 0 20px rgba(0, 242, 254, 0.1);
         }
 
-        .neon-border-cyan {
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
-            border: 1px solid rgba(0, 242, 254, 0.4);
-        }
-
-        .neon-text-cyan {
-            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
-        }
-
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -220,16 +211,12 @@
                         <i class="fa-solid fa-user-plus text-base"></i>
                         <span>Invite Member</span>
                     </button>
-                    <button onclick="openLinkCodeGenerator()" class="flex-1 md:flex-none px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm border border-slate-700 transition-all flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-key text-cyan-400"></i>
-                        <span>VR Link Code</span>
-                    </button>
                 </div>
             </div>
         </div>
 
         <!-- STATS DASHBOARD GRID -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
             <!-- Stat 1: Members -->
             <div class="glass-card rounded-2xl p-5 relative overflow-hidden group transition-all">
@@ -293,24 +280,6 @@
                     <span class="text-2xl font-black text-amber-300" id="stat-rank">Diamond II</span>
                 </div>
                 <p class="text-[11px] text-gray-400 mt-2">Global Rank #14</p>
-            </div>
-
-            <!-- Stat 5: Active VR Link Code Status -->
-            <div class="glass-card rounded-2xl p-5 relative overflow-hidden group transition-all border border-cyan-500/20">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-vbr-cyan">5-Min VR Code</span>
-                    <span class="flex h-2 w-2 relative">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-                    </span>
-                </div>
-                <div class="font-mono text-2xl font-black text-white tracking-widest my-1" id="active-link-code">
-                    784-912
-                </div>
-                <div class="flex justify-between items-center text-[11px]">
-                    <span class="text-gray-400">Expires in: <strong class="text-cyan-300 font-mono" id="code-timer">04:32</strong></span>
-                    <button onclick="refreshLinkCode()" class="text-vbr-cyan hover:underline font-semibold">New Code</button>
-                </div>
             </div>
 
         </section>
@@ -523,40 +492,6 @@
         </div>
     </div>
 
-    <!-- MODAL 2: 5-Minute VR Code Modal -->
-    <div id="code-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="glass-panel rounded-2xl max-w-md w-full p-6 border border-cyan-500/40 shadow-2xl text-center space-y-4">
-            <div class="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-vbr-cyan">
-                <i class="fa-solid fa-headset text-xl"></i>
-            </div>
-            <div>
-                <h3 class="text-xl font-extrabold text-white">Meta Quest VR Link Code</h3>
-                <p class="text-xs text-gray-400 mt-1">Enter this code inside the Volleyball Revengers VR headset app to authorize club management.</p>
-            </div>
-
-            <div class="bg-slate-950 p-4 rounded-xl border border-cyan-500/30 my-4">
-                <div class="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1">Temporary Linking Code</div>
-                <div id="modal-code-display" class="text-4xl font-black font-mono tracking-widest text-vbr-cyan neon-text-cyan">
-                    784-912
-                </div>
-                <div class="text-xs text-gray-400 mt-2">
-                    Code expires in: <span id="modal-timer-display" class="text-emerald-400 font-mono font-bold">04:32</span>
-                </div>
-            </div>
-
-            <div class="flex justify-center space-x-3">
-                <button onclick="copyCodeToClipboard()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs rounded-xl flex items-center gap-2">
-                    <i class="fa-solid fa-copy"></i> Copy Code
-                </button>
-                <button onclick="refreshLinkCode()" class="px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-vbr-cyan font-bold text-xs rounded-xl border border-cyan-500/30 flex items-center gap-2">
-                    <i class="fa-solid fa-rotate-right"></i> Generate Fresh
-                </button>
-            </div>
-
-            <button onclick="closeCodeModal()" class="w-full py-2.5 mt-2 bg-slate-800 text-gray-300 font-bold text-xs rounded-xl">Close</button>
-        </div>
-    </div>
-
     <!-- MODAL 3: Transfer Ownership Confirmation -->
     <div id="transfer-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass-panel rounded-2xl max-w-md w-full p-6 border border-amber-500/30 shadow-2xl space-y-4">
@@ -618,9 +553,7 @@
             wins: 42,
             losses: 18,
             rank: "Diamond II",
-            maxRoster: 12,
-            linkCode: "784-912",
-            codeExpirySeconds: 272 // 4 min 32 sec
+            maxRoster: 12
         };
 
         let membersList = [
@@ -641,14 +574,11 @@
             { text: "<strong>RevengerCaptain</strong> updated club motto.", time: "2 days ago", type: "settings" }
         ];
 
-        let timerInterval = null;
-
         // INITIALIZATION ON PAGE LOAD
         window.onload = function() {
             renderClubInfo();
             renderMembersTable();
             renderActivityLogs();
-            startCodeCountdown();
 
             // Mobile menu toggle
             document.getElementById('mobile-menu-btn').addEventListener('click', function() {
@@ -783,39 +713,6 @@
             });
         }
 
-        // 5-Minute Code Expiration Timer
-        function startCodeCountdown() {
-            if (timerInterval) clearInterval(timerInterval);
-
-            timerInterval = setInterval(() => {
-                if (clubData.codeExpirySeconds <= 0) {
-                    refreshLinkCode();
-                } else {
-                    clubData.codeExpirySeconds--;
-                    const mins = Math.floor(clubData.codeExpirySeconds / 60);
-                    const secs = clubData.codeExpirySeconds % 60;
-                    const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-                    
-                    document.getElementById('code-timer').innerText = formatted;
-                    document.getElementById('modal-timer-display').innerText = formatted;
-                }
-            }, 1000);
-        }
-
-        // Generate Fresh 6-Digit Code
-        function refreshLinkCode() {
-            const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-            const formattedCode = `${newCode.substring(0, 3)}-${newCode.substring(3, 6)}`;
-            
-            clubData.linkCode = formattedCode;
-            clubData.codeExpirySeconds = 300; // reset 5 mins
-
-            document.getElementById('active-link-code').innerText = formattedCode;
-            document.getElementById('modal-code-display').innerText = formattedCode;
-            
-            showToast("Fresh 5-minute VR code generated!");
-        }
-
         // Filter Member List
         function filterMembers() {
             const query = document.getElementById('member-search-input').value.toLowerCase();
@@ -887,9 +784,6 @@
         // MODAL TOGGLES
         function openInviteModal() { document.getElementById('invite-modal').classList.remove('hidden'); }
         function closeInviteModal() { document.getElementById('invite-modal').classList.add('hidden'); }
-
-        function openLinkCodeGenerator() { document.getElementById('code-modal').classList.remove('hidden'); }
-        function closeCodeModal() { document.getElementById('code-modal').classList.add('hidden'); }
 
         function openTransferModal() {
             const select = document.getElementById('transfer-select');
@@ -982,17 +876,6 @@
             renderMembersTable();
             closeDisbandModal();
             showToast("Club permanently disbanded.", "danger");
-        }
-
-        function copyCodeToClipboard() {
-            const text = clubData.linkCode.replace('-', '');
-            const dummy = document.createElement("textarea");
-            document.body.appendChild(dummy);
-            dummy.value = text;
-            dummy.select();
-            document.execCommand("copy");
-            document.body.removeChild(dummy);
-            showToast("Code copied to clipboard!");
         }
 
         function addLog(text, type) {
