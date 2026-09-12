@@ -93,6 +93,8 @@
         .profile-name { font-size: 1.8rem; font-weight: 900; margin-bottom: 4px; }
         .profile-id { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
 
+        .section-title { font-size: 1rem; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 800; color: var(--text-muted); margin-bottom: 15px; }
+
         .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 35px; }
         .info-box { background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; }
         .info-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 0.5px; margin-bottom: 6px; }
@@ -150,6 +152,8 @@
                 </div>
             </div>
 
+            <!-- Account Details -->
+            <div class="section-title">Account Details</div>
             <div class="info-grid">
                 <div class="info-box">
                     <div class="info-label">Authentication Method</div>
@@ -158,6 +162,63 @@
                 <div class="info-box">
                     <div class="info-label">Discord Tag</div>
                     <div id="discordTagDisplay" class="info-value">Not Linked</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Aero-Coins (AC)</div>
+                    <div id="currencyDisplay" class="info-value">--</div>
+                </div>
+            </div>
+
+            <!-- Player Statistics -->
+            <div class="section-title">Player Statistics</div>
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="info-label">Player ELO</div>
+                    <div id="statPlayerElo" class="info-value">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Player Height</div>
+                    <div id="statPlayerHeight" class="info-value">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Standing Reach</div>
+                    <div id="statStandingReach" class="info-value">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Wingspan</div>
+                    <div id="statWingspan" class="info-value">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Dominant Hand</div>
+                    <div id="statRightHanded" class="info-value">--</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Matches Played</div>
+                    <div id="statMatchesPlayed" class="info-value">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Wins</div>
+                    <div id="statWins" class="info-value">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">MVP</div>
+                    <div id="statMVP" class="info-value">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Kills</div>
+                    <div id="statKills" class="info-value">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Assists</div>
+                    <div id="statAssists" class="info-value">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Blocks</div>
+                    <div id="statBlocks" class="info-value">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Moderation</div>
+                    <div id="statModeration" class="info-value">0</div>
                 </div>
             </div>
 
@@ -216,6 +277,12 @@
                         document.getElementById("userName").innerText = "Guest Player";
                         document.getElementById("discordTagDisplay").innerText = "Not Connected";
                     }
+
+                    // Fetch Virtual Currency (AC)
+                    loadUserInventory();
+
+                    // Fetch Player Statistics
+                    loadPlayerStatistics();
                 },
                 (error) => {
                     // Redirect to home if session invalid
@@ -223,6 +290,66 @@
                 }
             );
         };
+
+        // Fetch User Inventory for Virtual Currencies
+        function loadUserInventory() {
+            PlayFabClientAPI.GetUserInventory({}, (result, error) => {
+                if (result && result.data && result.data.VirtualCurrency) {
+                    const acBalance = result.data.VirtualCurrency["AC"] ?? 0;
+                    document.getElementById("currencyDisplay").innerText = `${acBalance.toLocaleString()} AC`;
+                } else {
+                    document.getElementById("currencyDisplay").innerText = "0 AC";
+                }
+            });
+        }
+
+        // Fetch Player Statistics
+        function loadPlayerStatistics() {
+            PlayFabClientAPI.GetPlayerStatistics({
+                StatisticNames: [
+                    "PlayerElo",
+                    "PlayerHeight",
+                    "StandingReach",
+                    "Wingspan",
+                    "RightHanded",
+                    "Moderation",
+                    "MVP",
+                    "Wins",
+                    "MatchesPlayed",
+                    "Assists",
+                    "Blocks",
+                    "Kills"
+                ]
+            }, (result, error) => {
+                if (result && result.data && result.data.Statistics) {
+                    const statsMap = {};
+                    result.data.Statistics.forEach(stat => {
+                        statsMap[stat.StatisticName] = stat.Value;
+                    });
+
+                    // Map values to UI
+                    document.getElementById("statPlayerElo").innerText = statsMap["PlayerElo"] ?? "--";
+                    document.getElementById("statPlayerHeight").innerText = statsMap["PlayerHeight"] != null ? `${statsMap["PlayerHeight"]} cm` : "--";
+                    document.getElementById("statStandingReach").innerText = statsMap["StandingReach"] != null ? `${statsMap["StandingReach"]} cm` : "--";
+                    document.getElementById("statWingspan").innerText = statsMap["Wingspan"] != null ? `${statsMap["Wingspan"]} cm` : "--";
+                    
+                    // RightHanded (1 = Right-Handed, 0 = Left-Handed)
+                    if (statsMap["RightHanded"] !== undefined) {
+                        document.getElementById("statRightHanded").innerText = statsMap["RightHanded"] === 1 ? "Right-Handed" : "Left-Handed";
+                    } else {
+                        document.getElementById("statRightHanded").innerText = "--";
+                    }
+
+                    document.getElementById("statMatchesPlayed").innerText = (statsMap["MatchesPlayed"] ?? 0).toLocaleString();
+                    document.getElementById("statWins").innerText = (statsMap["Wins"] ?? 0).toLocaleString();
+                    document.getElementById("statMVP").innerText = (statsMap["MVP"] ?? 0).toLocaleString();
+                    document.getElementById("statKills").innerText = (statsMap["Kills"] ?? 0).toLocaleString();
+                    document.getElementById("statAssists").innerText = (statsMap["Assists"] ?? 0).toLocaleString();
+                    document.getElementById("statBlocks").innerText = (statsMap["Blocks"] ?? 0).toLocaleString();
+                    document.getElementById("statModeration").innerText = (statsMap["Moderation"] ?? 0).toLocaleString();
+                }
+            });
+        }
 
         // Logout Logic
         function executeLogout() {
