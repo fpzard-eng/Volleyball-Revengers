@@ -30,6 +30,7 @@ setInterval(() => {
 PlayFab.settings.titleId = process.env.PLAYFAB_TITLE_ID;
 PlayFab.settings.developerSecretKey = process.env.PLAYFAB_SECRET_KEY;
 PlayFab.settings.productionUrl = `https://${process.env.PLAYFAB_TITLE_ID}.playfabapi.com`;
+const PlayFabAdmin = PlayFab.PlayFabAdmin;
 
 // --- Initialize Discord Client ---
 const client = new Client({
@@ -113,9 +114,16 @@ function executeLinkCloudScript(code, discordUser) {
 
 function getPlayerStats(playFabId) {
     return new Promise((resolve) => {
-        PlayFab.PlayFabServer.GetUserStatistics({ PlayFabId: playFabId }, (error, result) => {
-            if (error || !result || !result.data) resolve({});
-            else {
+        if (!PlayFabAdmin || !PlayFabAdmin.GetAdminUserStatistics) {
+            console.error("[PlayFab Error] PlayFabAdmin API is not loaded.");
+            return resolve({});
+        }
+
+        PlayFabAdmin.GetAdminUserStatistics({ PlayFabId: playFabId }, (error, result) => {
+            if (error || !result || !result.data) {
+                console.error("[PlayFab Admin Stats Error]:", error);
+                resolve({});
+            } else {
                 const stats = {};
                 (result.data.UserStatistics || []).forEach(stat => {
                     stats[stat.StatisticName] = stat.Value;
@@ -125,6 +133,7 @@ function getPlayerStats(playFabId) {
         });
     });
 }
+
 
 function getPlayerData(playFabId) {
     return new Promise((resolve) => {
