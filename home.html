@@ -393,24 +393,34 @@ function initializeHomePageSession() {
             const authContainer = document.getElementById("auth-status-container");
             const linkDiscordNavItem = document.getElementById("linkDiscordNavItem");
 
+            // Check if user is logged in / authenticated via Discord
             if (authType === "discord" && discordUser) {
-                // Redirect logged-in Discord users to the account page
-                window.location.href = "account";
-                return;
-            }
+                // USER IS LOGGED IN: Change click behavior to redirect to Account page
+                if (authContainer) {
+                    authContainer.innerHTML = `
+                        <button class="discord-login-btn" id="accountBtn" onclick="window.location.href='account'">
+                            <span>👤</span> Account Settings
+                        </button>
+                    `;
+                }
 
-            // User is not logged in / linked via Discord: show the button & menu option
-            if (authContainer) {
-                authContainer.innerHTML = `
-                    <button class="discord-login-btn" id="discordLoginBtn" onclick="redirectToDiscordLogin()">
-                        <span>👾</span> Login with Discord
-                    </button>
-                `;
-            }
+                // Hide or update 'Link Discord' navigation item if already linked
+                if (linkDiscordNavItem) {
+                    linkDiscordNavItem.style.display = "none";
+                }
+            } else {
+                // USER IS GUEST / UNLINKED: Show Login with Discord button
+                if (authContainer) {
+                    authContainer.innerHTML = `
+                        <button class="discord-login-btn" id="discordLoginBtn" onclick="redirectToDiscordLogin()">
+                            <span>👾</span> Login with Discord
+                        </button>
+                    `;
+                }
 
-            // Show 'Link Discord' option in dropdown since account is not linked
-            if (linkDiscordNavItem) {
-                linkDiscordNavItem.style.display = "flex";
+                if (linkDiscordNavItem) {
+                    linkDiscordNavItem.style.display = "flex";
+                }
             }
 
             fetchPlayFabLeaderboard(currentStatistic);
