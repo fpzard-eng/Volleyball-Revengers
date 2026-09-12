@@ -4,11 +4,10 @@ const GUEST_ID_KEY = "vbr_guest_custom_id";
 const DISCORD_SESSION_KEY = "vbr_discord_session_user";
 const BOT_SERVER_URL = "https://vbr-assistant-coach.onrender.com";
 
-
 function getOrCreateGuestId() {
     let id = localStorage.getItem(GUEST_ID_KEY);
     if (!id) {
-        id = `Guest_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
+        id = `WebGuest_${Math.random().toString(36).substring(2, 11)}`;
         localStorage.setItem(GUEST_ID_KEY, id);
     }
     return id;
@@ -25,51 +24,50 @@ function logoutDiscordUser() {
     window.location.reload();
 }
 
-async function executePlayFabDiscordLogin(discordId) {
-    const customId = `DISCORD_${discordId}`;
+function executePlayFabDiscordLogin(user, onSuccess, onError) {
+    const discordId = user.id;
 
-    return new Promise((resolve, reject) => {
-        PlayFabClientSDK.LoginWithCustomID({
-            TitleId: PlayFab.settings.titleId,
-            CustomId: customId,
-            CreateAccount: true,
-            InfoRequestParameters: {
-                GetUserAccountInfo: true
-            }
-        }, (error, result) => {
-            if (error) {
-                console.warn(`[PlayFab Auth] Failed to authenticate CustomID: ${customId}`, error);
-                return executePlayFabGuestLogin()
-                    .then(resolve)
-                    .catch(reject);
-            }
-
-            console.log(`[PlayFab Auth] Successfully logged in as ${customId}`);
-            resolve(result.data);
-        });
-    });
-}
-
-function executePlayFabGuestLogin() {
-    return new Promise((resolve, reject) => {
-        let guestId = localStorage.getItem('vbr_guest_id');
-        if (!guestId) {
-            guestId = 'GUEST_' + Math.random().toString(36).substring(2, 11);
-            localStorage.setItem('vbr_guest_id', guestId);
+    fetch(`${BOT_SERVER_URL}/api/login-server-custom-id`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ discordId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            console.warn(`[PlayFab Auth] ServerCustomID login failed for DISCORD_${discordId}. Falling back to Guest.`, data.error);
+            return loginAsGuest(onSuccess, onError);
+        }
+        if (typeof PlayFab !== "undefined" && PlayFab._internalSettings) {
+            PlayFab._internalSettings.sessionTicket = data.sessionTicket;
         }
 
-        PlayFabClientSDK.LoginWithCustomID({
-            TitleId: PlayFab.settings.titleId,
-            CustomId: guestId,
-            CreateAccount: true
-        }, (error, result) => {
-            if (error) return reject(error);
-            console.log('[PlayFab Auth] Logged in with Guest Account:', guestId);
-            resolve(result.data);
-        });
+        console.log(`[PlayFab Auth] Successfully authenticated DISCORD_${discordId} via ServerCustomID!`);
+        if (onSuccess) onSuccess(data, "discord", user);
+    })
+    .catch(err => {
+        console.error('[PlayFab Auth] Network error contacting auth server:', err);
+        loginAsGuest(onSuccess, onError);
     });
 }
 
+function loginAsGuest(onSuccess, onError) {
+    const loginRequest = {
+        TitleId: PLAYFAB_TITLE_ID,
+        CreateAccount: true,
+        CustomId: getOrCreateGuestId()
+    };
+
+    PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
+        if (error) {
+            console.error("[PlayFab Auth] Guest login failed:", error);
+            if (onError) onError(error);
+        } else {
+            console.log("[PlayFab Auth] Logged in with Guest account.");
+            if (onSuccess) onSuccess(result, "guest", null);
+        }
+    });
+}
 
 function initPlayFabSession(onSuccess, onError) {
     if (typeof PlayFab === "undefined" || typeof PlayFabClientSDK === "undefined") {
@@ -116,20 +114,4 @@ function initPlayFabSession(onSuccess, onError) {
     }
 
     loginAsGuest(onSuccess, onError);
-}
-
-function loginAsGuest(onSuccess, onError) {
-    const loginRequest = {
-        TitleId: PLAYFAB_TITLE_ID,
-        CreateAccount: true,
-        CustomId: getOrCreateGuestId()
-    };
-
-    PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
-        if (error) {
-            if (onError) onError(error);
-        } else {
-            if (onSuccess) onSuccess(result, "guest", null);
-        }
-    });
 }
