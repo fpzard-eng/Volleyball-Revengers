@@ -3,7 +3,7 @@ const DISCORD_CLIENT_ID = "1547808053078925332";
 const GUEST_ID_KEY = "vbr_guest_custom_id";
 const DISCORD_SESSION_KEY = "vbr_discord_session_user";
 
-// Backend Render Server URL
+// Explicit backend host
 const BOT_SERVER_URL = "https://vbr-assistant-coach.onrender.com";
 
 /**
@@ -39,10 +39,11 @@ function logoutDiscordUser() {
  * Helper to verify Discord link status via backend Bot service and log into PlayFab.
  */
 function executePlayFabDiscordLogin(user, onSuccess, onError) {
-    // Query backend bot service on Render
-    fetch(`${BOT_SERVER_URL}/api/user-info?discordId=${user.id}`)
+    const apiUrl = `${BOT_SERVER_URL}/api/user-info?discordId=${user.id}`;
+
+    fetch(apiUrl, { mode: 'cors' })
         .then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
             return res.json();
         })
         .then(data => {
@@ -51,13 +52,13 @@ function executePlayFabDiscordLogin(user, onSuccess, onError) {
                 user.displayName = data.displayName || user.username;
                 loginWithPlayFabCustomId(user, onSuccess, onError);
             } else {
-                console.warn("[PlayFab Auth] Discord account is NOT linked via bot. Falling back to Guest.");
+                console.warn("[PlayFab Auth] Account is NOT linked via bot. Logging in as Guest.");
                 localStorage.removeItem(DISCORD_SESSION_KEY);
                 loginAsGuest(onSuccess, onError);
             }
         })
         .catch(err => {
-            console.error("[PlayFab Auth] Failed to verify backend status. Falling back to Guest.", err);
+            console.error("[PlayFab Auth] Backend verification failed at " + apiUrl, err);
             localStorage.removeItem(DISCORD_SESSION_KEY);
             loginAsGuest(onSuccess, onError);
         });
