@@ -148,7 +148,6 @@
                 <img id="userAvatar" src="logo.png" alt="Profile Avatar" class="profile-avatar">
                 <div class="profile-details">
                     <div id="userName" class="profile-name holo-text">Loading Discord Username...</div>
-                     <div id="playFabDisplayName" class="profile-id">Loading PlayFab Username...: --</div>
                     <div id="playFabIdDisplay" class="profile-id">PlayFab ID: --</div>
                 </div>
             </div>
@@ -165,8 +164,8 @@
                     <div id="discordTagDisplay" class="info-value">Not Linked</div>
                 </div>
                 <div class="info-box">
-                    <div class="info-label">Discord Username</div>
-                    <div id="discordTagDisplay" class="info-value">Not Linked</div>
+                    <div class="info-label">PlayFab Username</div>
+                    <div id="playFabDisplayName" class="info-value">Not Linked</div>
                 </div>
                 <div class="info-box">
                     <div class="info-label">Aero-Coins (AC)</div>
@@ -319,7 +318,6 @@
                     "StandingReach",
                     "Wingspan",
                     "RightHanded",
-                    "Moderation",
                     "MVP",
                     "Wins",
                     "MatchesPlayed",
@@ -353,7 +351,6 @@
                     document.getElementById("statKills").innerText = (statsMap["Kills"] ?? 0).toLocaleString();
                     document.getElementById("statAssists").innerText = (statsMap["Assists"] ?? 0).toLocaleString();
                     document.getElementById("statBlocks").innerText = (statsMap["Blocks"] ?? 0).toLocaleString();
-                    document.getElementById("statModeration").innerText = (statsMap["Moderation"] ?? 0).toLocaleString();
                 }
             });
         }
