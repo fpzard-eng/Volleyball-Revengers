@@ -250,19 +250,18 @@
             <button class="menu-btn" id="menuToggleBtn">
                 <span style="font-size: 1.1rem;">☰</span>
             </button>
-            <div class="nav-menu" id="navMenu">
-    <div class="nav-menu-header">Navigation</div>
-    <a href="account.html"><span class="menu-icon">👤</span> Account</a>
-    <a href="link-discord.html"><span class="menu-icon">💾</span> Link Discord</a>
-    <a href="updates.html"><span class="menu-icon">🚀</span> Update Log</a>
-    <hr>
-    <div class="nav-menu-header">Community</div>
-    <a href="https://discord.gg/xG6QcTbfp2" target="_blank"><span class="menu-icon">💬</span> Discord </a>
-    <hr>
-    <div class="nav-menu-header">Legal & Info</div>
-    <a href="privacy.html"><span class="menu-icon">🛡️</span> Privacy Policy</a>
-    <a href="terms.html"><span class="menu-icon">📄</span> Terms of Service</a>
-</div>
+           <div class="nav-menu" id="navMenu">
+               <div class="nav-menu-header">Navigation</div>
+               <a href="link-discord" id="linkDiscordNavItem" style="display: none;"><span class="menu-icon">💾</span> Link Discord</a>
+               <a href="updates"><span class="menu-icon">🚀</span> Update Log</a>
+               <hr>
+               <div class="nav-menu-header">Community</div>
+               <a href="https://discord.gg/xG6QcTbfp2" target="_blank"><span class="menu-icon">💬</span> Discord </a>
+               <hr>
+               <div class="nav-menu-header">Legal & Info</div>
+               <a href="privacy"><span class="menu-icon">🛡️</span> Privacy Policy</a>
+               <a href="terms"><span class="menu-icon">📄</span> Terms of Service</a>
+           </div>
         </div>
     </header>
 
@@ -385,29 +384,59 @@
         themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-        let currentStatistic = "Kills";
+       // Keep track of active statistic
+let currentStatistic = "Kills";
 
-        function initializeHomePageSession() {
-            initPlayFabSession(
-                (result, authType, discordUser) => {
-                    const authContainer = document.getElementById("auth-status-container");
-                    if (authType === "discord" && discordUser) {
-                        const avatarUrl = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
-                        authContainer.innerHTML = `
-                            <div class="user-badge" title="Logged in via linked Discord Account">
-                                <img src="${avatarUrl}" alt="Avatar">
-                                <span>${discordUser.username}</span>
-                            </div>
-                        `;
-                    }
-                    fetchPlayFabLeaderboard(currentStatistic);
-                },
-                (error) => {
-                    document.getElementById("leaderboard-body").innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Unable to connect to PlayFab servers.</td></tr>`;
-                }
-            );
+function initializeHomePageSession() {
+    initPlayFabSession(
+        (result, authType, discordUser) => {
+            const authContainer = document.getElementById("auth-status-container");
+            const linkDiscordNavItem = document.getElementById("linkDiscordNavItem");
+
+            if (authType === "discord" && discordUser) {
+                // Redirect logged-in Discord users to the account page
+                window.location.href = "account.html";
+                return;
+            }
+
+            // User is not logged in / linked via Discord: show the button & menu option
+            if (authContainer) {
+                authContainer.innerHTML = `
+                    <button class="discord-login-btn" id="discordLoginBtn" onclick="redirectToDiscordLogin()">
+                        <span>👾</span> Login with Discord
+                    </button>
+                `;
+            }
+
+            // Show 'Link Discord' option in dropdown since account is not linked
+            if (linkDiscordNavItem) {
+                linkDiscordNavItem.style.display = "flex";
+            }
+
+            fetchPlayFabLeaderboard(currentStatistic);
+        },
+        (error) => {
+            const authContainer = document.getElementById("auth-status-container");
+            const linkDiscordNavItem = document.getElementById("linkDiscordNavItem");
+
+            if (authContainer) {
+                authContainer.innerHTML = `
+                    <button class="discord-login-btn" id="discordLoginBtn" onclick="redirectToDiscordLogin()">
+                        <span>👾</span> Login with Discord
+                    </button>
+                `;
+            }
+
+            // Show link button for guests/unauthenticated users
+            if (linkDiscordNavItem) {
+                linkDiscordNavItem.style.display = "flex";
+            }
+
+            fetchPlayFabLeaderboard(currentStatistic);
         }
-
+    );
+}
+        
         function switchLeaderboard(statName, btnElement) {
             currentStatistic = statName;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
