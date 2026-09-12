@@ -26,10 +26,10 @@ setInterval(() => {
     }
 }, 300000);
 
-const PlayFab = require('playfab-sdk/Scripts/PlayFab/PlayFab.js');
-const PlayFabAdmin = require('playfab-sdk/Scripts/PlayFab/PlayFabAdmin.js');
-const PlayFabServer = require('playfab-sdk/Scripts/PlayFab/PlayFabServer.js');
+// --- Imports ---
+const { PlayFab, PlayFabAdmin, PlayFabServer } = require('playfab-sdk');
 
+// --- PlayFab Configuration ---
 PlayFab.settings.titleId = process.env.PLAYFAB_TITLE_ID;
 PlayFab.settings.developerSecretKey = process.env.PLAYFAB_SECRET_KEY;
 PlayFab.settings.productionUrl = `https://${process.env.PLAYFAB_TITLE_ID}.playfabapi.com`;
