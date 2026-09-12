@@ -206,39 +206,110 @@
 
         .nav-back { margin-bottom: 30px; font-weight: 700; }
         
-        .empty-log-card {
+        /* Update Logs & Timeline Styling */
+        .updates-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .update-card {
             background: var(--bg-card);
             backdrop-filter: blur(15px);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 50px 20px;
-            text-align: center;
-            box-shadow: var(--shadow-widget);
-            margin-top: 20px;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-card);
             position: relative;
             overflow: hidden;
-        }
-        .empty-log-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); }
-
-        .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            display: inline-block;
-            filter: drop-shadow(0 5px 15px var(--accent-glow));
+            transition: all 0.3s ease;
         }
 
-        .empty-title {
+        .update-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 10px 30px var(--accent-glow);
+            transform: translateY(-2px);
+        }
+
+        .update-card.upcoming {
+            border-style: dashed;
+            background: rgba(18, 22, 31, 0.5);
+        }
+
+        .update-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .update-title-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .update-version {
             font-size: 1.3rem;
-            font-weight: 900;
-            margin-bottom: 10px;
+            font-weight: 800;
+            color: var(--text-main);
         }
 
-        .empty-desc {
+        .update-date {
+            font-size: 0.85rem;
             color: var(--text-muted);
-            font-size: 0.95rem;
-            max-width: 450px;
-            margin: 0 auto;
             font-weight: 600;
+        }
+
+        .badge-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: var(--badge-bg);
+            border: 1px solid var(--badge-border);
+            color: var(--text-main);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.planned {
+            background: rgba(255, 193, 7, 0.15);
+            border-color: rgba(255, 193, 7, 0.4);
+            color: #ffc107;
+        }
+
+        .update-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .update-list li {
+            position: relative;
+            padding-left: 24px;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .update-list li::before {
+            content: "•";
+            position: absolute;
+            left: 8px;
+            color: var(--border-glow);
+            font-weight: bold;
+            font-size: 1.2rem;
+            line-height: 1;
         }
 
         .contact-box {
@@ -301,13 +372,85 @@
     <div class="container">
         <div class="nav-back"><a href="home">← Back to Home</a></div>
         
-        <h1 class="holo-text">Update Log</h1>
-        <p style="margin-bottom: 35px;">Stay up to date with patch notes, backend refactors, network optimizations, and physics improvements for <strong>Volleyball Revengers</strong>.</p>
+        <h1 class="holo-text">Update Log & Roadmap</h1>
+        <p style="margin-bottom: 35px;">Stay up to date with patch notes, backend refactors, network optimizations, and feature rollouts for <strong>Volleyball Revengers</strong>.</p>
 
-        <div class="empty-log-card">
-            <div class="empty-icon">🚀</div>
-            <div class="empty-title holo-text">No Update Logs Yet</div>
-            <div class="empty-desc">Patch notes and build logs will be published here leading up to the upcoming Open Beta release. Check back soon!</div>
+        <div class="updates-container">
+            <!-- Planned: Store & Inventory Update -->
+            <div class="update-card upcoming">
+                <div class="update-header">
+                    <div class="update-title-group">
+                        <div class="update-version">Store & Inventory Update</div>
+                        <div class="update-date">Planned Release</div>
+                    </div>
+                    <div class="badge-group">
+                        <span class="badge planned">Upcoming</span>
+                        <span class="badge">Features</span>
+                    </div>
+                </div>
+                <ul class="update-list">
+                    <li>Full cosmetic store implementation for balls, shoes, and court trails.</li>
+                    <li>PlayFab inventory persistence integration across VR sessions.</li>
+                    <li>NPC Store Cashier interaction and dynamic checkout UI.</li>
+                </ul>
+            </div>
+
+            <!-- Planned: Open Beta & Gacha Update -->
+            <div class="update-card upcoming">
+                <div class="update-header">
+                    <div class="update-title-group">
+                        <div class="update-version">Open Beta & Gacha Machine Update</div>
+                        <div class="update-date">Planned Release</div>
+                    </div>
+                    <div class="badge-group">
+                        <span class="badge planned">Upcoming</span>
+                        <span class="badge">Major Update</span>
+                    </div>
+                </div>
+                <ul class="update-list">
+                    <li>Public Open Beta launch for Quest and PCVR platforms.</li>
+                    <li>Interactive Gacha Machine unit for unlocking rare cosmetics and titles.</li>
+                    <li>Gym facility expansion and NPC Gym Trainer interactions.</li>
+                </ul>
+            </div>
+
+            <!-- Current Phase: Visual Update -->
+            <div class="update-card">
+                <div class="update-header">
+                    <div class="update-title-group">
+                        <div class="update-version">Visual & Environment Redesign</div>
+                        <div class="update-date">In Active Development</div>
+                    </div>
+                    <div class="badge-group">
+                        <span class="badge">In Progress</span>
+                        <span class="badge">Environment</span>
+                    </div>
+                </div>
+                <ul class="update-list">
+                    <li>Complete Blender overhaul of court models, lighting rigs, and net textures.</li>
+                    <li>Environment expansion: Adding Gym, Street, and Store areas.</li>
+                    <li>Procedural Inverse Kinematics (IK) refinements for player avatar limb alignment.</li>
+                </ul>
+            </div>
+
+            <!-- Released: Phone Update -->
+            <div class="update-card">
+                <div class="update-header">
+                    <div class="update-title-group">
+                        <div class="update-version">Phone & System Integration</div>
+                        <div class="update-date">Completed Milestone</div>
+                    </div>
+                    <div class="badge-group">
+                        <span class="badge">System</span>
+                        <span class="badge">UI / UX</span>
+                    </div>
+                </div>
+                <ul class="update-list">
+                    <li>In-game wrist phone interface for lobby navigation and player settings.</li>
+                    <li>Photon Fusion network state synchronization for VR input controls and VR keyboard.</li>
+                    <li>Backend PlayFab integration for server lobbies, matchmaking, and player tracking.</li>
+                </ul>
+            </div>
         </div>
 
         <div class="contact-box">
