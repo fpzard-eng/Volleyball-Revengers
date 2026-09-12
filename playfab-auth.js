@@ -2,6 +2,8 @@ const PLAYFAB_TITLE_ID = "1E90D8";
 const DISCORD_CLIENT_ID = "1547808053078925332";
 const GUEST_ID_KEY = "vbr_guest_custom_id";
 const DISCORD_SESSION_KEY = "vbr_discord_session_user";
+
+// Backend Render Server URL
 const BOT_SERVER_URL = "https://vbr-assistant-coach.onrender.com";
 
 /**
@@ -37,14 +39,7 @@ function logoutDiscordUser() {
  * Helper to verify Discord link status via backend Bot service and log into PlayFab.
  */
 function executePlayFabDiscordLogin(user, onSuccess, onError) {
-    // Check if BOT_SERVER_URL is configured
-    if (!BOT_SERVER_URL || BOT_SERVER_URL.includes("your-bot-server-url.com")) {
-        console.warn("[PlayFab Auth] BOT_SERVER_URL not configured. Attempting direct PlayFab Discord session login.");
-        loginWithPlayFabCustomId(user, onSuccess, onError);
-        return;
-    }
-
-    // Query backend bot service on hosted server
+    // Query backend bot service on Render
     fetch(`${BOT_SERVER_URL}/api/user-info?discordId=${user.id}`)
         .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
