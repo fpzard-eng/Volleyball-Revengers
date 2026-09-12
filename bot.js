@@ -309,7 +309,7 @@ client.on('interactionCreate', async interaction => {
             const kills = getStat('Kills');
 
             const playerHeight = getStat('PlayerHeight') || getData('PlayerHeight') || 'N/A';
-            const standingReach = getData('StandingReach') || 'N/A';
+            const standingReach = getStat('StandingReach') || getData('StandingReach') || 'N/A';
             const wingspan = getStat('Wingspan') || getData('Wingspan') || 'N/A';
             
             const rawHandedness = getStat('RightHanded');
