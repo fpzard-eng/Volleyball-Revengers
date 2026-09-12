@@ -2,7 +2,7 @@
 const PLAYFAB_TITLE_ID = "1E90D8";
 const DISCORD_CLIENT_ID = "1547808053078925332";
 const GUEST_ID_KEY = "vbr_guest_custom_id";
-const DISCORD_USER_KEY = "vbr_discord_user";
+const DISCORD_SESSION_KEY = "vbr_discord_session_user";
 
 /**
  * Generates or retrieves a local guest identifier.
@@ -26,17 +26,17 @@ function redirectToDiscordLogin() {
 }
 
 /**
- * Logs out the user by clearing stored Discord credentials and reloading.
+ * Clears saved Discord session and reloads page to log out.
  */
 function logoutDiscordUser() {
-    localStorage.removeItem(DISCORD_USER_KEY);
+    localStorage.removeItem(DISCORD_SESSION_KEY);
     window.location.reload();
 }
 
 /**
- * Authenticates with PlayFab using a Discord user object.
+ * Helper to log into PlayFab using a Discord User Object.
  */
-function loginWithDiscordUser(user, onSuccess, onError) {
+function executePlayFabDiscordLogin(user, onSuccess, onError) {
     const discordCustomId = "WEB_LINK_SESSION_" + user.id;
     const loginRequest = {
         TitleId: PLAYFAB_TITLE_ID,
@@ -46,8 +46,8 @@ function loginWithDiscordUser(user, onSuccess, onError) {
 
     PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
         if (error) {
-            console.warn("[PlayFab Auth] Discord-linked PlayFab login failed. Clearing saved session and falling back to Guest Account.", error);
-            localStorage.removeItem(DISCORD_USER_KEY);
+            console.warn("[PlayFab Auth] Discord PlayFab login failed. Removing saved session & using Guest.", error);
+            localStorage.removeItem(DISCORD_SESSION_KEY);
             loginAsGuest(onSuccess, onError);
         } else {
             if (onSuccess) onSuccess(result, "discord", user);
@@ -56,8 +56,7 @@ function loginWithDiscordUser(user, onSuccess, onError) {
 }
 
 /**
- * Initializes PlayFab session.
- * Checks URL for OAuth return, falls back to saved local session, then to Guest.
+ * Initializes PlayFab session with full persistence checks.
  */
 function initPlayFabSession(onSuccess, onError) {
     if (typeof PlayFab === "undefined" || typeof PlayFabClientSDK === "undefined") {
@@ -67,47 +66,51 @@ function initPlayFabSession(onSuccess, onError) {
 
     PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
 
-    // 1. Check URL fragment for a new OAuth token redirect
+    // STEP 1: Check URL hash for new OAuth access token
     const fragment = new URLSearchParams(window.location.hash.slice(1));
     const accessToken = fragment.get('access_token');
 
     if (accessToken) {
-        // Clear fragment from address bar for clean presentation
+        // Clean URL fragment
         history.replaceState(null, "", window.location.pathname + window.location.search);
 
+        // Fetch user from Discord API
         fetch('https://discord.com/api/users/@me', {
             headers: { authorization: `Bearer ${accessToken}` }
         })
         .then(res => res.json())
         .then(user => {
-            if (!user || !user.id) throw new Error("Invalid response from Discord API.");
+            if (!user || !user.id) throw new Error("Invalid Discord user payload.");
 
-            // Save user profile to keep session persistent across site visits
-            localStorage.setItem(DISCORD_USER_KEY, JSON.stringify(user));
-            loginWithDiscordUser(user, onSuccess, onError);
+            // Save session to localStorage for persistence across reloads
+            localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(user));
+
+            // Execute PlayFab login
+            executePlayFabDiscordLogin(user, onSuccess, onError);
         })
         .catch(err => {
-            console.warn("[PlayFab Auth] Failed to fetch Discord user profile. Falling back to Guest Account.", err);
+            console.warn("[PlayFab Auth] Failed fetching Discord profile. Falling back to Guest.", err);
             loginAsGuest(onSuccess, onError);
         });
         return;
     }
 
-    // 2. Check for an existing saved Discord session
-    const savedDiscordUser = localStorage.getItem(DISCORD_USER_KEY);
-    if (savedDiscordUser) {
+    // STEP 2: Check localStorage for existing Discord session
+    const savedSession = localStorage.getItem(DISCORD_SESSION_KEY);
+    if (savedSession) {
         try {
-            const user = JSON.parse(savedDiscordUser);
+            const user = JSON.parse(savedSession);
             if (user && user.id) {
-                loginWithDiscordUser(user, onSuccess, onError);
+                executePlayFabDiscordLogin(user, onSuccess, onError);
                 return;
             }
         } catch (e) {
-            localStorage.removeItem(DISCORD_USER_KEY);
+            console.error("[PlayFab Auth] Corrupted local session found. Clearing.");
+            localStorage.removeItem(DISCORD_SESSION_KEY);
         }
     }
 
-    // 3. Fall back to Guest Account
+    // STEP 3: Fall back to Guest Account
     loginAsGuest(onSuccess, onError);
 }
 
