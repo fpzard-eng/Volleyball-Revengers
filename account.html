@@ -269,7 +269,7 @@
                 
                 initPlayFabSession(
                     (result, authType, discordUser) => {
-                        const playFabId = result?.data?.PlayFabId || result?.PlayFabId || "Unknown";
+                        const playFabId = result?.playFabId || result?.data?.PlayFabId || result?.PlayFabId || "Unknown";
                         document.getElementById("playFabIdDisplay").innerText = `PlayFab ID: ${playFabId}`;
 
                         const sessionTicket = localStorage.getItem("playfab_session_ticket") || result?.data?.SessionTicket || result?.SessionTicket;
