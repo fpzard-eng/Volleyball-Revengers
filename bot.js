@@ -2,7 +2,6 @@ require('dotenv').config();
 const http = require('http');
 const https = require('https');
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
-const PlayFab = require('playfab-sdk');
 
 // --- Keep-Alive Web Server ---
 const PORT = process.env.PORT || 10000;
@@ -26,8 +25,7 @@ setInterval(() => {
     }
 }, 300000);
 
-/// --- Direct Submodule Imports ---
-const { PlayFab } = require('playfab-sdk');
+const PlayFab = require('playfab-sdk/Scripts/PlayFab/PlayFab.js');
 const PlayFabAdmin = require('playfab-sdk/Scripts/PlayFab/PlayFabAdmin.js');
 const PlayFabServer = require('playfab-sdk/Scripts/PlayFab/PlayFabServer.js');
 
