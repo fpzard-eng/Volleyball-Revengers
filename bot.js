@@ -26,12 +26,11 @@ setInterval(() => {
     }
 }, 300000);
 
-// Configure PlayFab Credentials
-const PlayFab = require('playfab-sdk');
-const PlayFabAdmin = require('playfab-sdk/Scripts/PlayFab/PlayFabAdmin.js');
+// --- Configure PlayFab Credentials ---
 PlayFab.settings.titleId = process.env.PLAYFAB_TITLE_ID;
 PlayFab.settings.developerSecretKey = process.env.PLAYFAB_SECRET_KEY;
 PlayFab.settings.productionUrl = `https://${process.env.PLAYFAB_TITLE_ID}.playfabapi.com`;
+const PlayFabAdmin = PlayFab.PlayFabAdmin;
 
 // --- Initialize Discord Client ---
 const client = new Client({
@@ -134,6 +133,7 @@ function getPlayerStats(playFabId) {
         });
     });
 }
+
 
 
 function getPlayerData(playFabId) {
@@ -309,8 +309,8 @@ client.on('interactionCreate', async interaction => {
             const kills = getStat('Kills');
 
             const playerHeight = getStat('PlayerHeight') || getData('PlayerHeight') || 'N/A';
-            const standingReach = getStat('StandingReach') || getData('StandingReach') || 'N/A';
-            const wingspan = getStat('Wingspan') || getData('Wingspan') || 'N/A';
+            const standingReach = getStat('StandingReach') || 'N/A';
+            const wingspan = getStat('Wingspan') || 'N/A';
             
             const rawHandedness = getStat('RightHanded');
             const handednessText = rawHandedness === 1 ? 'Right-Handed 🖐️' : (rawHandedness === 0 ? 'Left-Handed 🤚' : 'N/A');
