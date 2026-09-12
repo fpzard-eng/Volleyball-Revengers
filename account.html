@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account | Volleyball Revengers</title>
-    <!-- PlayFab JS SDK -->
     <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
-    <!-- Shared PlayFab Auth Module -->
     <script src="playfab-auth.js"></script>
     <script>
-        // Ensure PlayFab title ID is explicitly set if not handled in playfab-auth.js
         if (typeof PlayFab !== 'undefined' && typeof PLAYFAB_TITLE_ID !== 'undefined') {
             PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
         }
@@ -157,7 +154,6 @@
                 </div>
             </div>
 
-            <!-- Account Details -->
             <div class="section-title">Account Details</div>
             <div class="info-grid">
                 <div class="info-box">
@@ -174,7 +170,6 @@
                 </div>
             </div>
 
-            <!-- Player Statistics -->
             <div class="section-title">Player Statistics</div>
             <div class="info-grid">
                 <div class="info-box">
@@ -242,7 +237,6 @@
     </footer>
 
     <script>
-    // Navigation toggle
     const menuBtn = document.getElementById('menuToggleBtn');
     const navMenu = document.getElementById('navMenu');
     menuBtn.addEventListener('click', (e) => { e.stopPropagation(); navMenu.classList.toggle('active'); });
@@ -250,7 +244,6 @@
         if (!navMenu.contains(e.target) && !menuBtn.contains(e.target)) navMenu.classList.remove('active');
     });
 
-    // Theme toggle
     const themeBtn = document.getElementById('themeToggleBtn');
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -323,8 +316,6 @@
 
     function renderStats(statsMap, userDataMap = {}) {
         document.getElementById("statPlayerElo").innerText = statsMap["PlayerElo"] ?? "--";
-        
-        // Match bot behavior: Check Statistics first, fallback to UserData (Read-Only Data)
         const heightVal = statsMap["PlayerHeight"] ?? userDataMap["PlayerHeight"];
         document.getElementById("statPlayerHeight").innerText = heightVal != null ? `${heightVal} cm` : "--";
         
@@ -346,7 +337,6 @@
     }
 
     function loadPlayerStatistics(discordId) {
-        // Run both Statistics and UserData requests concurrently like bot.js /account
         const fetchStats = new Promise((resolve) => {
             PlayFabClientSDK.GetPlayerStatistics({
                 StatisticNames: [
@@ -385,7 +375,6 @@
             if (statsMap && Object.keys(statsMap).length > 0) {
                 renderStats(statsMap, userDataMap);
             } else if (discordId) {
-                // Fetch stats via Bot API fallback if PlayFab client stats return empty
                 fetch(`${BOT_SERVER_URL}/api/user-info?discordId=${discordId}`)
                     .then(res => res.json())
                     .then(data => {
