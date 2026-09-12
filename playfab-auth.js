@@ -2,6 +2,7 @@ const PLAYFAB_TITLE_ID = "1E90D8";
 const DISCORD_CLIENT_ID = "1547808053078925332";
 const GUEST_ID_KEY = "vbr_guest_custom_id";
 const DISCORD_SESSION_KEY = "vbr_discord_session_user";
+const BOT_SERVER_URL = "https://vbr-assistant-coach.onrender.com";
 
 /**
  * Generates or retrieves a local guest identifier.
@@ -33,47 +34,45 @@ function logoutDiscordUser() {
 }
 
 /**
- * Helper to log into PlayFab using a Discord User Object.
- * Checks linked status via Bot server API (/api/user-info).
- * Fallbacks to Guest Account if the Discord account is not linked.
+ * Verifies link status with bot backend before logging into PlayFab.
  */
 function executePlayFabDiscordLogin(user, onSuccess, onError) {
-    // Query bot endpoint to replicate /is-linked check logic
-    fetch(`/api/user-info?discordId=${user.id}`)
+    // Check with backend bot service to verify if Discord user is linked
+    fetch(`${BOT_SERVER_URL}/api/user-info?discordId=${user.id}`)
         .then(res => res.json())
         .then(data => {
-            // Check if user is returned from getPlayFabUserByDiscordId logic
-            if (data && (data.user || data.playFabId)) {
-                const linkedPlayFabId = data.playFabId || data.user.PlayFabId;
-                const linkedDisplayName = data.user?.TitleInfo?.DisplayName || data.displayName || 'Unknown Player';
-
-                // Attach linked account metadata to the discord user object
-                user.playFabId = linkedPlayFabId;
-                user.displayName = linkedDisplayName;
-
-                // Log into PlayFab with the confirmed linked CustomId
-                const loginRequest = {
-                    TitleId: PLAYFAB_TITLE_ID,
-                    CreateAccount: false,
-                    CustomId: linkedPlayFabId
-                };
-
-                PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
-                    if (error) {
-                        console.warn("[PlayFab Auth] Linked PlayFab login failed. Falling back to Guest.", error);
-                        loginAsGuest(onSuccess, onError);
-                    } else {
-                        if (onSuccess) onSuccess(result, "discord", user);
-                    }
-                });
-            } else {
-                // Discord account is NOT linked -> Fallback to Guest Account
-                console.info("[PlayFab Auth] Discord account is not linked. Logging in as Guest.");
+            // If bot backend indicates user is NOT linked or not found
+            if (!data || !data.success || !data.playFabId) {
+                console.warn("[PlayFab Auth] Discord account is not linked via Bot. Falling back to Guest Account.");
+                localStorage.removeItem(DISCORD_SESSION_KEY);
                 loginAsGuest(onSuccess, onError);
+                return;
             }
+
+            // User is linked: Attach linked PlayFab metadata to the user object
+            user.playFabId = data.playFabId;
+            user.displayName = data.displayName || user.username;
+
+            const discordCustomId = "WEB_LINK_SESSION_" + user.id;
+            const loginRequest = {
+                TitleId: PLAYFAB_TITLE_ID,
+                CreateAccount: true,
+                CustomId: discordCustomId
+            };
+
+            PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
+                if (error) {
+                    console.warn("[PlayFab Auth] Discord PlayFab login failed. Removing saved session & using Guest.", error);
+                    localStorage.removeItem(DISCORD_SESSION_KEY);
+                    loginAsGuest(onSuccess, onError);
+                } else {
+                    if (onSuccess) onSuccess(result, "discord", user);
+                }
+            });
         })
         .catch(err => {
-            console.warn("[PlayFab Auth] Failed to check link status from bot API. Falling back to Guest.", err);
+            console.error("[PlayFab Auth] Error checking link status from Bot server. Falling back to Guest.", err);
+            localStorage.removeItem(DISCORD_SESSION_KEY);
             loginAsGuest(onSuccess, onError);
         });
 }
@@ -108,7 +107,7 @@ function initPlayFabSession(onSuccess, onError) {
             // Save session to localStorage for persistence across reloads
             localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(user));
 
-            // Execute PlayFab link check & login
+            // Execute PlayFab login check
             executePlayFabDiscordLogin(user, onSuccess, onError);
         })
         .catch(err => {
