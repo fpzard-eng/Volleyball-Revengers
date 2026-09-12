@@ -278,7 +278,7 @@ async function enforceAccountLink(interaction, targetUser = null) {
 }
 
 // --- Bot Ready Listener ---
-client.once('ready', () => {
+client.once('clientReady', () => {
     console.log(`🤖 VBR Assistant Coach is online as ${client.user.tag}!`);
 });
 
