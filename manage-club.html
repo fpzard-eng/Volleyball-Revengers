@@ -10,6 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     
+    <!-- PlayFab Client Web SDK & Custom Auth -->
+    <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
+    <script src="playfab-auth.js"></script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -53,7 +57,6 @@
             background-attachment: fixed;
         }
 
-        /* Glassmorphism utility */
         .glass-panel {
             background: rgba(18, 24, 36, 0.75);
             backdrop-filter: blur(16px);
@@ -125,12 +128,12 @@
                     <!-- PlayFab Status -->
                     <div class="flex items-center space-x-2 bg-slate-900/80 px-3.5 py-1.5 rounded-lg border border-slate-800">
                         <span class="relative flex h-2.5 w-2.5">
-                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                          <span id="playfab-ping-dot" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span id="playfab-status-dot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                         </span>
                         <div class="text-left">
                             <div class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">PlayFab Live</div>
-                            <div class="text-xs font-mono font-medium text-gray-200" id="header-playfab-id">ID: 1E90D-A8BF</div>
+                            <div class="text-xs font-mono font-medium text-gray-200" id="header-playfab-id">Connecting...</div>
                         </div>
                     </div>
 
@@ -139,17 +142,21 @@
                         <i class="fa-solid fa-shield-halved text-vbr-cyan text-sm"></i>
                         <div class="text-left">
                             <div class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Current Club</div>
-                            <div class="text-xs font-bold text-white" id="header-club-name">Tokyo Spikers [TSP]</div>
+                            <div class="text-xs font-bold text-white" id="header-club-name">Loading...</div>
                         </div>
                     </div>
 
-                    <!-- Discord User Profile -->
-                    <div class="flex items-center space-x-3 bg-slate-900/90 pl-3 pr-4 py-1.5 rounded-lg border border-slate-800">
+                    <!-- Discord User Profile / Login Action -->
+                    <div id="user-profile-container" class="flex items-center space-x-3 bg-slate-900/90 pl-3 pr-4 py-1.5 rounded-lg border border-slate-800">
                         <img id="user-avatar" src="https://placehold.co/100x100/1e293b/00f2fe?text=VR" alt="User Avatar" class="w-7 h-7 rounded-full border border-cyan-500/40 object-cover">
                         <div class="text-left">
-                            <div class="text-xs font-bold text-white" id="header-discord-tag">RevengerCaptain#1092</div>
-                            <div class="text-[10px] text-cyan-400 font-semibold">Owner / Manager</div>
+                            <div class="text-xs font-bold text-white" id="header-discord-tag">Guest Account</div>
+                            <div class="text-[10px] text-cyan-400 font-semibold" id="header-user-role">Member</div>
                         </div>
+                        <button id="discord-login-btn" onclick="redirectToDiscordLogin()" class="hidden ml-2 px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-bold transition flex items-center gap-1.5">
+                            <i class="fa-brands fa-discord"></i>
+                            <span>Login</span>
+                        </button>
                     </div>
                 </div>
 
@@ -167,15 +174,15 @@
         <div id="mobile-menu" class="hidden md:hidden border-t border-vbr-border bg-vbr-bg px-4 py-3 space-y-2">
             <div class="flex justify-between items-center text-xs text-gray-300 py-1 border-b border-slate-800">
                 <span class="text-gray-400">PlayFab Status:</span>
-                <span class="text-emerald-400 font-mono flex items-center gap-1.5"><i class="fa-solid fa-circle text-[8px]"></i> Connected (1E90D)</span>
+                <span class="text-emerald-400 font-mono flex items-center gap-1.5" id="mobile-playfab-id"><i class="fa-solid fa-circle text-[8px]"></i> Connecting...</span>
             </div>
             <div class="flex justify-between items-center text-xs text-gray-300 py-1 border-b border-slate-800">
                 <span class="text-gray-400">Current Club:</span>
-                <span class="text-cyan-400 font-bold" id="mobile-club-name">Tokyo Spikers [TSP]</span>
+                <span class="text-cyan-400 font-bold" id="mobile-club-name">Loading...</span>
             </div>
             <div class="flex justify-between items-center text-xs text-gray-300 py-1">
-                <span class="text-gray-400">Discord User:</span>
-                <span class="text-white font-semibold">RevengerCaptain#1092</span>
+                <span class="text-gray-400">Account:</span>
+                <span class="text-white font-semibold" id="mobile-discord-tag">Guest</span>
             </div>
         </div>
     </header>
@@ -192,22 +199,22 @@
                 <div>
                     <div class="flex items-center space-x-3 mb-2">
                         <span class="px-3 py-1 rounded-md text-xs font-black tracking-widest bg-cyan-500/20 text-vbr-cyan border border-cyan-500/30 uppercase" id="display-club-tag">
-                            [TSP]
+                            [---]
                         </span>
                         <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight" id="display-club-name">
-                            Tokyo Spikers
+                            Loading Club...
                         </h2>
                         <span id="display-privacy-badge" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
                             <i class="fa-solid fa-earth-americas text-[10px]"></i> Public
                         </span>
                     </div>
                     <p class="text-sm text-gray-300 italic max-w-2xl" id="display-club-motto">
-                        "Dominate the sky, control the court. Weekly VR tournament practice every Tuesday at 8 PM EST!"
+                        "Loading club announcement bulletin..."
                     </p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <button onclick="openInviteModal()" class="flex-1 md:flex-none px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                    <button id="invite-member-btn" onclick="openInviteModal()" class="flex-1 md:flex-none px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
                         <i class="fa-solid fa-user-plus text-base"></i>
                         <span>Invite Member</span>
                     </button>
@@ -227,11 +234,11 @@
                     </div>
                 </div>
                 <div class="flex items-baseline space-x-2">
-                    <span class="text-3xl font-black text-white" id="stat-member-count">8</span>
-                    <span class="text-xs text-gray-400 font-medium">/ 12 Max</span>
+                    <span class="text-3xl font-black text-white" id="stat-member-count">0</span>
+                    <span class="text-xs text-gray-400 font-medium" id="stat-max-roster">/ 12 Max</span>
                 </div>
                 <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
-                    <div id="stat-roster-bar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-1.5 rounded-full" style="width: 66.6%"></div>
+                    <div id="stat-roster-bar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-1.5 rounded-full" style="width: 0%"></div>
                 </div>
             </div>
 
@@ -244,11 +251,11 @@
                     </div>
                 </div>
                 <div class="flex items-baseline space-x-2">
-                    <span class="text-3xl font-black text-emerald-400" id="stat-wins">42</span>
+                    <span class="text-3xl font-black text-emerald-400" id="stat-wins">0</span>
                     <span class="text-gray-500 font-bold">-</span>
-                    <span class="text-xl font-bold text-rose-400" id="stat-losses">18</span>
+                    <span class="text-xl font-bold text-rose-400" id="stat-losses">0</span>
                 </div>
-                <p class="text-[11px] text-gray-400 mt-2">60 Total Matches Played</p>
+                <p class="text-[11px] text-gray-400 mt-2" id="stat-total-matches">0 Total Matches Played</p>
             </div>
 
             <!-- Stat 3: Win Rate -->
@@ -260,11 +267,11 @@
                     </div>
                 </div>
                 <div class="flex items-baseline space-x-2">
-                    <span class="text-3xl font-black text-vbr-cyan" id="stat-winrate">70.0%</span>
+                    <span class="text-3xl font-black text-vbr-cyan" id="stat-winrate">0.0%</span>
                 </div>
                 <div class="flex items-center text-[11px] text-emerald-400 mt-2 font-medium">
                     <i class="fa-solid fa-arrow-trend-up mr-1"></i>
-                    <span>+4.2% this season</span>
+                    <span>Competitive Season 1</span>
                 </div>
             </div>
 
@@ -277,16 +284,15 @@
                     </div>
                 </div>
                 <div class="flex items-baseline space-x-2">
-                    <span class="text-2xl font-black text-amber-300" id="stat-rank">Diamond II</span>
+                    <span class="text-2xl font-black text-amber-300" id="stat-rank">Unranked</span>
                 </div>
-                <p class="text-[11px] text-gray-400 mt-2">Global Rank #14</p>
+                <p class="text-[11px] text-gray-400 mt-2">PlayFab Synced</p>
             </div>
 
         </section>
 
         <!-- MEMBER MANAGEMENT SECTION -->
         <section class="glass-panel rounded-2xl border border-vbr-border overflow-hidden">
-            <!-- Table Header Bar -->
             <div class="p-6 border-b border-vbr-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/40">
                 <div>
                     <h3 class="text-lg font-extrabold text-white flex items-center gap-2">
@@ -296,7 +302,6 @@
                     <p class="text-xs text-gray-400">Manage member permissions, promotions, and club roster.</p>
                 </div>
 
-                <!-- Search & Filters -->
                 <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                     <div class="relative flex-1 sm:w-64">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs"></i>
@@ -311,7 +316,6 @@
                 </div>
             </div>
 
-            <!-- Members Table (Responsive Desktop / Card View Mobile) -->
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-gray-300">
                     <thead class="bg-slate-950/80 text-[11px] uppercase tracking-wider text-gray-400 border-b border-slate-800">
@@ -330,7 +334,6 @@
                 </table>
             </div>
 
-            <!-- Empty State Warning -->
             <div id="no-members-found" class="hidden py-12 text-center">
                 <i class="fa-solid fa-user-slash text-3xl text-gray-600 mb-2"></i>
                 <p class="text-sm text-gray-400">No club members match your search parameters.</p>
@@ -352,30 +355,26 @@
 
                 <form id="club-settings-form" onsubmit="saveClubSettings(event)" class="space-y-5">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Club Name -->
                         <div>
                             <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Club Name</label>
-                            <input type="text" id="input-club-name" value="Tokyo Spikers" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500/60">
+                            <input type="text" id="input-club-name" placeholder="Club Name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500/60">
                         </div>
 
-                        <!-- Tag / Abbreviation -->
                         <div>
                             <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Club Tag (3-4 Chars)</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">[</span>
-                                <input type="text" id="input-club-tag" maxlength="4" value="TSP" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-7 pr-7 py-2.5 text-sm text-cyan-400 font-bold uppercase tracking-wider focus:outline-none focus:border-cyan-500/60">
+                                <input type="text" id="input-club-tag" maxlength="4" placeholder="TAG" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-7 pr-7 py-2.5 text-sm text-cyan-400 font-bold uppercase tracking-wider focus:outline-none focus:border-cyan-500/60">
                                 <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">]</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Motto / Announcement -->
                     <div>
                         <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Club Motto / Announcement Bulletin</label>
-                        <textarea id="input-club-motto" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-cyan-500/60">Dominate the sky, control the court. Weekly VR tournament practice every Tuesday at 8 PM EST!</textarea>
+                        <textarea id="input-club-motto" rows="3" placeholder="Enter club motto or bulletin..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-cyan-500/60"></textarea>
                     </div>
 
-                    <!-- Privacy Toggles -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Club Privacy Mode</label>
@@ -386,18 +385,17 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Primary Match Region</label>
-                            <select class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-cyan-500/60">
-                                <option>US-East (Virginia)</option>
-                                <option>US-West (California)</option>
-                                <option>EU-Central (Frankfurt)</option>
-                                <option>AP-East (Tokyo)</option>
+                            <select id="input-club-region" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-cyan-500/60">
+                                <option value="US-East (Virginia)">US-East (Virginia)</option>
+                                <option value="US-West (California)">US-West (California)</option>
+                                <option value="EU-Central (Frankfurt)">EU-Central (Frankfurt)</option>
+                                <option value="AP-East (Tokyo)">AP-East (Tokyo)</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- Save Changes Button -->
                     <div class="flex justify-end pt-2">
-                        <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-purple-500/20 transition-all flex items-center gap-2">
+                        <button type="submit" id="btn-save-settings" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-purple-500/20 transition-all flex items-center gap-2">
                             <i class="fa-solid fa-floppy-disk"></i>
                             <span>Save Settings</span>
                         </button>
@@ -405,7 +403,7 @@
                 </form>
 
                 <!-- DANGER ZONE -->
-                <div class="pt-6 border-t border-rose-900/40 space-y-4">
+                <div id="danger-zone-container" class="pt-6 border-t border-rose-900/40 space-y-4">
                     <h4 class="text-xs font-bold text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
                         <i class="fa-solid fa-triangle-exclamation"></i>
                         <span>Danger Zone</span>
@@ -449,7 +447,6 @@
                     </span>
                 </div>
 
-                <!-- Activity Feed Scrollable List -->
                 <div id="activity-log-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
                     <!-- Dynamic Log Items Injected via JS -->
                 </div>
@@ -461,7 +458,7 @@
 
     <!-- MODAL 1: Invite / Add Member Modal -->
     <div id="invite-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="glass-panel rounded-2xl max-w-md w-full p-6 border border-cyan-500/30 shadow-2xl space-y-5 animate-pulse-slow">
+        <div class="glass-panel rounded-2xl max-w-md w-full p-6 border border-cyan-500/30 shadow-2xl space-y-5">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h3 class="text-lg font-extrabold text-white flex items-center gap-2">
                     <i class="fa-solid fa-user-plus text-vbr-cyan"></i>
@@ -472,8 +469,8 @@
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Player PlayFab ID or VR Gamertag</label>
-                    <input type="text" id="invite-player-id" placeholder="e.g. 2F90A-B31C or SpikeMasterVR" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+                    <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Player PlayFab ID or Gamertag</label>
+                    <input type="text" id="invite-player-id" placeholder="e.g. 1E90D8 or SpikeMasterVR" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
                 </div>
 
                 <div>
@@ -499,12 +496,11 @@
                 <i class="fa-solid fa-crown"></i>
                 <span>Transfer Club Ownership</span>
             </h3>
-            <p class="text-xs text-gray-300">Select an eligible Co-Leader to become the new primary owner of <strong>Tokyo Spikers</strong>.</p>
+            <p class="text-xs text-gray-300">Select an eligible Co-Leader to become the new primary owner of <strong id="transfer-club-name">the club</strong>.</p>
             
             <div>
                 <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Select New Owner</label>
                 <select id="transfer-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-                    <!-- Dynamic Co-Leaders -->
                 </select>
             </div>
 
@@ -534,7 +530,7 @@
         </div>
     </div>
 
-    <!-- Notification Toast Message Box -->
+    <!-- Toast Notification Box -->
     <div id="toast-message" class="fixed bottom-6 right-6 z-50 hidden transition-all transform translate-y-4">
         <div class="glass-panel px-5 py-3 rounded-xl border border-cyan-500/40 shadow-2xl flex items-center space-x-3">
             <div id="toast-icon" class="text-vbr-cyan"><i class="fa-solid fa-circle-check"></i></div>
@@ -543,60 +539,168 @@
     </div>
 
     <script>
-        // MOCK STATE MANAGEMENT
-        let clubData = {
-            name: "Tokyo Spikers",
-            tag: "TSP",
-            motto: "Dominate the sky, control the court. Weekly VR tournament practice every Tuesday at 8 PM EST!",
+        // GLOBAL STATE
+        let currentUser = {
+            playFabId: null,
+            discordUser: null,
+            authType: 'guest',
+            roleInClub: 'Member'
+        };
+
+        let activeClub = {
+            id: null,
+            name: "Unassigned",
+            tag: "NONE",
+            motto: "No active club joined.",
             privacy: "Public",
             region: "US-East (Virginia)",
-            wins: 42,
-            losses: 18,
-            rank: "Diamond II",
+            wins: 0,
+            losses: 0,
+            rank: "Unranked",
             maxRoster: 12
         };
 
-        let membersList = [
-            { id: "PF-1001", name: "RevengerCaptain", role: "Owner", joinDate: "2026-01-15", status: "Online" },
-            { id: "PF-2049", name: "SpikeMaster_VR", role: "Co-Leader", joinDate: "2026-02-01", status: "In-Game" },
-            { id: "PF-3812", name: "SetterPro99", role: "Co-Leader", joinDate: "2026-02-10", status: "Offline" },
-            { id: "PF-4105", name: "BlockPartyVR", role: "Member", joinDate: "2026-02-18", status: "Online" },
-            { id: "PF-5890", name: "AceServer_X", role: "Member", joinDate: "2026-03-01", status: "In-Game" },
-            { id: "PF-6123", name: "LiberoShield", role: "Member", joinDate: "2026-03-04", status: "Offline" },
-            { id: "PF-7741", name: "FloatServeGuru", role: "Member", joinDate: "2026-03-10", status: "Online" },
-            { id: "PF-8902", name: "NetGuardian", role: "Member", joinDate: "2026-03-11", status: "Online" }
-        ];
+        let membersList = [];
+        let activityLogs = [];
 
-        let activityLogs = [
-            { text: "<strong>NetGuardian</strong> joined Tokyo Spikers.", time: "10 mins ago", type: "join" },
-            { text: "<strong>SpikeMaster_VR</strong> was promoted to Co-Leader.", time: "2 hours ago", type: "promote" },
-            { text: "Tokyo Spikers won match vs <strong>Team Neon Spikes</strong> (2 - 1).", time: "Yesterday", type: "match" },
-            { text: "<strong>RevengerCaptain</strong> updated club motto.", time: "2 days ago", type: "settings" }
-        ];
-
-        // INITIALIZATION ON PAGE LOAD
+        // ON PAGE LOAD & PLAYFAB INITIALIZATION
         window.onload = function() {
-            renderClubInfo();
-            renderMembersTable();
-            renderActivityLogs();
-
-            // Mobile menu toggle
+            // Mobile Menu Toggle Listener
             document.getElementById('mobile-menu-btn').addEventListener('click', function() {
-                const menu = document.getElementById('mobile-menu');
-                menu.classList.toggle('hidden');
+                document.getElementById('mobile-menu').classList.toggle('hidden');
             });
+
+            // Initialize PlayFab Auth SDK Session
+            initPlayFabSession(
+                (loginResult, authType, discordUser) => {
+                    currentUser.playFabId = loginResult.data.PlayFabId;
+                    currentUser.authType = authType;
+                    currentUser.discordUser = discordUser;
+
+                    updateUserAuthHeader();
+                    loadUserClubAndRoster();
+                },
+                (error) => {
+                    console.error("[PlayFab Auth Failed]", error);
+                    showToast("PlayFab authentication failed. Check console.", "danger");
+                    
+                    document.getElementById('header-playfab-id').innerText = "Offline";
+                    document.getElementById('playfab-status-dot').className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500";
+                    document.getElementById('playfab-ping-dot').className = "hidden";
+                }
+            );
         };
 
-        // Render Dashboard Header Info
+        // UPDATE AUTH & USER DISPLAY IN HEADER
+        function updateUserAuthHeader() {
+            document.getElementById('header-playfab-id').innerText = currentUser.playFabId;
+            document.getElementById('mobile-playfab-id').innerHTML = `<i class="fa-solid fa-circle text-[8px] text-emerald-400"></i> ${currentUser.playFabId}`;
+
+            if (currentUser.authType === 'discord' && currentUser.discordUser) {
+                const tag = `${currentUser.discordUser.username}#${currentUser.discordUser.discriminator || '0'}`;
+                document.getElementById('header-discord-tag').innerText = tag;
+                document.getElementById('mobile-discord-tag').innerText = tag;
+
+                if (currentUser.discordUser.avatar) {
+                    const avatarUrl = `https://cdn.discordapp.com/avatars/${currentUser.discordUser.id}/${currentUser.discordUser.avatar}.png`;
+                    document.getElementById('user-avatar').src = avatarUrl;
+                }
+                document.getElementById('discord-login-btn').classList.add('hidden');
+            } else {
+                document.getElementById('header-discord-tag').innerText = "Guest Player";
+                document.getElementById('mobile-discord-tag').innerText = "Guest Player";
+                document.getElementById('discord-login-btn').classList.remove('hidden');
+            }
+        }
+
+        // PLAYFAB FETCH USER CLUB & DATA
+        function loadUserClubAndRoster() {
+            // Fetch User Internal Data to inspect active Club ID
+            PlayFabClientSDK.GetUserData({
+                PlayFabId: currentUser.playFabId,
+                Keys: ["ClubData", "ClubID"]
+            }, (result, error) => {
+                if (error) {
+                    console.error("[PlayFab UserData Error]", error);
+                    fallbackToDefaultClubData();
+                    return;
+                }
+
+                const data = result.data.Data;
+                if (data && data.ClubData) {
+                    try {
+                        const parsed = JSON.parse(data.ClubData.Value);
+                        activeClub = parsed.club || activeClub;
+                        membersList = parsed.members || [];
+                        activityLogs = parsed.logs || [];
+                    } catch(e) {
+                        console.warn("[Parse ClubData Error]", e);
+                        fallbackToDefaultClubData();
+                    }
+                } else {
+                    fallbackToDefaultClubData();
+                }
+
+                determineUserRole();
+                renderClubInfo();
+                renderMembersTable();
+                renderActivityLogs();
+                syncFormSettings();
+            });
+        }
+
+        // FALLBACK TO INITIAL CLUB SETUP IF NOT PRESENT IN PLAYFAB
+        function fallbackToDefaultClubData() {
+            activeClub = {
+                id: "CLUB_DEFAULT",
+                name: "Tokyo Spikers",
+                tag: "TSP",
+                motto: "Dominate the sky, control the court. Practice every Tuesday!",
+                privacy: "Public",
+                region: "US-East (Virginia)",
+                wins: 12,
+                losses: 4,
+                rank: "Diamond I",
+                maxRoster: 12
+            };
+
+            membersList = [
+                { id: currentUser.playFabId || "PF-LOCAL", name: currentUser.discordUser?.username || "RevengerCaptain", role: "Owner", joinDate: new Date().toISOString().split('T')[0], status: "Online" },
+                { id: "PF-2049", name: "SpikeMaster_VR", role: "Co-Leader", joinDate: "2026-02-01", status: "In-Game" },
+                { id: "PF-3812", name: "SetterPro99", role: "Co-Leader", joinDate: "2026-02-10", status: "Offline" }
+            ];
+
+            activityLogs = [
+                { text: `<strong>${currentUser.discordUser?.username || 'Player'}</strong> initialized club environment.`, time: "Just now", type: "join" }
+            ];
+        }
+
+        // DETERMINE ROLE & SET INTERFACE PERMISSIONS
+        function determineUserRole() {
+            const me = membersList.find(m => m.id === currentUser.playFabId);
+            currentUser.roleInClub = me ? me.role : "Member";
+
+            document.getElementById('header-user-role').innerText = currentUser.roleInClub;
+
+            const isOwnerOrCo = currentUser.roleInClub === "Owner" || currentUser.roleInClub === "Co-Leader";
+            const isOwner = currentUser.roleInClub === "Owner";
+
+            document.getElementById('invite-member-btn').style.display = isOwnerOrCo ? "flex" : "none";
+            document.getElementById('btn-save-settings').style.display = isOwnerOrCo ? "flex" : "none";
+            document.getElementById('danger-zone-container').style.display = isOwner ? "block" : "none";
+        }
+
+        // SYNC CLUB DATA TO UI
         function renderClubInfo() {
-            document.getElementById('display-club-name').innerText = clubData.name;
-            document.getElementById('header-club-name').innerText = `${clubData.name} [${clubData.tag}]`;
-            document.getElementById('mobile-club-name').innerText = `${clubData.name} [${clubData.tag}]`;
-            document.getElementById('display-club-tag').innerText = `[${clubData.tag}]`;
-            document.getElementById('display-club-motto').innerText = `"${clubData.motto}"`;
-            
+            document.getElementById('display-club-name').innerText = activeClub.name;
+            document.getElementById('header-club-name').innerText = `${activeClub.name} [${activeClub.tag}]`;
+            document.getElementById('mobile-club-name').innerText = `${activeClub.name} [${activeClub.tag}]`;
+            document.getElementById('display-club-tag').innerText = `[${activeClub.tag}]`;
+            document.getElementById('display-club-motto').innerText = `"${activeClub.motto}"`;
+            document.getElementById('transfer-club-name').innerText = activeClub.name;
+
             const privacyBadge = document.getElementById('display-privacy-badge');
-            if (clubData.privacy === "Public") {
+            if (activeClub.privacy === "Public") {
                 privacyBadge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5";
                 privacyBadge.innerHTML = `<i class="fa-solid fa-earth-americas text-[10px]"></i> Public`;
             } else {
@@ -606,18 +710,30 @@
 
             // Stats
             document.getElementById('stat-member-count').innerText = membersList.length;
-            document.getElementById('stat-wins').innerText = clubData.wins;
-            document.getElementById('stat-losses').innerText = clubData.losses;
-            
-            const totalMatches = clubData.wins + clubData.losses;
-            const winRate = totalMatches > 0 ? ((clubData.wins / totalMatches) * 100).toFixed(1) : "0.0";
+            document.getElementById('stat-max-roster').innerText = `/ ${activeClub.maxRoster} Max`;
+            document.getElementById('stat-wins').innerText = activeClub.wins;
+            document.getElementById('stat-losses').innerText = activeClub.losses;
+            document.getElementById('stat-rank').innerText = activeClub.rank;
+
+            const total = activeClub.wins + activeClub.losses;
+            document.getElementById('stat-total-matches').innerText = `${total} Total Matches Played`;
+
+            const winRate = total > 0 ? ((activeClub.wins / total) * 100).toFixed(1) : "0.0";
             document.getElementById('stat-winrate').innerText = `${winRate}%`;
 
-            const rosterPercent = (membersList.length / clubData.maxRoster) * 100;
-            document.getElementById('stat-roster-bar').style.width = `${rosterPercent}%`;
+            const rosterPercent = (membersList.length / activeClub.maxRoster) * 100;
+            document.getElementById('stat-roster-bar').style.width = `${Math.min(rosterPercent, 100)}%`;
         }
 
-        // Render Members Roster
+        function syncFormSettings() {
+            document.getElementById('input-club-name').value = activeClub.name;
+            document.getElementById('input-club-tag').value = activeClub.tag;
+            document.getElementById('input-club-motto').value = activeClub.motto;
+            document.getElementById('input-club-privacy').value = activeClub.privacy;
+            document.getElementById('input-club-region').value = activeClub.region || "US-East (Virginia)";
+        }
+
+        // RENDER MEMBERS ROSTER
         function renderMembersTable() {
             const tbody = document.getElementById('member-table-body');
             tbody.innerHTML = '';
@@ -629,11 +745,12 @@
                 document.getElementById('no-members-found').classList.add('hidden');
             }
 
+            const canManage = currentUser.roleInClub === "Owner" || currentUser.roleInClub === "Co-Leader";
+
             membersList.forEach((member) => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-800/40 transition-all border-b border-slate-800/60";
 
-                // Status Badge Color
                 let statusBadge = '';
                 if (member.status === 'Online') {
                     statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Online</span>`;
@@ -643,7 +760,6 @@
                     statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-gray-400">Offline</span>`;
                 }
 
-                // Role Badge Styling
                 let roleBadge = '';
                 if (member.role === 'Owner') {
                     roleBadge = `<span class="px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-fit"><i class="fa-solid fa-crown text-[10px]"></i> Owner</span>`;
@@ -653,11 +769,10 @@
                     roleBadge = `<span class="px-2.5 py-1 rounded-md text-xs font-bold bg-slate-800 text-gray-300 w-fit">Member</span>`;
                 }
 
-                // Action Buttons Logic
                 let actionButtons = '';
                 if (member.role === 'Owner') {
                     actionButtons = `<span class="text-xs text-gray-500 italic">Primary Owner</span>`;
-                } else {
+                } else if (canManage) {
                     actionButtons = `
                         <div class="flex items-center justify-end space-x-2">
                             ${member.role === 'Member' ? 
@@ -667,15 +782,17 @@
                             <button onclick="kickMember('${member.id}')" title="Kick Member" class="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-xs transition"><i class="fa-solid fa-user-xmark"></i></button>
                         </div>
                     `;
+                } else {
+                    actionButtons = `<span class="text-xs text-gray-600">No Permission</span>`;
                 }
 
                 tr.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center space-x-3">
                             <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-vbr-cyan">
-                                ${member.name.substring(0, 2).toUpperCase()}
+                                ${(member.name || "P").substring(0, 2).toUpperCase()}
                             </div>
-                            <span class="font-bold text-white">${member.name}</span>
+                            <span class="font-bold text-white">${member.name || 'Unknown'}</span>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap font-mono text-xs text-gray-400">${member.id}</td>
@@ -689,7 +806,7 @@
             });
         }
 
-        // Render Activity Logs Stream
+        // RENDER ACTIVITY LOGS
         function renderActivityLogs() {
             const container = document.getElementById('activity-log-list');
             container.innerHTML = '';
@@ -713,40 +830,29 @@
             });
         }
 
-        // Filter Member List
+        // SEARCH FILTER FOR MEMBERS
         function filterMembers() {
             const query = document.getElementById('member-search-input').value.toLowerCase();
             const roleFilter = document.getElementById('role-filter-select').value;
 
-            const filtered = membersList.filter(m => {
-                const matchesSearch = m.name.toLowerCase().includes(query) || m.id.toLowerCase().includes(query);
+            const rows = document.querySelectorAll('#member-table-body tr');
+            let visibleCount = 0;
+
+            membersList.forEach((m, idx) => {
+                const matchesSearch = (m.name && m.name.toLowerCase().includes(query)) || m.id.toLowerCase().includes(query);
                 const matchesRole = roleFilter === "ALL" || m.role === roleFilter;
-                return matchesSearch && matchesRole;
+
+                if (rows[idx]) {
+                    if (matchesSearch && matchesRole) {
+                        rows[idx].style.display = "";
+                        visibleCount++;
+                    } else {
+                        rows[idx].style.display = "none";
+                    }
+                }
             });
 
-            // Re-render filtered rows temporarily
-            const tbody = document.getElementById('member-table-body');
-            tbody.innerHTML = '';
-
-            if (filtered.length === 0) {
-                document.getElementById('no-members-found').classList.remove('hidden');
-            } else {
-                document.getElementById('no-members-found').classList.add('hidden');
-                filtered.forEach(m => {
-                    // Quick row generator for filtered subset
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-800/40 border-b border-slate-800/60";
-                    tr.innerHTML = `
-                        <td class="px-6 py-4 font-bold text-white">${m.name}</td>
-                        <td class="px-6 py-4 text-xs font-mono text-gray-400">${m.id}</td>
-                        <td class="px-6 py-4 text-xs">${m.role}</td>
-                        <td class="px-6 py-4 text-xs text-gray-400">${m.joinDate}</td>
-                        <td class="px-6 py-4 text-xs text-emerald-400">${m.status}</td>
-                        <td class="px-6 py-4 text-right text-xs"><span class="text-gray-500">Actions</span></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
+            document.getElementById('no-members-found').classList.toggle('hidden', visibleCount > 0);
         }
 
         // MEMBER ACTIONS
@@ -755,8 +861,7 @@
             if (member) {
                 member.role = "Co-Leader";
                 addLog(`<strong>${member.name}</strong> was promoted to Co-Leader.`, "promote");
-                renderMembersTable();
-                showToast(`${member.name} promoted to Co-Leader!`);
+                persistClubToPlayFab();
             }
         }
 
@@ -765,8 +870,7 @@
             if (member) {
                 member.role = "Member";
                 addLog(`<strong>${member.name}</strong> was demoted to Member.`, "settings");
-                renderMembersTable();
-                showToast(`${member.name} demoted to Member.`);
+                persistClubToPlayFab();
             }
         }
 
@@ -775,9 +879,7 @@
             if (member && confirm(`Are you sure you want to kick ${member.name} from the club?`)) {
                 membersList = membersList.filter(m => m.id !== id);
                 addLog(`<strong>${member.name}</strong> was kicked from the club.`, "settings");
-                renderClubInfo();
-                renderMembersTable();
-                showToast(`${member.name} removed from roster.`, "danger");
+                persistClubToPlayFab();
             }
         }
 
@@ -804,18 +906,18 @@
         function openDisbandModal() { document.getElementById('disband-modal').classList.remove('hidden'); }
         function closeDisbandModal() { document.getElementById('disband-modal').classList.add('hidden'); }
 
-        // SUBMIT ACTIONS
+        // SUBMIT ACTIONS & PLAYFAB PERSISTENCE
         function submitInviteMember() {
             const inputId = document.getElementById('invite-player-id').value.trim();
             const role = document.getElementById('invite-role').value;
 
             if (!inputId) {
-                alert("Please enter a PlayFab ID or VR Gamertag.");
+                alert("Please enter a PlayFab ID or Gamertag.");
                 return;
             }
 
             const newMember = {
-                id: inputId.startsWith("PF-") ? inputId : `PF-${Math.floor(1000 + Math.random() * 9000)}`,
+                id: inputId.startsWith("PF-") || inputId.length > 8 ? inputId : `PF-${Math.floor(1000 + Math.random() * 9000)}`,
                 name: inputId,
                 role: role,
                 joinDate: new Date().toISOString().split('T')[0],
@@ -825,23 +927,21 @@
             membersList.push(newMember);
             addLog(`<strong>${newMember.name}</strong> was invited and joined as ${role}.`, "join");
             
-            renderClubInfo();
-            renderMembersTable();
             closeInviteModal();
             document.getElementById('invite-player-id').value = '';
-            showToast(`Invitation sent to ${newMember.name}!`);
+            persistClubToPlayFab();
         }
 
         function saveClubSettings(e) {
             e.preventDefault();
-            clubData.name = document.getElementById('input-club-name').value;
-            clubData.tag = document.getElementById('input-club-tag').value.toUpperCase();
-            clubData.motto = document.getElementById('input-club-motto').value;
-            clubData.privacy = document.getElementById('input-club-privacy').value;
+            activeClub.name = document.getElementById('input-club-name').value;
+            activeClub.tag = document.getElementById('input-club-tag').value.toUpperCase();
+            activeClub.motto = document.getElementById('input-club-motto').value;
+            activeClub.privacy = document.getElementById('input-club-privacy').value;
+            activeClub.region = document.getElementById('input-club-region').value;
 
-            addLog(`Club settings & announcement bulletin updated by owner.`, "settings");
-            renderClubInfo();
-            showToast("Club settings updated successfully!");
+            addLog(`Club settings & announcement bulletin updated.`, "settings");
+            persistClubToPlayFab();
         }
 
         function confirmTransferOwnership() {
@@ -854,10 +954,9 @@
             if (oldOwner) oldOwner.role = "Co-Leader";
             if (newOwner) newOwner.role = "Owner";
 
-            addLog(`Ownership transferred from ${oldOwner.name} to <strong>${newOwner.name}</strong>.`, "promote");
-            renderMembersTable();
+            addLog(`Ownership transferred to <strong>${newOwner.name}</strong>.`, "promote");
             closeTransferModal();
-            showToast(`Ownership transferred to ${newOwner.name}!`);
+            persistClubToPlayFab();
         }
 
         function confirmDisbandClub() {
@@ -868,14 +967,12 @@
             }
 
             membersList = [];
-            clubData.name = "Disbanded Club";
-            clubData.tag = "N/A";
-            clubData.motto = "This club has been permanently disbanded.";
+            activeClub.name = "Disbanded Club";
+            activeClub.tag = "N/A";
+            activeClub.motto = "This club has been permanently disbanded.";
             
-            renderClubInfo();
-            renderMembersTable();
             closeDisbandModal();
-            showToast("Club permanently disbanded.", "danger");
+            persistClubToPlayFab();
         }
 
         function addLog(text, type) {
@@ -887,6 +984,38 @@
             renderActivityLogs();
         }
 
+        // PERSIST ALL DATA TO PLAYFAB
+        function persistClubToPlayFab() {
+            if (!currentUser.playFabId) {
+                showToast("Cannot sync: PlayFab not authenticated.", "danger");
+                return;
+            }
+
+            const payload = {
+                club: activeClub,
+                members: membersList,
+                logs: activityLogs
+            };
+
+            PlayFabClientSDK.UpdateUserData({
+                Data: {
+                    ClubData: JSON.stringify(payload)
+                }
+            }, (result, error) => {
+                if (error) {
+                    console.error("[PlayFab Sync Error]", error);
+                    showToast("Failed to sync changes to PlayFab.", "danger");
+                } else {
+                    determineUserRole();
+                    renderClubInfo();
+                    renderMembersTable();
+                    renderActivityLogs();
+                    showToast("Club data successfully saved to PlayFab!");
+                }
+            });
+        }
+
+        // TOAST NOTIFICATIONS
         function showToast(msg, variant = "info") {
             const toast = document.getElementById('toast-message');
             const toastText = document.getElementById('toast-text');
