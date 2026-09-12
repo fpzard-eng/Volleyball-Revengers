@@ -77,6 +77,10 @@ const commands = [
         .setName('link')
         .setDescription('Link your Discord using a 6-digit code generated in-game')
         .addStringOption(opt => opt.setName('code').setDescription('The 6-digit link code (e.g. 294-617 or 294617)').setRequired(true)),
+    new SlashCommandBuilder()
+    .setName('is-linked')
+    .setDescription('Check if a Discord account is linked to PlayFab')
+    .addUserOption(opt => opt.setName('target').setDescription('Discord user to check (optional)').setRequired(false)),
     new SlashCommandBuilder().setName('account').setDescription('View profile, stats, physical attributes, and PlayFab info')
         .addUserOption(opt => opt.setName('target').setDescription('Player profile to view (optional)').setRequired(false)),
     new SlashCommandBuilder().setName('club').setDescription('View club details, rank, W-L ratio, and members')
@@ -283,6 +287,39 @@ client.on('interactionCreate', async interaction => {
                 await interaction.editReply({ embeds: [failEmbed] });
             }
         }
+            
+            else if (commandName === 'is-linked') {
+    await interaction.deferReply();
+    const targetUser = interaction.options.getUser('target') || interaction.user;
+    const isSelf = targetUser.id === interaction.user.id;
+
+    const { user, reason, playFabId } = await getPlayFabUserByDiscordId(targetUser.id);
+
+    if (user) {
+        const displayName = user.TitleInfo?.DisplayName || 'Unknown Player';
+        const linkedEmbed = new EmbedBuilder()
+            .setTitle('✅ Account Linked')
+            .setDescription(isSelf 
+                ? `Your account is linked to PlayFab ID \`${user.PlayFabId}\` (**${displayName}**).`
+                : `**${targetUser.username}** is linked to PlayFab ID \`${user.PlayFabId}\` (**${displayName}**).`
+            )
+            .setColor('#00FF7F')
+            .setFooter({ text: 'Volleyball Revengers • Profile Status' });
+
+        await interaction.editReply({ embeds: [linkedEmbed] });
+    } else {
+        const notLinkedEmbed = new EmbedBuilder()
+            .setTitle('❌ Account Not Linked')
+            .setDescription(isSelf 
+                ? 'Your Discord account is not linked to PlayFab yet. Use `/link <code>` to link your account.'
+                : `**${targetUser.username}** has not linked their Discord account yet.`
+            )
+            .setColor('#FF4B4B')
+            .setFooter({ text: 'Volleyball Revengers • Profile Status' });
+
+        await interaction.editReply({ embeds: [notLinkedEmbed] });
+    }
+}
 
         else if (commandName === 'account') {
             await interaction.deferReply();
