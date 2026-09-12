@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Update Log - Volleyball Revengers</title>
-    <!-- PlayFab JS SDK -->
     <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
-    <!-- Shared PlayFab Auth Module -->
     <script src="playfab-auth.js"></script>
     <style>
         :root {
-            /* Dark Mode: Blue, White Gradient & Holographic */
             --bg-main: #060709;
             --bg-card: rgba(18, 22, 31, 0.85);
             --bg-card-hover: rgba(28, 34, 48, 0.95);
@@ -33,7 +30,6 @@
             --discord-btn-hover: #4752C4;
         }
         [data-theme="light"] {
-            /* Light Mode: Red, Black Gradient & Holographic */
             --bg-main: #f9f3f3;
             --bg-card: rgba(255, 255, 255, 0.95);
             --bg-card-hover: rgba(255, 255, 255, 1);
@@ -206,7 +202,6 @@
 
         .nav-back { margin-bottom: 30px; font-weight: 700; }
         
-        /* Update Logs & Timeline Styling */
         .updates-container {
             display: flex;
             flex-direction: column;
@@ -376,7 +371,6 @@
         <p style="margin-bottom: 35px;">Stay up to date with patch notes, backend refactors, network optimizations, and feature rollouts for <strong>Volleyball Revengers</strong>.</p>
 
         <div class="updates-container">
-            <!-- Planned: Store & Inventory Update -->
             <div class="update-card upcoming">
                 <div class="update-header">
                     <div class="update-title-group">
@@ -389,17 +383,15 @@
                     </div>
                 </div>
                 <ul class="update-list">
-                    <li>Full cosmetic store implementation for balls, shoes, and court trails.</li>
+                    <li>Full cosmetic store implementation for balls, Practice Jerseys, and court trails.</li>
                     <li>PlayFab inventory persistence integration across VR sessions.</li>
-                    <li>NPC Store Cashier interaction and dynamic checkout UI.</li>
+                    <li>Dynamic checkout UI.</li>
                 </ul>
             </div>
-
-            <!-- Planned: Open Beta & Gacha Update -->
             <div class="update-card upcoming">
                 <div class="update-header">
                     <div class="update-title-group">
-                        <div class="update-version">Open Beta & Gacha Machine Update</div>
+                        <div class="update-version">Open Beta</div>
                         <div class="update-date">Planned Release</div>
                     </div>
                     <div class="badge-group">
@@ -408,13 +400,10 @@
                     </div>
                 </div>
                 <ul class="update-list">
-                    <li>Public Open Beta launch for Quest and PCVR platforms.</li>
-                    <li>Interactive Gacha Machine unit for unlocking rare cosmetics and titles.</li>
-                    <li>Gym facility expansion and NPC Gym Trainer interactions.</li>
+                    <li>Public Open Beta launch for Quest platforms.</li>
+                    <li>Gym expansion and Matchmaking UI.</li>
                 </ul>
             </div>
-
-            <!-- Current Phase: Visual Update -->
             <div class="update-card">
                 <div class="update-header">
                     <div class="update-title-group">
@@ -429,11 +418,8 @@
                 <ul class="update-list">
                     <li>Complete Blender overhaul of court models, lighting rigs, and net textures.</li>
                     <li>Environment expansion: Adding Gym, Street, and Store areas.</li>
-                    <li>Procedural Inverse Kinematics (IK) refinements for player avatar limb alignment.</li>
                 </ul>
             </div>
-
-            <!-- Released: Phone Update -->
             <div class="update-card">
                 <div class="update-header">
                     <div class="update-title-group">
