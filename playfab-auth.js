@@ -1,4 +1,3 @@
-// playfab-auth.js
 const PLAYFAB_TITLE_ID = "1E90D8";
 const DISCORD_CLIENT_ID = "1547808053078925332";
 const GUEST_ID_KEY = "vbr_guest_custom_id";
@@ -34,17 +33,20 @@ function logoutDiscordUser() {
 }
 
 /**
- * Helper to log into PlayFab using a verified linked Discord account or fallback to Guest.
+ * Helper to verify Discord link status via backend Bot service and log into PlayFab.
  */
 function executePlayFabDiscordLogin(user, onSuccess, onError) {
-    // Check with the Bot backend to confirm link status and target PlayFab ID
-    fetch(`/api/user-info?discordId=${user.id}`)
+    // Step A: Query backend bot service to verify PlayFab link status
+    fetch(`/api/is-linked?discordId=${user.id}`)
         .then(res => res.json())
         .then(data => {
-            if (data && (data.success || data.linked) && (data.playFabId || data.playfabId)) {
-                const targetPlayFabId = data.playFabId || data.playfabId;
-                const discordCustomId = "WEB_LINK_SESSION_" + user.id;
+            // Check if backend bot confirms account link
+            if (data && (data.linked || data.user || data.playFabId)) {
+                // Attach linked PlayFab details to the user object
+                user.playFabId = data.playFabId || (data.user ? data.user.PlayFabId : null);
+                user.displayName = data.displayName || (data.user?.TitleInfo?.DisplayName) || user.username;
 
+                const discordCustomId = "WEB_LINK_SESSION_" + user.id;
                 const loginRequest = {
                     TitleId: PLAYFAB_TITLE_ID,
                     CreateAccount: false,
@@ -53,20 +55,22 @@ function executePlayFabDiscordLogin(user, onSuccess, onError) {
 
                 PlayFabClientSDK.LoginWithCustomID(loginRequest, (result, error) => {
                     if (error) {
-                        // Custom ID login failed; attempt fallback via session ticket or generic login
-                        console.warn("[PlayFab Auth] Custom ID login failed for linked user. Attempting session fallback...", error);
+                        console.warn("[PlayFab Auth] PlayFab login error for linked user. Falling back to Guest.", error);
+                        localStorage.removeItem(DISCORD_SESSION_KEY);
                         loginAsGuest(onSuccess, onError);
                     } else {
                         if (onSuccess) onSuccess(result, "discord", user);
                     }
                 });
             } else {
-                console.warn("[PlayFab Auth] Discord account is not linked in Bot backend. Falling back to Guest account.");
+                console.warn("[PlayFab Auth] Discord account is NOT linked via bot. Falling back to Guest.");
+                localStorage.removeItem(DISCORD_SESSION_KEY);
                 loginAsGuest(onSuccess, onError);
             }
         })
         .catch(err => {
-            console.error("[PlayFab Auth] Bot backend verification failed. Falling back to Guest.", err);
+            console.error("[PlayFab Auth] Failed to check /api/is-linked status. Falling back to Guest.", err);
+            localStorage.removeItem(DISCORD_SESSION_KEY);
             loginAsGuest(onSuccess, onError);
         });
 }
@@ -87,8 +91,10 @@ function initPlayFabSession(onSuccess, onError) {
     const accessToken = fragment.get('access_token');
 
     if (accessToken) {
+        // Clean URL fragment
         history.replaceState(null, "", window.location.pathname + window.location.search);
 
+        // Fetch user from Discord API
         fetch('https://discord.com/api/users/@me', {
             headers: { authorization: `Bearer ${accessToken}` }
         })
@@ -96,7 +102,10 @@ function initPlayFabSession(onSuccess, onError) {
         .then(user => {
             if (!user || !user.id) throw new Error("Invalid Discord user payload.");
 
+            // Save session to localStorage for persistence across reloads
             localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(user));
+
+            // Execute linked verification and PlayFab login
             executePlayFabDiscordLogin(user, onSuccess, onError);
         })
         .catch(err => {
