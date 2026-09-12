@@ -4,10 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings | Volleyball Revengers</title>
-    <!-- PlayFab JS SDK -->
+   <!-- PlayFab JS SDK -->
     <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
     <!-- Shared PlayFab Auth Module -->
     <script src="playfab-auth.js"></script>
+    <script>
+        // Ensure PlayFab title ID is explicitly set if not handled in playfab-auth.js
+        if (typeof PlayFab !== 'undefined' && typeof PLAYFAB_TITLE_ID !== 'undefined') {
+            PlayFab.settings.titleId = PLAYFAB_TITLE_ID;
+        }
+    </script>
     <style>
         :root {
             --bg-main: #060709;
@@ -260,41 +266,43 @@
         themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-       window.onload = function() {
-    initPlayFabSession(
-        (result, authType, discordUser) => {
-            // Display PlayFab ID
-            document.getElementById("playFabIdDisplay").innerText = `PlayFab ID: ${result.PlayFabId || 'Unknown'}`;
-            document.getElementById("authTypeDisplay").innerText = authType ? authType.toUpperCase() : 'Guest / Session';
+      window.onload = function() {
+    const checkPlayFabReady = setInterval(() => {
+        if (typeof PlayFabClientAPI !== 'undefined' && typeof initPlayFabSession === 'function') {
+            clearInterval(checkPlayFabReady);
+            
+            initPlayFabSession(
+                (result, authType, discordUser) => {
+                    document.getElementById("playFabIdDisplay").innerText = `PlayFab ID: ${result.PlayFabId || 'Unknown'}`;
+                    document.getElementById("authTypeDisplay").innerText = authType ? authType.toUpperCase() : 'Guest / Session';
 
-            PlayFabClientAPI.GetAccountInfo({}, (accResult, accError) => {
-                if (accResult && accResult.data && accResult.data.AccountInfo) {
-                    const displayName = accResult.data.AccountInfo.TitleInfo?.DisplayName || accResult.data.AccountInfo.Username || "Not Set";
-                    document.getElementById("playFabDisplayName").innerText = `Display Name: ${displayName}`;
+                    PlayFabClientAPI.GetAccountInfo({}, (accResult, accError) => {
+                        if (accResult && accResult.data && accResult.data.AccountInfo) {
+                            const displayName = accResult.data.AccountInfo.TitleInfo?.DisplayName || accResult.data.AccountInfo.Username || "Not Set";
+                            document.getElementById("playFabDisplayName").innerText = displayName;
+                        }
+                    });
+
+                    if (authType === "discord" && discordUser) {
+                        document.getElementById("userName").innerText = discordUser.username;
+                        document.getElementById("discordTagDisplay").innerText = `@${discordUser.username}`;
+                        if (discordUser.avatar) {
+                            document.getElementById("userAvatar").src = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
+                        }
+                    } else {
+                        document.getElementById("userName").innerText = "Guest Player";
+                        document.getElementById("discordTagDisplay").innerText = "Not Connected";
+                    }
+
+                    loadUserInventory();
+                    loadPlayerStatistics();
+                },
+                (error) => {
+                    window.location.href = "home";
                 }
-            });
-
-            // Handle Discord User details
-            if (authType === "discord" && discordUser) {
-                document.getElementById("userName").innerText = discordUser.username;
-                document.getElementById("discordTagDisplay").innerText = `@${discordUser.username}`;
-                
-                if (discordUser.avatar) {
-                    document.getElementById("userAvatar").src = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
-                }
-            } else {
-                document.getElementById("userName").innerText = "Guest Player";
-                document.getElementById("discordTagDisplay").innerText = "Not Connected";
-            }
-
-            // Fetch Virtual Currency & Player Statistics
-            loadUserInventory();
-            loadPlayerStatistics();
-        },
-        (error) => {
-            window.location.href = "home";
+            );
         }
-    );
+    }, 50);
 };
         
         // Fetch User Inventory for Virtual Currencies
