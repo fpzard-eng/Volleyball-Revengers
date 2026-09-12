@@ -272,14 +272,12 @@ client.on('interactionCreate', async interaction => {
             }
         }
 
-       else if (commandName === 'account') {
-            // 1. Defer immediately so Discord never times out
+        else if (commandName === 'account') {
             await interaction.deferReply();
 
-            // Explicitly grab the user option or default to the interaction author
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
-            if (!user) return; // enforceAccountLink automatically handles unlinked embeds
+            if (!user) return;
 
             const playFabId = user.PlayFabId;
             const displayName = user.TitleInfo?.DisplayName || 'Unknown Player';
@@ -298,7 +296,7 @@ client.on('interactionCreate', async interaction => {
             const matchesPlayed = getStat('MatchesPlayed');
             const assists = getStat('Assists');
             const blocks = getStat('Blocks');
-            const kills = getStats('Kills') || getStat('Kills');
+            const kills = getStat('Kills');
 
             const playerHeight = getStat('PlayerHeight') || getData('PlayerHeight') || 'N/A';
             const standingReach = getData('StandingReach') || 'N/A';
@@ -307,7 +305,6 @@ client.on('interactionCreate', async interaction => {
             const rawHandedness = getStat('RightHanded');
             const handednessText = rawHandedness === 1 ? 'Right-Handed 🖐️' : (rawHandedness === 0 ? 'Left-Handed 🤚' : 'N/A');
 
-            // Safe fallback for avatar URL in case targetUser lacks cache
             const avatarURL = targetDiscordUser?.displayAvatarURL?.({ dynamic: true }) || interaction.user.displayAvatarURL({ dynamic: true });
 
             const accountEmbed = new EmbedBuilder()
@@ -325,7 +322,7 @@ client.on('interactionCreate', async interaction => {
 
             await interaction.editReply({ embeds: [accountEmbed] });
         }
-           
+
         else if (commandName === 'club') {
             await interaction.deferReply();
             const user = await enforceAccountLink(interaction);
@@ -468,10 +465,9 @@ client.on('interactionCreate', async interaction => {
                 await interaction.reply({ content: '❌ Failed to send the message. Make sure I have permission to speak in that channel.', ephemeral: true });
             }
         }
-    }     
-} catch (cmdErr) {
+    } catch (cmdErr) {
         console.error(`[Command Error] Command ${commandName} failed:`, cmdErr);
-const errEmbed = new EmbedBuilder()
+        const errEmbed = new EmbedBuilder()
             .setTitle('❌ Command Failure')
             .setDescription('An internal error occurred while processing this command.')
             .setColor('#FF4B4B');
@@ -486,3 +482,4 @@ const errEmbed = new EmbedBuilder()
 
 // Log in the client
 client.login(process.env.DISCORD_BOT_TOKEN);
+
