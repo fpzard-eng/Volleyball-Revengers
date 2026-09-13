@@ -350,7 +350,7 @@ client.on('interactionCreate', async interaction => {
             await interaction.editReply({ embeds: [embed] });
         }
 
-        else if (commandName === 'check-status') {
+       else if (commandName === 'check-status') {
             await interaction.deferReply();
             const targetDiscordUser = interaction.options.getUser('target');
             const user = await enforceAccountLink(interaction, targetDiscordUser);
@@ -359,16 +359,31 @@ client.on('interactionCreate', async interaction => {
             const playFabId = user.PlayFabId;
             const displayName = user.TitleInfo?.DisplayName || targetDiscordUser.username;
             const userData = await getPlayerData(playFabId);
-            const presenceStatus = userData.PresenceStatus?.Value || 'Offline';
+            const rawStatus = userData.PresenceStatus?.Value || 'Offline';
+
+            // Map status to dynamic colors, emojis, and labels
+            let statusColor = '#E0E0E0'; // Holographic White/Grey (Default Offline)
+            let statusEmoji = '⚪';
+            let formattedStatus = 'Offline';
+
+            if (rawStatus.toLowerCase().includes('in-game') || rawStatus.toLowerCase().includes('ingame')) {
+                statusColor = '#00D4FF'; // Holographic Light/Dark Blue
+                statusEmoji = '🔵';
+                formattedStatus = 'In-Game';
+            } else if (rawStatus.toLowerCase() === 'online') {
+                statusColor = '#00FF7F'; // Holographic Light/Dark Green
+                statusEmoji = '🟢';
+                formattedStatus = 'Online';
+            }
 
             const statusEmbed = new EmbedBuilder()
-                .setTitle(`🟢 Player Status: ${displayName}`)
-                .setColor(presenceStatus === 'Offline' ? '#808080' : '#00FF7F')
+                .setTitle(`${statusEmoji} Player Status: ${displayName}`)
+                .setColor(statusColor)
                 .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
                 .addFields(
                     { name: '👤 Discord User', value: `${targetDiscordUser}`, inline: true },
                     { name: '🆔 PlayFab ID', value: `\`${playFabId}\``, inline: true },
-                    { name: '📡 Status', value: `**${presenceStatus}**`, inline: false }
+                    { name: '📡 Status', value: `**${formattedStatus}**`, inline: false }
                 )
                 .setFooter({ text: 'Volleyball Revengers • Status Checker' })
                 .setTimestamp();
