@@ -148,9 +148,8 @@ const commands = [
         .addUserOption(opt => opt.setName('target').setDescription('Discord user to check (optional)').setRequired(false)),
     new SlashCommandBuilder()
         .setName('check-status')
-        .setDescription('Check a player\'s online status and presence')
-        .addUserOption(opt => opt.setName('target_discord').setDescription('Discord user to check').setRequired(false))
-        .addStringOption(opt => opt.setName('target_playfab').setDescription('PlayFab Username or Display Name').setRequired(false)),
+        .setDescription('Check a player’s in-game status')
+        .addUserOption(opt => opt.setName('target').setDescription('Discord user to check status for').setRequired(true)),
     new SlashCommandBuilder().setName('account').setDescription('View profile, stats, and physical attributes')
         .addUserOption(opt => opt.setName('target').setDescription('Player profile to view (optional)').setRequired(false)),
     new SlashCommandBuilder().setName('club').setDescription('View club details, rank, W-L ratio, and members')
@@ -259,53 +258,6 @@ function getPlayFabUserByDiscordId(discordId) {
     });
 }
 
-function getPlayFabUserByUsername(username) {
-    return new Promise((resolve) => {
-        PlayFabServer.GetAccountInfo({ TitleDisplayName: username }, (error, result) => {
-            if (error || !result?.data?.UserInfo) {
-                PlayFabServer.GetAccountInfo({ PlayFabId: username }, (idErr, idResult) => {
-                    if (idErr || !idResult?.data?.UserInfo) {
-                        return resolve(null);
-                    }
-                    resolve(idResult.data.UserInfo);
-                });
-            } else {
-                resolve(result.data.UserInfo);
-            }
-        });
-    });
-}
-
-function getPlayerProfileStatus(playFabId) {
-    return new Promise((resolve) => {
-        PlayFabServer.GetPlayerProfile({
-            PlayFabId: playFabId,
-            ProfileConstraints: {
-                ShowLastLogin: true,
-                ShowDisplayName: true
-            }
-        }, (error, result) => {
-            if (error || !result?.data?.PlayerProfile) {
-                return resolve({ online: false, presenceStatus: 'Unknown', lastLogin: 'N/A' });
-            }
-
-            const profile = result.data.PlayerProfile;
-            const lastLogin = profile.LastLogin ? new Date(profile.LastLogin) : null;
-            
-            // Checking if last login was within active session window (5 minutes)
-            const isOnline = lastLogin ? (new Date() - lastLogin) < 300000 : false;
-            const presenceStatus = isOnline ? 'Online' : 'Offline';
-
-            resolve({
-                displayName: profile.DisplayName || 'Unknown',
-                online: isOnline,
-                presenceStatus: presenceStatus,
-                lastLogin: lastLogin ? lastLogin.toUTCString() : 'Unknown'
-            });
-        });
-    });
-}
-
 async function enforceAccountLink(interaction, targetUser = null) {
     const userToVerify = targetUser || interaction.user;
     const isSelf = userToVerify.id === interaction.user.id;
@@ -400,67 +352,26 @@ client.on('interactionCreate', async interaction => {
 
         else if (commandName === 'check-status') {
             await interaction.deferReply();
+            const targetDiscordUser = interaction.options.getUser('target');
+            const user = await enforceAccountLink(interaction, targetDiscordUser);
+            if (!user) return;
 
-            const targetDiscord = interaction.options.getUser('target_discord');
-            const targetPlayFabInput = interaction.options.getString('target_playfab');
-
-            if (!targetDiscord && !targetPlayFabInput) {
-                const missingEmbed = new EmbedBuilder()
-                    .setTitle('⚠️ Missing Arguments')
-                    .setDescription('Please provide either a **Discord User** or a **PlayFab Username/ID** to check.')
-                    .setColor('#FF4B4B');
-                return await interaction.editReply({ embeds: [missingEmbed] });
-            }
-
-            let playFabId = null;
-            let displayName = 'Unknown';
-            let linkedDiscordUser = null;
-
-            if (targetDiscord) {
-                linkedDiscordUser = targetDiscord;
-                const { user, reason } = await getPlayFabUserByDiscordId(targetDiscord.id);
-
-                if (!user) {
-                    const unlinkedEmbed = new EmbedBuilder()
-                        .setTitle('⚠️ Account Not Linked')
-                        .setDescription(`**${targetDiscord.username}** has not linked their Discord account to PlayFab yet.`)
-                        .setColor('#FF4B4B')
-                        .setFooter({ text: 'Volleyball Revengers • Presence Tracker' });
-                    return await interaction.editReply({ embeds: [unlinkedEmbed] });
-                }
-
-                playFabId = user.PlayFabId;
-                displayName = user.TitleInfo?.DisplayName || targetDiscord.username;
-            } else if (targetPlayFabInput) {
-                const pfUser = await getPlayFabUserByUsername(targetPlayFabInput);
-                if (!pfUser) {
-                    const notFoundEmbed = new EmbedBuilder()
-                        .setTitle('❌ Player Not Found')
-                        .setDescription(`Could not find a PlayFab player matching \`${targetPlayFabInput}\`.`)
-                        .setColor('#FF4B4B');
-                    return await interaction.editReply({ embeds: [notFoundEmbed] });
-                }
-                playFabId = pfUser.PlayFabId;
-                displayName = pfUser.TitleInfo?.DisplayName || pfUser.PlayFabId;
-            }
-
-            const statusInfo = await getPlayerProfileStatus(playFabId);
+            const playFabId = user.PlayFabId;
+            const displayName = user.TitleInfo?.DisplayName || targetDiscordUser.username;
+            const userData = await getPlayerData(playFabId);
+            const presenceStatus = userData.PresenceStatus?.Value || 'Offline';
 
             const statusEmbed = new EmbedBuilder()
-                .setTitle(`🎮 Player Status: ${displayName}`)
-                .setColor(statusInfo.online ? '#00FF7F' : '#7289DA')
+                .setTitle(`🟢 Player Status: ${displayName}`)
+                .setColor(presenceStatus === 'Offline' ? '#808080' : '#00FF7F')
+                .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
                 .addFields(
-                    { name: '👤 Display Name', value: displayName, inline: true },
+                    { name: '👤 Discord User', value: `${targetDiscordUser}`, inline: true },
                     { name: '🆔 PlayFab ID', value: `\`${playFabId}\``, inline: true },
-                    { name: '🟢 Presence Status', value: `**${statusInfo.presenceStatus}**`, inline: false },
-                    { name: '🕒 Last Active', value: statusInfo.lastLogin, inline: false }
+                    { name: '📡 Status', value: `**${presenceStatus}**`, inline: false }
                 )
-                .setFooter({ text: 'Volleyball Revengers • Assistant Coach' })
+                .setFooter({ text: 'Volleyball Revengers • Status Checker' })
                 .setTimestamp();
-
-            if (linkedDiscordUser) {
-                statusEmbed.setThumbnail(linkedDiscordUser.displayAvatarURL({ dynamic: true }));
-            }
 
             await interaction.editReply({ embeds: [statusEmbed] });
         }
