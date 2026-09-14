@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volleyball Revengers | Friends & Social</title>
+    <title>Volleyball Revengers | Friends & Social Hub</title>
     <!-- PlayFab JS SDK -->
     <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
     <!-- Shared PlayFab Auth Module -->
     <script src="playfab-auth.js"></script>
     <style>
         :root {
-            /* Dark Mode: Blue, White Gradient & Holographic */
             --bg-main: #060709;
             --bg-card: rgba(18, 22, 31, 0.85);
             --bg-card-hover: rgba(28, 34, 48, 0.95);
@@ -36,7 +35,6 @@
             --discord-btn-hover: #4752C4;
         }
         [data-theme="light"] {
-            /* Light Mode: Red, Black Gradient & Holographic */
             --bg-main: #f9f3f3;
             --bg-card: rgba(255, 255, 255, 0.95);
             --bg-card-hover: rgba(255, 255, 255, 1);
@@ -132,6 +130,8 @@
 </head>
 <body>
 
+    <input type="hidden" id="discordIdInput" value="">
+
     <header>
         <a href="home" class="header-brand">
             <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
@@ -169,11 +169,13 @@
     <div class="content">
         <h1 class="holo-text" style="font-size: 2.2rem; text-align: center;">Friends & Social Hub</h1>
 
+        <div id="authStatus" class="status-msg"></div>
+
         <!-- Send Friend Request -->
         <div class="card">
             <h2>➕ Add Friend</h2>
             <div class="auth-group">
-                <input type="text" id="targetIdInput" placeholder="Enter Friend's PlayFab ID or Username">
+                <input type="text" id="targetIdInput" placeholder="Enter Friend's PlayFab ID">
                 <button class="btn-action" onclick="sendFriendRequest()">Send Request</button>
             </div>
             <div id="requestStatus" class="status-msg"></div>
@@ -240,7 +242,7 @@
                         document.getElementById('discordIdInput').value = discordUser.id;
                         loadSocialData();
 
-                        fetch(`/api/user-info?discordId=${discordUser.id}`)
+                        fetch(`${API_BASE_URL}/api/user-info?discordId=${discordUser.id}`)
                             .then(res => res.json())
                             .then(data => {
                                 if (linkDiscordNavItem) linkDiscordNavItem.style.display = (data.success || data.linked) ? "none" : "flex";
@@ -277,8 +279,8 @@
                 }
 
                 activePlayFabId = data.playFabId;
-                showStatus(statusDiv, `Logged in as: ${data.displayName} (${data.playFabId})`, 'success');
-                renderFriends(data.userData?.FriendList?.Value);
+                showStatus(statusDiv, `Logged in as: ${data.displayName || data.playFabId}`, 'success');
+                fetchPlayFabFriendsList();
                 renderRequests(data.userData?.FriendRequests?.Value);
             } catch (err) {
                 console.error(err);
@@ -286,27 +288,36 @@
             }
         }
 
-        function renderFriends(rawFriends) {
+        function fetchPlayFabFriendsList() {
+            PlayFabClientCode.GetFriendsList({}, (result, error) => {
+                if (result) {
+                    renderFriends(result.data.Friends);
+                } else {
+                    console.error("Error fetching PlayFab friends:", error);
+                }
+            });
+        }
+
+        function renderFriends(friends) {
             const container = document.getElementById('friendsContainer');
             container.innerHTML = '';
-            let friends = [];
-            if (rawFriends) { try { friends = JSON.parse(rawFriends); } catch (e) { friends = [rawFriends]; } }
 
-            if (!Array.isArray(friends) || friends.length === 0) {
+            if (!friends || friends.length === 0) {
                 container.innerHTML = '<li class="empty-state">No friends added yet.</li>';
                 return;
             }
 
             friends.forEach(friend => {
+                const friendName = friend.TitleDisplayName || friend.FriendPlayFabId;
                 const li = document.createElement('li');
                 li.className = 'friend-item';
                 li.innerHTML = `
                     <div class="player-info">
                         <span class="status-dot online"></span>
-                        <span>${friend}</span>
+                        <span>${friendName}</span>
                     </div>
                     <div class="action-btns">
-                        <button class="btn-small btn-danger" onclick="removeFriend('${friend}')">Remove</button>
+                        <button class="btn-small btn-danger" onclick="removeFriend('${friend.FriendPlayFabId}')">Remove</button>
                     </div>`;
                 container.appendChild(li);
             });
@@ -316,49 +327,93 @@
             const container = document.getElementById('requestsContainer');
             container.innerHTML = '';
             let requests = [];
-            if (rawRequests) { try { requests = JSON.parse(rawRequests); } catch (e) { requests = [rawRequests]; } }
+            if (rawRequests) { 
+                try { requests = JSON.parse(rawRequests); } 
+                catch (e) { requests = Array.isArray(rawRequests) ? rawRequests : [rawRequests]; } 
+            }
 
             if (!Array.isArray(requests) || requests.length === 0) {
                 container.innerHTML = '<li class="empty-state">No incoming friend requests.</li>';
                 return;
             }
 
-            requests.forEach(sender => {
+            requests.forEach(senderId => {
                 const li = document.createElement('li');
                 li.className = 'request-item';
                 li.innerHTML = `
                     <div class="player-info">
-                        <span>${sender}</span>
+                        <span>${senderId}</span>
                     </div>
                     <div class="action-btns">
-                        <button class="btn-small" onclick="acceptRequest('${sender}')">Accept</button>
-                        <button class="btn-small btn-danger" onclick="declineRequest('${sender}')">Decline</button>
+                        <button class="btn-small" onclick="acceptRequest('${senderId}')">Accept</button>
+                        <button class="btn-small btn-danger" onclick="declineRequest('${senderId}')">Decline</button>
                     </div>`;
                 container.appendChild(li);
             });
         }
 
         async function sendFriendRequest() {
-            const target = document.getElementById('targetIdInput').value.trim();
+            const targetId = document.getElementById('targetIdInput').value.trim();
             const statusDiv = document.getElementById('requestStatus');
 
             if (!activePlayFabId) {
-                showStatus(statusDiv, 'Authenticate your Discord account first.', 'error');
+                showStatus(statusDiv, 'Authenticate your account first.', 'error');
                 return;
             }
 
-            if (!target) {
-                showStatus(statusDiv, 'Enter a target ID or username.', 'error');
+            if (!targetId) {
+                showStatus(statusDiv, 'Enter a target PlayFab ID.', 'error');
                 return;
             }
 
-            showStatus(statusDiv, `Friend request sent to ${target}!`, 'success');
-            document.getElementById('targetIdInput').value = '';
+            executeCloudScript('SendFriendRequest', { FriendPlayFabId: targetId }, (result, error) => {
+                if (result && result.data.FunctionResult && result.data.FunctionResult.success) {
+                    showStatus(statusDiv, `Friend request sent to ${targetId}!`, 'success');
+                    document.getElementById('targetIdInput').value = '';
+                } else {
+                    const msg = error ? error.errorMessage : (result?.data?.FunctionResult?.message || 'Failed to send request.');
+                    showStatus(statusDiv, msg, 'error');
+                }
+            });
         }
 
-        function acceptRequest(sender) { alert(`Accepted friend request from ${sender}`); }
-        function declineRequest(sender) { alert(`Declined friend request from ${sender}`); }
-        function removeFriend(friend) { alert(`Removed ${friend} from friends list.`); }
+        function acceptRequest(senderId) {
+            executeCloudScript('AcceptFriendRequest', { FriendPlayFabId: senderId }, (result, error) => {
+                if (result && result.data.FunctionResult && result.data.FunctionResult.success) {
+                    loadSocialData();
+                } else {
+                    alert('Error accepting request.');
+                }
+            });
+        }
+
+        function declineRequest(senderId) {
+            executeCloudScript('DeclineFriendRequest', { FriendPlayFabId: senderId }, (result, error) => {
+                if (result && result.data.FunctionResult && result.data.FunctionResult.success) {
+                    loadSocialData();
+                } else {
+                    alert('Error declining request.');
+                }
+            });
+        }
+
+        function removeFriend(friendId) {
+            PlayFabClientCode.RemoveFriend({ FriendPlayFabId: friendId }, (result, error) => {
+                if (result) {
+                    fetchPlayFabFriendsList();
+                } else {
+                    alert('Error removing friend: ' + error.errorMessage);
+                }
+            });
+        }
+
+        function executeCloudScript(functionName, functionParameters, callback) {
+            PlayFabClientCode.ExecuteCloudScript({
+                FunctionName: functionName,
+                FunctionParameter: functionParameters,
+                GeneratePlayStreamEvent: true
+            }, callback);
+        }
 
         function showStatus(element, text, type) {
             element.style.display = 'block';
