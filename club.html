@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volleyball Revengers | Club Portal</title>
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --card-bg: #161b22;
+            --accent-blue: #00d4ff;
+            --accent-pink: #ff007f;
+            --text-color: #f0f6fc;
+            --text-dim: #8b949e;
+            --border-color: #30363d;
+            --success-color: #00ff7f;
+            --danger-color: #ff4b4b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            color: var(--text-dim);
+            margin-top: 5px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Auth Section */
+        .auth-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background-color: #0d1117;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-blue);
+        }
+
+        button {
+            background-color: var(--accent-blue);
+            color: #000;
+            font-weight: bold;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Club Status */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-box {
+            background-color: #0d1117;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .info-box.invites {
+            border-left-color: var(--accent-pink);
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* Creation Form */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .status-msg {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        .status-msg.error {
+            background-color: rgba(255, 75, 75, 0.1);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        .status-msg.success {
+            background-color: rgba(0, 255, 127, 0.1);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Volleyball Revengers</h1>
+        <p>Club Management Portal</p>
+    </header>
+
+    <!-- Account Verification -->
+    <div class="card">
+        <h2>🔑 Account Verification</h2>
+        <div class="auth-group">
+            <input type="text" id="discordIdInput" placeholder="Enter your Discord User ID">
+            <button onclick="loadPlayerData()">Fetch Profile</button>
+        </div>
+        <div id="authStatus" class="status-msg"></div>
+    </div>
+
+    <!-- Player & Club Info -->
+    <div class="card">
+        <h2>🏐 Club Overview</h2>
+        <div class="grid-2">
+            <div class="info-box">
+                <div class="info-label">Active Club</div>
+                <div class="info-value" id="currentClub">Not Loaded</div>
+            </div>
+            <div class="info-box invites">
+                <div class="info-label">Pending Invites</div>
+                <div class="info-value" id="pendingInvites">Not Loaded</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Club Section -->
+    <div class="card">
+        <h2>✨ Create a Club</h2>
+        <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 15px;">
+            Creating a club costs <strong>10,000 Aero-Coins</strong>.
+        </p>
+        
+        <form id="createClubForm" onsubmit="handleCreateClub(event)">
+            <div class="form-group">
+                <label for="clubName">Club Name</label>
+                <input type="text" id="clubName" placeholder="e.g. Karasuno High" required>
+            </div>
+
+            <div class="form-group">
+                <label for="clubTag">Club Tag (3-4 Characters)</label>
+                <input type="text" id="clubTag" placeholder="e.g. KARA" maxlength="4" required>
+            </div>
+
+            <div class="form-group">
+                <label for="practiceDays">Practice Days</label>
+                <input type="text" id="practiceDays" placeholder="e.g. Mon, Wed, Fri" required>
+            </div>
+
+            <button type="submit" style="width: 100%; background-color: var(--accent-pink); color: #fff;">
+                Create Club (10,000 Aero-Coins)
+            </button>
+        </form>
+        <div id="formStatus" class="status-msg"></div>
+    </div>
+</div>
+
+<script>
+    // Config: Update backend URL if hosted elsewhere (e.g. Render app URL)
+    const API_BASE_URL = window.location.origin.includes('github.io') 
+        ? 'https://your-render-app.onrender.com' 
+        : '';
+
+    let activePlayFabId = null;
+
+    async function loadPlayerData() {
+        const discordId = document.getElementById('discordIdInput').value.trim();
+        const statusDiv = document.getElementById('authStatus');
+
+        if (!discordId) {
+            showStatus(statusDiv, 'Please enter a valid Discord User ID.', 'error');
+            return;
+        }
+
+        showStatus(statusDiv, 'Fetching player data...', 'success');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/user-info?discordId=${encodeURIComponent(discordId)}`);
+            const data = await response.json();
+
+            if (!data.success) {
+                showStatus(statusDiv, `Error: ${data.reason || data.error}`, 'error');
+                return;
+            }
+
+            activePlayFabId = data.playFabId;
+            showStatus(statusDiv, `Logged in as: ${data.displayName} (${data.playFabId})`, 'success');
+
+            // Render Club Info
+            const clubName = data.userData?.ClubName?.Value || 'Free Agent (No Club)';
+            const rawInvites = data.userData?.ClubInvites?.Value;
+            let invitesList = 'None';
+
+            if (rawInvites) {
+                try {
+                    const parsed = JSON.parse(rawInvites);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        invitesList = parsed.join(', ');
+                    }
+                } catch (e) {
+                    invitesList = rawInvites;
+                }
+            }
+
+            document.getElementById('currentClub').innerText = clubName;
+            document.getElementById('pendingInvites').innerText = invitesList;
+
+        } catch (err) {
+            console.error(err);
+            showStatus(statusDiv, 'Failed to connect to backend server.', 'error');
+        }
+    }
+
+    async function handleCreateClub(event) {
+        event.preventDefault();
+        const formStatus = document.getElementById('formStatus');
+
+        if (!activePlayFabId) {
+            showStatus(formStatus, 'You must authenticate your Discord ID first above.', 'error');
+            return;
+        }
+
+        const name = document.getElementById('clubName').value.trim();
+        const tag = document.getElementById('clubTag').value.trim();
+        const practice = document.getElementById('practiceDays').value.trim();
+
+        showStatus(formStatus, 'Submitting club creation...', 'success');
+
+        // Here you can handle frontend form submission to your API endpoint or PlayFab CloudScript
+        console.log('Creating Club Payload:', {
+            playFabId: activePlayFabId,
+            name,
+            tag,
+            practice
+        });
+
+        // Example response mockup
+        setTimeout(() => {
+            showStatus(formStatus, `Club "${name}" [${tag}] created successfully!`, 'success');
+        }, 1000);
+    }
+
+    function showStatus(element, text, type) {
+        element.style.display = 'block';
+        element.className = `status-msg ${type}`;
+        element.innerText = text;
+    }
+</script>
+
+</body>
+</html>
