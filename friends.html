@@ -1,386 +1,382 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volleyball Revengers | Social Network</title>
+    <title>Volleyball Revengers | Friends & Social</title>
+    <!-- PlayFab JS SDK -->
+    <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
+    <!-- Shared PlayFab Auth Module -->
+    <script src="playfab-auth.js"></script>
     <style>
         :root {
-            --bg-color: #0b0e14;
-            --card-bg: #161b22;
+            /* Dark Mode: Blue, White Gradient & Holographic */
+            --bg-main: #060709;
+            --bg-card: rgba(18, 22, 31, 0.85);
+            --bg-card-hover: rgba(28, 34, 48, 0.95);
+            --bg-nav: rgba(10, 12, 16, 0.9);
+            --text-main: #ffffff;
+            --text-muted: #9ba3b4;
+            --border-color: rgba(255, 255, 255, 0.15);
+            --border-glow: rgba(30, 144, 216, 0.6);
+            --accent-glow: rgba(30, 144, 216, 0.4);
             --accent-green: #00ff7f;
             --accent-blue: #00d4ff;
-            --text-color: #f0f6fc;
-            --text-dim: #8b949e;
-            --border-color: #30363d;
             --danger-color: #ff4b4b;
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.8), 0 8px 20px rgba(0, 0, 0, 0.6);
+            --shadow-hero: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 50px rgba(30, 144, 216, 0.35);
+            --shadow-btn: 0 12px 30px rgba(30, 144, 216, 0.5);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.85);
+            --holo-gradient: linear-gradient(135deg, #1E90D8 0%, #ffffff 50%, #1E90D8 100%);
+            --btn-gradient: linear-gradient(135deg, #1E90D8 0%, #1572a8 100%);
+            --btn-hover: linear-gradient(135deg, #24a0f0 0%, #1a82c4 100%);
+            --badge-bg: rgba(30, 144, 216, 0.15);
+            --badge-border: rgba(30, 144, 216, 0.4);
+            --discord-btn: #5865F2;
+            --discord-btn-hover: #4752C4;
         }
+        [data-theme="light"] {
+            /* Light Mode: Red, Black Gradient & Holographic */
+            --bg-main: #f9f3f3;
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --bg-card-hover: rgba(255, 255, 255, 1);
+            --bg-nav: rgba(250, 245, 245, 0.95);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: rgba(0, 0, 0, 0.15);
+            --border-glow: rgba(220, 38, 38, 0.6);
+            --accent-glow: rgba(220, 38, 38, 0.3);
+            --accent-green: #10b981;
+            --accent-blue: #0284c7;
+            --danger-color: #ef4444;
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.05);
+            --shadow-hero: 0 25px 50px rgba(0, 0, 0, 0.15), 0 0 40px rgba(220, 38, 38, 0.25);
+            --shadow-btn: 0 12px 30px rgba(220, 38, 38, 0.35);
+            --shadow-widget: 0 25px 50px rgba(0, 0, 0, 0.1);
+            --holo-gradient: linear-gradient(135deg, #dc2626 0%, #000000 50%, #dc2626 100%);
+            --btn-gradient: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            --btn-hover: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            --badge-bg: rgba(220, 38, 38, 0.1);
+            --badge-border: rgba(220, 38, 38, 0.3);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: -15%; left: 50%; transform: translateX(-50%); width: 85vw; height: 550px; background: radial-gradient(circle, var(--accent-glow) 0%, rgba(0,0,0,0) 70%); pointer-events: none; z-index: 0; }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
+        .holo-text { background: var(--holo-gradient); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: holoGlow 4s linear infinite; font-weight: 900; }
+        @keyframes holoGlow { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 14px 32px; background: var(--bg-nav); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 9999; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4); }
+        .header-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .header-logo-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-color); filter: drop-shadow(0 0 10px var(--accent-glow)); }
+        .logo-text { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
 
-        .container {
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+        .nav-actions { display: flex; align-items: center; gap: 1.0rem; position: relative; }
+        .theme-toggle-container { display: flex; align-items: center; position: relative; width: 70px; height: 34px; padding: 2px; border-radius: 9999px; border: 1px solid var(--border-color); background: rgba(100, 100, 100, 0.2); box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4); cursor: pointer; user-select: none; }
+        .theme-toggle-option { flex: 1; text-align: center; font-size: 0.8rem; z-index: 2; pointer-events: none; }
+        .theme-toggle-slider { position: absolute; top: 2px; left: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--btn-gradient, #4f46e5); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1; }
+        [data-theme="light"] .theme-toggle-slider { transform: translateX(36px); }
 
-        header {
-            text-align: center;
-            padding: 20px 0;
-            border-bottom: 2px solid var(--border-color);
-        }
+        .discord-login-btn { background-color: var(--discord-btn); color: #ffffff; border: none; padding: 8px 16px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4); transition: all 0.2s ease; }
+        .discord-login-btn:hover { background-color: var(--discord-btn-hover); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(88, 101, 242, 0.6); }
 
-        header h1 {
-            font-size: 2rem;
-            color: var(--accent-green);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
+        .menu-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; font-size: 0.95rem; font-weight: 800; border-radius: 10px; outline: none; box-shadow: var(--shadow-card); z-index: 10000; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        .menu-btn:hover { border-color: var(--border-glow); box-shadow: 0 0 20px var(--accent-glow); transform: translateY(-2px); }
 
-        header p {
-            color: var(--text-dim);
-            margin-top: 5px;
-        }
+        .nav-menu { display: none; position: absolute; top: calc(100% + 14px); right: 0; background: var(--bg-card); backdrop-filter: blur(25px); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: var(--shadow-widget); width: 240px; padding: 12px; flex-direction: column; gap: 6px; z-index: 9998; transform-origin: top right; }
+        .nav-menu.active { display: flex; animation: menuDropdownFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes menuDropdownFade { from { opacity: 0; transform: scale(0.95) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-        }
+        .nav-menu-header { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); padding: 6px 12px 4px 12px; font-weight: 800; opacity: 0.7; }
+        .nav-menu a { color: var(--text-muted); padding: 10px 14px; text-decoration: none; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 12px; border-radius: 10px; transition: all 0.2s ease; }
+        .nav-menu a span.menu-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+        .nav-menu a:hover { background: var(--badge-bg); color: var(--text-main); border-color: var(--border-glow); transform: translateX(4px); }
+        .nav-menu hr { border: none; border-top: 1px solid var(--border-color); margin: 6px 4px; }
 
-        .card h2 {
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            color: var(--text-color);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .content { flex: 1; width: 100%; max-width: 900px; margin: 40px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; z-index: 1; }
 
-        .auth-group {
-            display: flex;
-            gap: 10px;
-        }
+        .card { background: var(--bg-card); backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 20px; padding: 24px; box-shadow: var(--shadow-widget); position: relative; overflow: hidden; }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--holo-gradient); }
+        .card h2 { font-size: 1.3rem; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 10px; font-weight: 800; }
 
-        input[type="text"] {
-            flex: 1;
-            background-color: #0d1117;
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
+        .auth-group { display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; background-color: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 16px; border-radius: 10px; font-size: 0.95rem; outline: none; }
+        input[type="text"]:focus { border-color: var(--border-glow); box-shadow: 0 0 10px var(--accent-glow); }
 
-        input[type="text"]:focus {
-            border-color: var(--accent-green);
-        }
+        .btn-action { background: var(--btn-gradient); color: #ffffff; font-weight: 800; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-size: 0.95rem; box-shadow: var(--shadow-btn); }
+        .btn-action:hover { background: var(--btn-hover); transform: translateY(-2px); box-shadow: 0 8px 20px var(--accent-glow); }
 
-        button {
-            background-color: var(--accent-green);
-            color: #000;
-            font-weight: bold;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: transform 0.1s, opacity 0.2s;
-        }
+        .friend-list, .request-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .friend-item, .request-item { background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
 
-        button:hover {
-            opacity: 0.9;
-        }
+        .player-info { display: flex; align-items: center; gap: 12px; font-weight: 700; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background-color: var(--text-muted); }
+        .status-dot.online { background-color: var(--accent-green); }
+        .status-dot.ingame { background-color: var(--accent-blue); }
 
-        button:active {
-            transform: scale(0.98);
-        }
+        .action-btns { display: flex; gap: 8px; }
+        .btn-small { padding: 6px 12px; font-size: 0.85rem; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; background: var(--badge-bg); color: var(--text-main); border: 1px solid var(--badge-border); }
+        .btn-small:hover { border-color: var(--border-glow); }
+        .btn-danger { background-color: var(--danger-color); color: #fff; border: none; }
 
-        /* List Items */
-        .friend-list, .request-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 10px;
-        }
+        .empty-state { color: var(--text-muted); font-style: italic; font-size: 0.95rem; }
+        .status-msg { margin-top: 15px; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: 700; display: none; }
+        .status-msg.error { background-color: rgba(255, 75, 75, 0.15); color: var(--danger-color); border: 1px solid var(--danger-color); }
+        .status-msg.success { background-color: rgba(0, 255, 127, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
 
-        .friend-item, .request-item {
-            background-color: #0d1117;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .player-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: var(--text-dim);
-        }
-
-        .status-dot.online {
-            background-color: var(--accent-green);
-        }
-
-        .status-dot.ingame {
-            background-color: var(--accent-blue);
-        }
-
-        .action-btns {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 0.85rem;
-        }
-
-        .btn-danger {
-            background-color: var(--danger-color);
-            color: #fff;
-        }
-
-        .empty-state {
-            color: var(--text-dim);
-            font-style: italic;
-            font-size: 0.95rem;
-        }
-
-        .status-msg {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            display: none;
-        }
-
-        .status-msg.error {
-            background-color: rgba(255, 75, 75, 0.1);
-            color: var(--danger-color);
-            border: 1px solid var(--danger-color);
-        }
-
-        .status-msg.success {
-            background-color: rgba(0, 255, 127, 0.1);
-            color: var(--accent-green);
-            border: 1px solid var(--accent-green);
-        }
+        footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; margin-top: auto; box-shadow: 0 -10px 40px rgba(0,0,0,0.6); }
+        .footer-links a { color: var(--text-muted); text-decoration: none; margin: 0 15px; font-weight: 700; font-size: 0.9rem; }
+        .footer-links a:hover { color: var(--text-main); }
+        .copyright { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; opacity: 0.6; }
     </style>
 </head>
 <body>
 
-<div class="container">
     <header>
-        <h1>Volleyball Revengers</h1>
-        <p>Friends & Social Hub</p>
+        <a href="home" class="header-brand">
+            <img src="logo.png" alt="Mugen Revolution Logo" class="header-logo-img">
+            <span class="logo-text holo-text">Volleyball Revengers</span>
+        </a>
+        <div class="nav-actions">
+            <div id="auth-status-container">
+                <button class="discord-login-btn" id="discordLoginBtn" onclick="redirectToDiscordLogin()">
+                    <span>👾</span> Login with Discord
+                </button>
+            </div>
+            <div class="theme-toggle-container" id="themeToggleBtn" title="Toggle Dark/Light Mode">
+                <div class="theme-toggle-slider"></div>
+                <span class="theme-toggle-option">🌙</span>
+                <span class="theme-toggle-option">☀️</span>
+            </div>
+            <button class="menu-btn" id="menuToggleBtn">
+                <span style="font-size: 1.1rem;">☰</span>
+            </button>
+            <div class="nav-menu" id="navMenu">
+                <div class="nav-menu-header">Navigation</div>
+                <a href="link-discord" id="linkDiscordNavItem" style="display: none;"><span class="menu-icon">💾</span> Link Discord</a>
+                <a href="updates"><span class="menu-icon">🚀</span> Update Log</a>
+                <hr>
+                <div class="nav-menu-header">Community</div>
+                <a href="https://discord.gg/xG6QcTbfp2" target="_blank"><span class="menu-icon">💬</span> Discord</a>
+                <hr>
+                <div class="nav-menu-header">Legal & Info</div>
+                <a href="privacy"><span class="menu-icon">🛡️</span> Privacy Policy</a>
+                <a href="terms"><span class="menu-icon">📄</span> Terms of Service</a>
+            </div>
+        </div>
     </header>
 
-    <!-- Authentication -->
-    <div class="card">
-        <h2>🔑 Account Verification</h2>
-        <div class="auth-group">
-            <input type="text" id="discordIdInput" placeholder="Enter your Discord User ID">
-            <button onclick="loadSocialData()">Fetch Profile</button>
+    <div class="content">
+        <h1 class="holo-text" style="font-size: 2.2rem; text-align: center;">Friends & Social Hub</h1>
+
+        <!-- Authentication -->
+        <div class="card">
+            <h2>🔑 Account Verification</h2>
+            <div class="auth-group">
+                <input type="text" id="discordIdInput" placeholder="Enter your Discord User ID">
+                <button class="btn-action" onclick="loadSocialData()">Fetch Profile</button>
+            </div>
+            <div id="authStatus" class="status-msg"></div>
         </div>
-        <div id="authStatus" class="status-msg"></div>
-    </div>
 
-    <!-- Send Friend Request -->
-    <div class="card">
-        <h2>➕ Add Friend</h2>
-        <div class="auth-group">
-            <input type="text" id="targetIdInput" placeholder="Enter Friend's PlayFab ID or Username">
-            <button onclick="sendFriendRequest()">Send Request</button>
+        <!-- Send Friend Request -->
+        <div class="card">
+            <h2>➕ Add Friend</h2>
+            <div class="auth-group">
+                <input type="text" id="targetIdInput" placeholder="Enter Friend's PlayFab ID or Username">
+                <button class="btn-action" onclick="sendFriendRequest()">Send Request</button>
+            </div>
+            <div id="requestStatus" class="status-msg"></div>
         </div>
-        <div id="requestStatus" class="status-msg"></div>
+
+        <!-- Pending Friend Requests -->
+        <div class="card">
+            <h2>📩 Pending Requests</h2>
+            <ul id="requestsContainer" class="request-list">
+                <li class="empty-state">Authenticate above to load pending requests.</li>
+            </ul>
+        </div>
+
+        <!-- Friends List -->
+        <div class="card">
+            <h2>🤝 Friends List</h2>
+            <ul id="friendsContainer" class="friend-list">
+                <li class="empty-state">Authenticate above to load friends.</li>
+            </ul>
+        </div>
     </div>
 
-    <!-- Pending Friend Requests -->
-    <div class="card">
-        <h2>📩 Pending Requests</h2>
-        <ul id="requestsContainer" class="request-list">
-            <li class="empty-state">Authenticate above to load pending requests.</li>
-        </ul>
-    </div>
+    <footer>
+        <div class="footer-links">
+            <a href="privacy.html">Privacy</a>
+            <a href="terms.html">Terms</a>
+            <a href="https://discord.gg/xG6QcTbfp2">Discord</a>
+            <a href="mailto:mugenrevolutionstudios@gmail.com">Contact</a>
+        </div>
+        <div class="copyright">&copy; 2026 Mugen Revolution Studios. All rights reserved.</div>
+    </footer>
 
-    <!-- Friends List -->
-    <div class="card">
-        <h2>🤝 Friends List</h2>
-        <ul id="friendsContainer" class="friend-list">
-            <li class="empty-state">Authenticate above to load friends.</li>
-        </ul>
-    </div>
-</div>
+    <script>
+        const API_BASE_URL = window.location.origin.includes('github.io') ? 'https://your-render-app.onrender.com' : '';
+        let activePlayFabId = null;
 
-<script>
-    const API_BASE_URL = window.location.origin.includes('github.io') 
-        ? 'https://your-render-app.onrender.com' 
-        : '';
+        const menuBtn = document.getElementById('menuToggleBtn');
+        const navMenu = document.getElementById('navMenu');
+        menuBtn.addEventListener('click', (e) => { e.stopPropagation(); navMenu.classList.toggle('active'); });
+        document.addEventListener('click', (e) => {
+            if (!navMenu.contains(e.target) && !menuBtn.contains(e.target)) navMenu.classList.remove('active');
+        });
 
-    let activePlayFabId = null;
+        const themeBtn = document.getElementById('themeToggleBtn');
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('preferred-theme', newTheme);
+        }
+        themeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); });
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-    async function loadSocialData() {
-        const discordId = document.getElementById('discordIdInput').value.trim();
-        const statusDiv = document.getElementById('authStatus');
+        function initializeFriendsSession() {
+            initPlayFabSession(
+                (result, authType, discordUser) => {
+                    const authContainer = document.getElementById("auth-status-container");
+                    const linkDiscordNavItem = document.getElementById("linkDiscordNavItem");
 
-        if (!discordId) {
-            showStatus(statusDiv, 'Please enter a valid Discord User ID.', 'error');
-            return;
+                    if (authType === "discord" && discordUser) {
+                        if (authContainer) {
+                            authContainer.innerHTML = `<button class="discord-login-btn" onclick="window.location.href='account'"><span>👤</span> Account</button>`;
+                        }
+                        document.getElementById('discordIdInput').value = discordUser.id;
+                        loadSocialData();
+
+                        fetch(`/api/user-info?discordId=${discordUser.id}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (linkDiscordNavItem) linkDiscordNavItem.style.display = (data.success || data.linked) ? "none" : "flex";
+                            }).catch(() => { if (linkDiscordNavItem) linkDiscordNavItem.style.display = "none"; });
+                    } else {
+                        if (linkDiscordNavItem) linkDiscordNavItem.style.display = "flex";
+                    }
+                },
+                () => {
+                    const linkDiscordNavItem = document.getElementById("linkDiscordNavItem");
+                    if (linkDiscordNavItem) linkDiscordNavItem.style.display = "flex";
+                }
+            );
         }
 
-        showStatus(statusDiv, 'Fetching profile & friends network...', 'success');
+        async function loadSocialData() {
+            const discordId = document.getElementById('discordIdInput').value.trim();
+            const statusDiv = document.getElementById('authStatus');
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/user-info?discordId=${encodeURIComponent(discordId)}`);
-            const data = await response.json();
-
-            if (!data.success) {
-                showStatus(statusDiv, `Error: ${data.reason || data.error}`, 'error');
+            if (!discordId) {
+                showStatus(statusDiv, 'Please enter a valid Discord User ID.', 'error');
                 return;
             }
 
-            activePlayFabId = data.playFabId;
-            showStatus(statusDiv, `Logged in as: ${data.displayName} (${data.playFabId})`, 'success');
+            showStatus(statusDiv, 'Fetching profile & friends network...', 'success');
 
-            // Render Friends List
-            renderFriends(data.userData?.FriendList?.Value);
-            
-            // Render Pending Requests
-            renderRequests(data.userData?.FriendRequests?.Value);
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/user-info?discordId=${encodeURIComponent(discordId)}`);
+                const data = await response.json();
 
-        } catch (err) {
-            console.error(err);
-            showStatus(statusDiv, 'Failed to connect to backend server.', 'error');
-        }
-    }
+                if (!data.success) {
+                    showStatus(statusDiv, `Error: ${data.reason || data.error}`, 'error');
+                    return;
+                }
 
-    function renderFriends(rawFriends) {
-        const container = document.getElementById('friendsContainer');
-        container.innerHTML = '';
-
-        let friends = [];
-        if (rawFriends) {
-            try { friends = JSON.parse(rawFriends); } catch (e) { friends = [rawFriends]; }
+                activePlayFabId = data.playFabId;
+                showStatus(statusDiv, `Logged in as: ${data.displayName} (${data.playFabId})`, 'success');
+                renderFriends(data.userData?.FriendList?.Value);
+                renderRequests(data.userData?.FriendRequests?.Value);
+            } catch (err) {
+                console.error(err);
+                showStatus(statusDiv, 'Failed to connect to backend server.', 'error');
+            }
         }
 
-        if (!Array.isArray(friends) || friends.length === 0) {
-            container.innerHTML = '<li class="empty-state">No friends added yet.</li>';
-            return;
+        function renderFriends(rawFriends) {
+            const container = document.getElementById('friendsContainer');
+            container.innerHTML = '';
+            let friends = [];
+            if (rawFriends) { try { friends = JSON.parse(rawFriends); } catch (e) { friends = [rawFriends]; } }
+
+            if (!Array.isArray(friends) || friends.length === 0) {
+                container.innerHTML = '<li class="empty-state">No friends added yet.</li>';
+                return;
+            }
+
+            friends.forEach(friend => {
+                const li = document.createElement('li');
+                li.className = 'friend-item';
+                li.innerHTML = `
+                    <div class="player-info">
+                        <span class="status-dot online"></span>
+                        <span>${friend}</span>
+                    </div>
+                    <div class="action-btns">
+                        <button class="btn-small btn-danger" onclick="removeFriend('${friend}')">Remove</button>
+                    </div>`;
+                container.appendChild(li);
+            });
         }
 
-        friends.forEach(friend => {
-            const li = document.createElement('li');
-            li.className = 'friend-item';
-            li.innerHTML = `
-                <div class="player-info">
-                    <span class="status-dot online"></span>
-                    <strong>${friend}</strong>
-                </div>
-                <div class="action-btns">
-                    <button class="btn-small btn-danger" onclick="removeFriend('${friend}')">Remove</button>
-                </div>
-            `;
-            container.appendChild(li);
-        });
-    }
+        function renderRequests(rawRequests) {
+            const container = document.getElementById('requestsContainer');
+            container.innerHTML = '';
+            let requests = [];
+            if (rawRequests) { try { requests = JSON.parse(rawRequests); } catch (e) { requests = [rawRequests]; } }
 
-    function renderRequests(rawRequests) {
-        const container = document.getElementById('requestsContainer');
-        container.innerHTML = '';
+            if (!Array.isArray(requests) || requests.length === 0) {
+                container.innerHTML = '<li class="empty-state">No incoming friend requests.</li>';
+                return;
+            }
 
-        let requests = [];
-        if (rawRequests) {
-            try { requests = JSON.parse(rawRequests); } catch (e) { requests = [rawRequests]; }
+            requests.forEach(sender => {
+                const li = document.createElement('li');
+                li.className = 'request-item';
+                li.innerHTML = `
+                    <div class="player-info">
+                        <span>${sender}</span>
+                    </div>
+                    <div class="action-btns">
+                        <button class="btn-small" onclick="acceptRequest('${sender}')">Accept</button>
+                        <button class="btn-small btn-danger" onclick="declineRequest('${sender}')">Decline</button>
+                    </div>`;
+                container.appendChild(li);
+            });
         }
 
-        if (!Array.isArray(requests) || requests.length === 0) {
-            container.innerHTML = '<li class="empty-state">No incoming friend requests.</li>';
-            return;
+        async function sendFriendRequest() {
+            const target = document.getElementById('targetIdInput').value.trim();
+            const statusDiv = document.getElementById('requestStatus');
+
+            if (!activePlayFabId) {
+                showStatus(statusDiv, 'Authenticate your Discord account first.', 'error');
+                return;
+            }
+
+            if (!target) {
+                showStatus(statusDiv, 'Enter a target ID or username.', 'error');
+                return;
+            }
+
+            showStatus(statusDiv, `Friend request sent to ${target}!`, 'success');
+            document.getElementById('targetIdInput').value = '';
         }
 
-        requests.forEach(sender => {
-            const li = document.createElement('li');
-            li.className = 'request-item';
-            li.innerHTML = `
-                <div class="player-info">
-                    <strong>${sender}</strong>
-                </div>
-                <div class="action-btns">
-                    <button class="btn-small" onclick="acceptRequest('${sender}')">Accept</button>
-                    <button class="btn-small btn-danger" onclick="declineRequest('${sender}')">Decline</button>
-                </div>
-            `;
-            container.appendChild(li);
-        });
-    }
+        function acceptRequest(sender) { alert(`Accepted friend request from ${sender}`); }
+        function declineRequest(sender) { alert(`Declined friend request from ${sender}`); }
+        function removeFriend(friend) { alert(`Removed ${friend} from friends list.`); }
 
-    async function sendFriendRequest() {
-        const target = document.getElementById('targetIdInput').value.trim();
-        const statusDiv = document.getElementById('requestStatus');
-
-        if (!activePlayFabId) {
-            showStatus(statusDiv, 'Authenticate your Discord account first.', 'error');
-            return;
+        function showStatus(element, text, type) {
+            element.style.display = 'block';
+            element.className = `status-msg ${type}`;
+            element.innerText = text;
         }
 
-        if (!target) {
-            showStatus(statusDiv, 'Enter a target ID or username.', 'error');
-            return;
-        }
-
-        showStatus(statusDiv, `Friend request sent to ${target}!`, 'success');
-        document.getElementById('targetIdInput').value = '';
-    }
-
-    function acceptRequest(sender) {
-        alert(`Accepted friend request from ${sender}`);
-    }
-
-    function declineRequest(sender) {
-        alert(`Declined friend request from ${sender}`);
-    }
-
-    function removeFriend(friend) {
-        alert(`Removed ${friend} from friends list.`);
-    }
-
-    function showStatus(element, text, type) {
-        element.style.display = 'block';
-        element.className = `status-msg ${type}`;
-        element.innerText = text;
-    }
-</script>
+        window.onload = initializeFriendsSession;
+    </script>
 </body>
 </html>
