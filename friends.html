@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volleyball Revengers | Social Network</title>
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --card-bg: #161b22;
+            --accent-green: #00ff7f;
+            --accent-blue: #00d4ff;
+            --text-color: #f0f6fc;
+            --text-dim: #8b949e;
+            --border-color: #30363d;
+            --danger-color: #ff4b4b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            color: var(--text-dim);
+            margin-top: 5px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .auth-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background-color: #0d1117;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-green);
+        }
+
+        button {
+            background-color: var(--accent-green);
+            color: #000;
+            font-weight: bold;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* List Items */
+        .friend-list, .request-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .friend-item, .request-item {
+            background-color: #0d1117;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--text-dim);
+        }
+
+        .status-dot.online {
+            background-color: var(--accent-green);
+        }
+
+        .status-dot.ingame {
+            background-color: var(--accent-blue);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: #fff;
+        }
+
+        .empty-state {
+            color: var(--text-dim);
+            font-style: italic;
+            font-size: 0.95rem;
+        }
+
+        .status-msg {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        .status-msg.error {
+            background-color: rgba(255, 75, 75, 0.1);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        .status-msg.success {
+            background-color: rgba(0, 255, 127, 0.1);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Volleyball Revengers</h1>
+        <p>Friends & Social Hub</p>
+    </header>
+
+    <!-- Authentication -->
+    <div class="card">
+        <h2>🔑 Account Verification</h2>
+        <div class="auth-group">
+            <input type="text" id="discordIdInput" placeholder="Enter your Discord User ID">
+            <button onclick="loadSocialData()">Fetch Profile</button>
+        </div>
+        <div id="authStatus" class="status-msg"></div>
+    </div>
+
+    <!-- Send Friend Request -->
+    <div class="card">
+        <h2>➕ Add Friend</h2>
+        <div class="auth-group">
+            <input type="text" id="targetIdInput" placeholder="Enter Friend's PlayFab ID or Username">
+            <button onclick="sendFriendRequest()">Send Request</button>
+        </div>
+        <div id="requestStatus" class="status-msg"></div>
+    </div>
+
+    <!-- Pending Friend Requests -->
+    <div class="card">
+        <h2>📩 Pending Requests</h2>
+        <ul id="requestsContainer" class="request-list">
+            <li class="empty-state">Authenticate above to load pending requests.</li>
+        </ul>
+    </div>
+
+    <!-- Friends List -->
+    <div class="card">
+        <h2>🤝 Friends List</h2>
+        <ul id="friendsContainer" class="friend-list">
+            <li class="empty-state">Authenticate above to load friends.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const API_BASE_URL = window.location.origin.includes('github.io') 
+        ? 'https://your-render-app.onrender.com' 
+        : '';
+
+    let activePlayFabId = null;
+
+    async function loadSocialData() {
+        const discordId = document.getElementById('discordIdInput').value.trim();
+        const statusDiv = document.getElementById('authStatus');
+
+        if (!discordId) {
+            showStatus(statusDiv, 'Please enter a valid Discord User ID.', 'error');
+            return;
+        }
+
+        showStatus(statusDiv, 'Fetching profile & friends network...', 'success');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/user-info?discordId=${encodeURIComponent(discordId)}`);
+            const data = await response.json();
+
+            if (!data.success) {
+                showStatus(statusDiv, `Error: ${data.reason || data.error}`, 'error');
+                return;
+            }
+
+            activePlayFabId = data.playFabId;
+            showStatus(statusDiv, `Logged in as: ${data.displayName} (${data.playFabId})`, 'success');
+
+            // Render Friends List
+            renderFriends(data.userData?.FriendList?.Value);
+            
+            // Render Pending Requests
+            renderRequests(data.userData?.FriendRequests?.Value);
+
+        } catch (err) {
+            console.error(err);
+            showStatus(statusDiv, 'Failed to connect to backend server.', 'error');
+        }
+    }
+
+    function renderFriends(rawFriends) {
+        const container = document.getElementById('friendsContainer');
+        container.innerHTML = '';
+
+        let friends = [];
+        if (rawFriends) {
+            try { friends = JSON.parse(rawFriends); } catch (e) { friends = [rawFriends]; }
+        }
+
+        if (!Array.isArray(friends) || friends.length === 0) {
+            container.innerHTML = '<li class="empty-state">No friends added yet.</li>';
+            return;
+        }
+
+        friends.forEach(friend => {
+            const li = document.createElement('li');
+            li.className = 'friend-item';
+            li.innerHTML = `
+                <div class="player-info">
+                    <span class="status-dot online"></span>
+                    <strong>${friend}</strong>
+                </div>
+                <div class="action-btns">
+                    <button class="btn-small btn-danger" onclick="removeFriend('${friend}')">Remove</button>
+                </div>
+            `;
+            container.appendChild(li);
+        });
+    }
+
+    function renderRequests(rawRequests) {
+        const container = document.getElementById('requestsContainer');
+        container.innerHTML = '';
+
+        let requests = [];
+        if (rawRequests) {
+            try { requests = JSON.parse(rawRequests); } catch (e) { requests = [rawRequests]; }
+        }
+
+        if (!Array.isArray(requests) || requests.length === 0) {
+            container.innerHTML = '<li class="empty-state">No incoming friend requests.</li>';
+            return;
+        }
+
+        requests.forEach(sender => {
+            const li = document.createElement('li');
+            li.className = 'request-item';
+            li.innerHTML = `
+                <div class="player-info">
+                    <strong>${sender}</strong>
+                </div>
+                <div class="action-btns">
+                    <button class="btn-small" onclick="acceptRequest('${sender}')">Accept</button>
+                    <button class="btn-small btn-danger" onclick="declineRequest('${sender}')">Decline</button>
+                </div>
+            `;
+            container.appendChild(li);
+        });
+    }
+
+    async function sendFriendRequest() {
+        const target = document.getElementById('targetIdInput').value.trim();
+        const statusDiv = document.getElementById('requestStatus');
+
+        if (!activePlayFabId) {
+            showStatus(statusDiv, 'Authenticate your Discord account first.', 'error');
+            return;
+        }
+
+        if (!target) {
+            showStatus(statusDiv, 'Enter a target ID or username.', 'error');
+            return;
+        }
+
+        showStatus(statusDiv, `Friend request sent to ${target}!`, 'success');
+        document.getElementById('targetIdInput').value = '';
+    }
+
+    function acceptRequest(sender) {
+        alert(`Accepted friend request from ${sender}`);
+    }
+
+    function declineRequest(sender) {
+        alert(`Declined friend request from ${sender}`);
+    }
+
+    function removeFriend(friend) {
+        alert(`Removed ${friend} from friends list.`);
+    }
+
+    function showStatus(element, text, type) {
+        element.style.display = 'block';
+        element.className = `status-msg ${type}`;
+        element.innerText = text;
+    }
+</script>
+</body>
+</html>
