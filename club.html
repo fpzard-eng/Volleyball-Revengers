@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volleyball Revengers | Club Portal</title>
-    <!-- PlayFab JS SDK -->
+    <title>Volleyball Revengers | Club Dashboard</title>
     <script src="https://download.playfab.com/PlayFabClientApi.js"></script>
-    <!-- Shared PlayFab Auth Module -->
     <script src="playfab-auth.js"></script>
     <style>
         :root {
@@ -52,7 +50,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
         
-        /* Glow Overlay */
         body::before { content: ''; position: fixed; top: -20%; left: 50%; transform: translateX(-50%); width: 100vw; height: 600px; background: radial-gradient(circle, var(--accent-glow) 0%, rgba(0,0,0,0) 70%); pointer-events: none; z-index: 0; }
 
         .holo-text { background: var(--holo-gradient); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: holoGlow 6s linear infinite; font-weight: 900; }
@@ -138,7 +135,7 @@
     </header>
 
     <div class="content">
-        <h1 class="holo-text" style="font-size: 2.2rem; text-align: center;">Club Management Portal</h1>
+        <h1 class="holo-text" style="font-size: 2.2rem; text-align: center;">Club Dashboard</h1>
         
         <!-- Player & Club Info -->
         <div class="card">
@@ -198,8 +195,6 @@
     <script>
         const API_BASE_URL = window.location.origin.includes('github.io') ? 'https://your-render-app.onrender.com' : '';
         let activePlayFabId = null;
-
-        // UI Event Listeners
         const menuBtn = document.getElementById('menuToggleBtn');
         const navMenu = document.getElementById('navMenu');
         menuBtn.addEventListener('click', (e) => { e.stopPropagation(); navMenu.classList.toggle('active'); });
@@ -214,7 +209,6 @@
         });
         document.documentElement.setAttribute('data-theme', localStorage.getItem('preferred-theme') || 'dark');
 
-        // Session & Authentication Setup
         function initializeClubSession() {
             if (typeof initPlayFabSession === "function") {
                 initPlayFabSession((result, authType, discordUser) => {
@@ -249,7 +243,6 @@
             }
         }
 
-        // Executing Cloud Script for Club Creation
         function handleCreateClub(event) {
             event.preventDefault();
             const formStatus = document.getElementById('formStatus');
