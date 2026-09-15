@@ -231,6 +231,27 @@ function getPlayFabUserByDiscordId(discordId) {
     });
 }
 
+function getOnlinePlayerCount() {
+    return new Promise((resolve) => {
+        PlayFabServer.GetTitleData({ Keys: ['OnlinePlayersCount', 'ActiveSessions'] }, (error, result) => {
+            if (!error && result?.data?.Data?.OnlinePlayersCount) {
+                return resolve(parseInt(result.data.Data.OnlinePlayersCount, 10) || 0);
+            }
+            
+            // Fallback: Query active matches/servers if stored in Internal Data
+            PlayFabServer.GetTitleInternalData({ Keys: ['GlobalServerState'] }, (intErr, intResult) => {
+                if (intErr || !intResult?.data?.Data?.GlobalServerState) return resolve(0);
+                try {
+                    const serverState = JSON.parse(intResult.data.Data.GlobalServerState);
+                    resolve(serverState.totalOnline || 0);
+                } catch {
+                    resolve(0);
+                }
+            });
+        });
+    });
+}
+
 async function enforceAccountLink(interaction, targetUser = null) {
     const userToVerify = targetUser || interaction.user;
     const isSelf = userToVerify.id === interaction.user.id;
@@ -254,7 +275,6 @@ async function enforceAccountLink(interaction, targetUser = null) {
             .setColor('#FF4B4B')
             .setFooter({ text: 'Volleyball Revengers • Assistant Coach' });
 
-        // Safe check for editReply vs reply
         if (interaction.deferred || interaction.replied) {
             await interaction.editReply({ embeds: [responseEmbed] }).catch(() => {});
         } else {
@@ -283,51 +303,52 @@ client.on('interactionCreate', async interaction => {
 
     try {
         if (commandName === 'website') {
-            return await interaction.reply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
+            return await interaction.reply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home', ephemeral: true  });
         }
 
-    if (commandName === 'club-info') {
-    const embed = new EmbedBuilder()
-        .setTitle('🏐 Club System Overview')
-        .setDescription('Clubs are the core competitive units in Volleyball Revengers. Build your roster, compete in regional circuits, and climb the standings toward full release.')
-        .addFields(
-            { name: '👥 Roster Capacity', value: '• **Standard Roster:** 12 Players\n• **Max Roster (with Coaches):** 14 Players', inline: true },
-            { name: '🏆 Competitive Paths', value: '• Open Gym / Regional Matches\n• Qualification Play-Ins\n• National Tournament (NT)', inline: false }
-        )
-        .setColor('#2B2D31')
-        .setFooter({ text: 'Volleyball Revengers • Club Information' });
+        if (commandName === 'club-info') {
+            const embed = new EmbedBuilder()
+                .setTitle('🏐 Club System Overview')
+                .setDescription('Clubs are the core competitive units in Volleyball Revengers. Build your roster, compete in regional circuits, and climb the standings toward full release.')
+                .addFields(
+                    { name: '👥 Roster Capacity', value: '• **Standard Roster:** 12 Players\n• **Max Roster (with Coaches):** 14 Players', inline: true },
+                    { name: '🏆 Competitive Paths', value: '• Open Gym / Regional Matches\n• Qualification Play-Ins\n• National Tournament (NT)', inline: false }
+                )
+                .setColor('#2B2D31')
+                .setFooter({ text: '*Volleyball Revengers • Club Information*' });
 
-    return await interaction.reply({ embeds: [embed] });
-}
+            return await interaction.reply({ embeds: [embed], ephemeral: true  });
+        }
 
-if (commandName === 'nt-info') {
-    const embed = new EmbedBuilder()
-        .setTitle('🏆 National Tournament (NT) Format')
-        .setDescription('The premier championship tournament for Volleyball Revengers.\nHere is how teams advance from Open Qualifications to the Championship.\n\n⠀') // Extra space before fields
-        .addFields(
-            { 
-                name: '1️⃣ Qualification Round', 
-                value: '• **Format:** Single-Elimination Knockout (Best of 3)\n• **Entrants:** Open Entrant Pool\n• **Goal:** Top **36 Teams** advance to the League Stage.', 
-                inline: false 
-            },
-            { name: '\u200B', value: '──────────────────────────────', inline: false },
-            { 
-                name: '2️⃣ League Stage (36 Teams)', 
-                value: '• **Format:** 6 Pools of 6 Teams (Round-Robin)\n• **Match Length:** Best 2-out-of-3 sets\n• **Scoring:** 3pts (2-0 win), 2pts (2-1 win), 1pt (1-2 loss), 0pts (0-2 loss)\n• **Advancement:** Top 2 teams per pool (12) + Top 4 Wildcards (16 total).', 
-                inline: false 
-            },
-            { name: '\u200B', value: '──────────────────────────────', inline: false },
-            { 
-                name: '3️⃣ Finals (16 Teams)', 
-                value: '• **Format:** Single-Elimination Bracket with **Random Draw**\n• **Match Length:** Best 3-out-of-5 sets\n• **Progression:** Round of 16 ➔ Quarterfinals ➔ Semifinals\n• **Placements:** Semifinal losers play for **3rd Place**; Winners play for **1st Place**.', 
-                inline: false 
-            }
-        )
-        .setColor('#FFD700')
-        .setFooter({ text: 'Volleyball Revengers • National Tournament' });
+        if (commandName === 'nt-info') {
+            const embed = new EmbedBuilder()
+                .setTitle('🏆 NATIONAL TOURNAMENT (NT)')
+                .setDescription('**The Premier Championship for Volleyball Revengers**\n*Follow the road from Open Qualifications to the Grand Finals.*')
+                .addFields(
+                    { 
+                        name: '# *🥇 QUALIFICATION ROUND*', 
+                        value: '>>> • **Format:** Single-Elimination Knockout (Best of 3)\n• **Entrants:** Open Entrant Pool\n• **Advancement Goal:** Top **36 Teams** reach the League Stage', 
+                        inline: false
+                    },
+                    { name: ' ', inline: false },
+                    { 
+                        name: '# *🏐 LEAGUE STAGE (36 TEAMS)*', 
+                        value: '>>> • **Structure:** 6 Pools of 6 Teams (Round-Robin)\n• **Match Length:** Best 2-out-of-3 sets\n• **Scoring System:**\n  └ **3 pts:** 2-0 Win | **2 pts:** 2-1 Win\n  └ **1 pt:** 1-2 Loss | **0 pts:** 0-2 Loss\n• **Advancement:** Top 2 per pool (12) + Top 4 Wildcards (**16 total**)', 
+                        inline: false 
+                    },
+                    { name: ' ', inline: false },
+                    { 
+                        name: '# *👑 FINALS — NT PLAYOFFS (16 TEAMS)*', 
+                        value: '>>> • **Format:** Single-Elimination Bracket (Random Seeding)\n• **Match Length:** Best 3-out-of-5 sets\n• **Progression:** Round of 16 ➔ Quarterfinals ➔ Semifinals\n• **Podium Matches:**\n  └ 🥉 **3rd Place Match:** Semifinal Losers\n  └ 🏆 **Grand Final:** Semifinal Winners', 
+                        inline: false 
+                    }
+                )
+                .setColor('#FFD700')
+                .setFooter({ text: '*Volleyball Revengers • National Tournament Infomation*' })
+                .setTimestamp();
 
-    return await interaction.reply({ embeds: [embed] });
-}
+            return await interaction.reply({ embeds: [embed], ephemeral: true  });
+        }
         
         if (commandName === 'msg') {
             if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
@@ -373,9 +394,57 @@ if (commandName === 'nt-info') {
                     ? `Linked **${interaction.user.username}** to PlayFab ID \`${result.linkedPlayerId}\`.`
                     : (result.message || 'The code is invalid or expired.'))
                 .setColor(result.success ? '#00FF7F' : '#FF4B4B')
-                .setFooter({ text: 'Volleyball Revengers • Profile Linker' });
+                .setFooter({ text: '*Volleyball Revengers • Profile Linker*' });
 
-            await interaction.editReply({ embeds: [embed] });
+            await interaction.editReply({ embeds: [embed], ephemeral: true  });
+        }
+
+        else if (commandName === 'is-linked') {
+            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+            const isSelf = targetDiscordUser.id === interaction.user.id;
+
+            const { user, reason, playFabId } = await getPlayFabUserByDiscordId(targetDiscordUser.id);
+
+            const isLinkedEmbed = new EmbedBuilder().setTimestamp();
+
+            if (user) {
+                const displayName = user.TitleInfo?.DisplayName || 'Not Set';
+                isLinkedEmbed
+                    .setTitle('🔗 Account Linked')
+                    .setColor('#00FF7F')
+                    .setDescription(isSelf 
+                        ? `Your Discord account is linked to PlayFab!` 
+                        : `**${targetDiscordUser.username}**'s Discord account is linked to PlayFab.`)
+                    .addFields(
+                        { name: '👤 Discord User', value: `${targetDiscordUser}`, inline: true },
+                        { name: '🎮 Display Name', value: displayName, inline: true },
+                        { name: '🆔 PlayFab ID', value: `\`${user.PlayFabId}\``, inline: false }
+                    )
+                    .setFooter({ text: '*Volleyball Revengers • Account Verification*' });
+            } else {
+                isLinkedEmbed
+                    .setTitle('❌ Account Not Linked')
+                    .setColor('#FF4B4B')
+                    .setDescription(isSelf 
+                        ? 'Your Discord account is not linked to PlayFab yet. Use `/link <code>` to link your account.' 
+                        : `**${targetDiscordUser.username}** has not linked their Discord account yet.`)
+                    .setFooter({ text: '*Volleyball Revengers • Account Verification*' });
+            }
+
+            await interaction.editReply({ embeds: [isLinkedEmbed], ephemeral: true });
+        }
+
+        else if (commandName === 'online-players') {
+            const count = await getOnlinePlayerCount();
+
+            const onlineEmbed = new EmbedBuilder()
+                .setTitle('🌐 Online Players')
+                .setColor('#00D4FF')
+                .setDescription(`There are currently **${count}** player${count === 1 ? '' : 's'} online in **Volleyball Revengers**!`)
+                .setFooter({ text: '*Volleyball Revengers • Live Server Monitor*' })
+                .setTimestamp();
+
+            await interaction.editReply({ embeds: [onlineEmbed], ephemeral: true });
         }
 
         else if (commandName === 'check-status') {
@@ -411,10 +480,10 @@ if (commandName === 'nt-info') {
                     { name: '🆔 PlayFab ID', value: `\`${playFabId}\``, inline: true },
                     { name: '📡 Status', value: `**${formattedStatus}**`, inline: false }
                 )
-                .setFooter({ text: 'Volleyball Revengers • Status Checker' })
+                .setFooter({ text: '*Volleyball Revengers • Status Checker*' })
                 .setTimestamp();
 
-            await interaction.editReply({ embeds: [statusEmbed] });
+            await interaction.editReply({ embeds: [statusEmbed], ephemeral: true  });
         }
 
         else if (commandName === 'account') {
@@ -443,10 +512,10 @@ if (commandName === 'nt-info') {
                     { name: '📊 Performance', value: `**Matches:** ${getStat('MatchesPlayed')}\n**Wins:** ${getStat('Wins')}\n**MVPs:** ${getStat('MVP')}`, inline: true },
                     { name: '🎯 In-Game Actions', value: `**Kills:** ${getStat('Kills')}\n**Blocks:** ${getStat('Blocks')}\n**Assists:** ${getStat('Assists')}`, inline: false }
                 )
-                .setFooter({ text: 'Volleyball Revengers • Player Statistics' })
+                .setFooter({ text: '*Volleyball Revengers • Player Statistics*' })
                 .setTimestamp();
 
-            await interaction.editReply({ embeds: [accountEmbed] });
+            await interaction.editReply({ embeds: [accountEmbed], ephemeral: true  });
         }
 
         else if (commandName === 'club') {
@@ -466,9 +535,9 @@ if (commandName === 'nt-info') {
                     { name: '📩 Pending Invites', value: pendingInvites.length > 0 ? pendingInvites.join(', ') : 'None', inline: false },
                     { name: '🌐 Management Portal', value: 'Manage invitations, view stats, and access settings at:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/club', inline: false }
                 )
-                .setFooter({ text: 'Volleyball Revengers • Club Hub' });
+                .setFooter({ text: '*Volleyball Revengers • Club Hub*' });
 
-            await interaction.editReply({ embeds: [clubEmbed] });
+            await interaction.editReply({ embeds: [clubEmbed], ephemeral: true  });
         }
 
         else if (commandName === 'party') {
@@ -487,9 +556,9 @@ if (commandName === 'nt-info') {
                     { name: '👥 Party Status', value: `**${partyStatus}**`, inline: false },
                     { name: '📩 Incoming Invites', value: pendingInvites.length > 0 ? pendingInvites.join(', ') : 'None', inline: false }
                 )
-                .setFooter({ text: 'Volleyball Revengers • Party Hub' });
+                .setFooter({ text: '*Volleyball Revengers • Party Hub*' });
 
-            await interaction.editReply({ embeds: [partyEmbed] });
+            await interaction.editReply({ embeds: [partyEmbed], ephemeral: true  });
         }
 
         else if (commandName === 'friends') {
@@ -509,9 +578,9 @@ if (commandName === 'nt-info') {
                     { name: '📩 Pending Requests', value: pendingRequests.length > 0 ? pendingRequests.join(', ') : 'None', inline: false },
                     { name: '🌐 Manage Friends', value: 'Add or remove friends on the dashboard:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/friends', inline: false }
                 )
-                .setFooter({ text: 'Volleyball Revengers • Social Network' });
+                .setFooter({ text: '*Volleyball Revengers • Social Network*' });
 
-            await interaction.editReply({ embeds: [friendsEmbed] });
+            await interaction.editReply({ embeds: [friendsEmbed], ephemeral: true  });
         }
 
     } catch (cmdErr) {
