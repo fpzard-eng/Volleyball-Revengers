@@ -303,20 +303,22 @@ client.on('interactionCreate', async interaction => {
 if (commandName === 'nt-info') {
     const embed = new EmbedBuilder()
         .setTitle('🏆 National Tournament (NT) Format')
-        .setDescription('The premier championship tournament for Volleyball Revengers. Here is how teams advance from Open Qualifications to the Championship.')
+        .setDescription('The premier championship tournament for Volleyball Revengers.\nHere is how teams advance from Open Qualifications to the Championship.\n\n⠀') // Extra space before fields
         .addFields(
             { 
                 name: '1️⃣ Qualification Round', 
                 value: '• **Format:** Single-Elimination Knockout (Best of 3)\n• **Entrants:** Open Entrant Pool\n• **Goal:** Top **36 Teams** advance to the League Stage.', 
                 inline: false 
             },
+            { name: '\u200B', value: '──────────────────────────────', inline: false },
             { 
                 name: '2️⃣ League Stage (36 Teams)', 
                 value: '• **Format:** 6 Pools of 6 Teams (Round-Robin)\n• **Match Length:** Best 2-out-of-3 sets\n• **Scoring:** 3pts (2-0 win), 2pts (2-1 win), 1pt (1-2 loss), 0pts (0-2 loss)\n• **Advancement:** Top 2 teams per pool (12) + Top 4 Wildcards (16 total).', 
                 inline: false 
             },
+            { name: '\u200B', value: '──────────────────────────────', inline: false },
             { 
-                name: '3️⃣ Finals — NCAA-Style Playoff (16 Teams)', 
+                name: '3️⃣ Finals (16 Teams)', 
                 value: '• **Format:** Single-Elimination Bracket with **Random Draw**\n• **Match Length:** Best 3-out-of-5 sets\n• **Progression:** Round of 16 ➔ Quarterfinals ➔ Semifinals\n• **Placements:** Semifinal losers play for **3rd Place**; Winners play for **1st Place**.', 
                 inline: false 
             }
