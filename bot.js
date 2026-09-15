@@ -315,7 +315,7 @@ client.on('interactionCreate', async interaction => {
                     { name: '🏆 Competitive Paths', value: '• Open Gym / Regional Matches\n• Qualification Play-Ins\n• National Tournament (NT)', inline: false }
                 )
                 .setColor('#2B2D31')
-                .setFooter({ text: '*Volleyball Revengers • Club Information*' });
+                .setFooter({ text: 'Volleyball Revengers • Club Information' });
 
             return await interaction.reply({ embeds: [embed], ephemeral: true  });
         }
@@ -344,7 +344,7 @@ client.on('interactionCreate', async interaction => {
                     }
                 )
                 .setColor('#FFD700')
-                .setFooter({ text: '*Volleyball Revengers • National Tournament Infomation*' })
+                .setFooter({ text: 'Volleyball Revengers • National Tournament Infomation' })
                 .setTimestamp();
 
             return await interaction.reply({ embeds: [embed], ephemeral: true  });
@@ -394,7 +394,7 @@ client.on('interactionCreate', async interaction => {
                     ? `Linked **${interaction.user.username}** to PlayFab ID \`${result.linkedPlayerId}\`.`
                     : (result.message || 'The code is invalid or expired.'))
                 .setColor(result.success ? '#00FF7F' : '#FF4B4B')
-                .setFooter({ text: '*Volleyball Revengers • Profile Linker*' });
+                .setFooter({ text: 'Volleyball Revengers • Profile Linker' });
 
             await interaction.editReply({ embeds: [embed], ephemeral: true  });
         }
@@ -420,7 +420,7 @@ client.on('interactionCreate', async interaction => {
                         { name: '🎮 Display Name', value: displayName, inline: true },
                         { name: '🆔 PlayFab ID', value: `\`${user.PlayFabId}\``, inline: false }
                     )
-                    .setFooter({ text: '*Volleyball Revengers • Account Verification*' });
+                    .setFooter({ text: 'Volleyball Revengers • Account Verification' });
             } else {
                 isLinkedEmbed
                     .setTitle('❌ Account Not Linked')
@@ -428,7 +428,7 @@ client.on('interactionCreate', async interaction => {
                     .setDescription(isSelf 
                         ? 'Your Discord account is not linked to PlayFab yet. Use `/link <code>` to link your account.' 
                         : `**${targetDiscordUser.username}** has not linked their Discord account yet.`)
-                    .setFooter({ text: '*Volleyball Revengers • Account Verification*' });
+                    .setFooter({ text: 'Volleyball Revengers • Account Verification' });
             }
 
             await interaction.editReply({ embeds: [isLinkedEmbed], ephemeral: true });
@@ -441,7 +441,7 @@ client.on('interactionCreate', async interaction => {
                 .setTitle('🌐 Online Players')
                 .setColor('#00D4FF')
                 .setDescription(`There are currently **${count}** player${count === 1 ? '' : 's'} online in **Volleyball Revengers**!`)
-                .setFooter({ text: '*Volleyball Revengers • Live Server Monitor*' })
+                .setFooter({ text: 'Volleyball Revengers • Live Server Monitor' })
                 .setTimestamp();
 
             await interaction.editReply({ embeds: [onlineEmbed], ephemeral: true });
@@ -480,7 +480,7 @@ client.on('interactionCreate', async interaction => {
                     { name: '🆔 PlayFab ID', value: `\`${playFabId}\``, inline: true },
                     { name: '📡 Status', value: `**${formattedStatus}**`, inline: false }
                 )
-                .setFooter({ text: '*Volleyball Revengers • Status Checker*' })
+                .setFooter({ text: 'Volleyball Revengers • Status Checker' })
                 .setTimestamp();
 
             await interaction.editReply({ embeds: [statusEmbed], ephemeral: true  });
@@ -512,7 +512,7 @@ client.on('interactionCreate', async interaction => {
                     { name: '📊 Performance', value: `**Matches:** ${getStat('MatchesPlayed')}\n**Wins:** ${getStat('Wins')}\n**MVPs:** ${getStat('MVP')}`, inline: true },
                     { name: '🎯 In-Game Actions', value: `**Kills:** ${getStat('Kills')}\n**Blocks:** ${getStat('Blocks')}\n**Assists:** ${getStat('Assists')}`, inline: false }
                 )
-                .setFooter({ text: '*Volleyball Revengers • Player Statistics*' })
+                .setFooter({ text: 'Volleyball Revengers • Player Statistics' })
                 .setTimestamp();
 
             await interaction.editReply({ embeds: [accountEmbed], ephemeral: true  });
@@ -535,7 +535,7 @@ client.on('interactionCreate', async interaction => {
                     { name: '📩 Pending Invites', value: pendingInvites.length > 0 ? pendingInvites.join(', ') : 'None', inline: false },
                     { name: '🌐 Management Portal', value: 'Manage invitations, view stats, and access settings at:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/club', inline: false }
                 )
-                .setFooter({ text: '*Volleyball Revengers • Club Hub*' });
+                .setFooter({ text: 'Volleyball Revengers • Club Hub' });
 
             await interaction.editReply({ embeds: [clubEmbed], ephemeral: true  });
         }
@@ -556,7 +556,7 @@ client.on('interactionCreate', async interaction => {
                     { name: '👥 Party Status', value: `**${partyStatus}**`, inline: false },
                     { name: '📩 Incoming Invites', value: pendingInvites.length > 0 ? pendingInvites.join(', ') : 'None', inline: false }
                 )
-                .setFooter({ text: '*Volleyball Revengers • Party Hub*' });
+                .setFooter({ text: 'Volleyball Revengers • Party Hub' });
 
             await interaction.editReply({ embeds: [partyEmbed], ephemeral: true  });
         }
@@ -578,7 +578,7 @@ client.on('interactionCreate', async interaction => {
                     { name: '📩 Pending Requests', value: pendingRequests.length > 0 ? pendingRequests.join(', ') : 'None', inline: false },
                     { name: '🌐 Manage Friends', value: 'Add or remove friends on the dashboard:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/friends', inline: false }
                 )
-                .setFooter({ text: '*Volleyball Revengers • Social Network*' });
+                .setFooter({ text: 'Volleyball Revengers • Social Network' });
 
             await interaction.editReply({ embeds: [friendsEmbed], ephemeral: true  });
         }
