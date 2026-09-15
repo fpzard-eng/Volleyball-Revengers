@@ -282,25 +282,51 @@ client.on('interactionCreate', async interaction => {
     const { commandName } = interaction;
 
     try {
-        // --- Instant Commands (No API latency needed) ---
         if (commandName === 'website') {
             return await interaction.reply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
         }
 
-        if (commandName === 'club-info') {
-            const embed = new EmbedBuilder()
-                .setTitle('🏐 Club System Information')
-                .setDescription('Clubs in **Volleyball Revengers** allow players to team up, track shared W-L ratios, host scheduled practice sessions, and compete together!')
-                .addFields(
-                    { name: '✨ Features', value: '• Dedicated Club Roster\n• Shared Win/Loss Stats\n• Practice Schedules' },
-                    { name: '🌐 Club Dashboard', value: 'https://fpzard-eng.github.io/Volleyball-Revengers/club' }
-                )
-                .setColor('#1E90D8')
-                .setFooter({ text: 'Volleyball Revengers • Club Manager' });
+    if (commandName === 'club-info') {
+    const embed = new EmbedBuilder()
+        .setTitle('🏐 Club System Overview')
+        .setDescription('Clubs are the core competitive units in Volleyball Revengers. Build your roster, compete in regional circuits, and climb the standings toward full release.')
+        .addFields(
+            { name: '👥 Roster Capacity', value: '• **Standard Roster:** 12 Players\n• **Max Roster (with Coaches):** 14 Players', inline: true },
+            { name: '🏆 Competitive Paths', value: '• Open Gym / Regional Matches\n• Qualification Play-Ins\n• National Tournament (NT)', inline: false }
+        )
+        .setColor('#2B2D31')
+        .setFooter({ text: 'Volleyball Revengers • Club Information' });
 
-            return await interaction.reply({ embeds: [embed] });
-        }
+    return await interaction.reply({ embeds: [embed] });
+}
 
+if (commandName === 'nt-info') {
+    const embed = new EmbedBuilder()
+        .setTitle('🏆 National Tournament (NT) Format')
+        .setDescription('The premier championship tournament for Volleyball Revengers. Here is how teams advance from Open Qualifications to the Championship.')
+        .addFields(
+            { 
+                name: '1️⃣ Qualification Round', 
+                value: '• **Format:** Single-Elimination Knockout (Best of 3)\n• **Entrants:** Open Entrant Pool\n• **Goal:** Top **36 Teams** advance to the League Stage.', 
+                inline: false 
+            },
+            { 
+                name: '2️⃣ League Stage (36 Teams)', 
+                value: '• **Format:** 6 Pools of 6 Teams (Round-Robin)\n• **Match Length:** Best 2-out-of-3 sets\n• **Scoring:** 3pts (2-0 win), 2pts (2-1 win), 1pt (1-2 loss), 0pts (0-2 loss)\n• **Advancement:** Top 2 teams per pool (12) + Top 4 Wildcards (16 total).', 
+                inline: false 
+            },
+            { 
+                name: '3️⃣ Finals — NCAA-Style Playoff (16 Teams)', 
+                value: '• **Format:** Single-Elimination Bracket with **Random Draw**\n• **Match Length:** Best 3-out-of-5 sets\n• **Progression:** Round of 16 ➔ Quarterfinals ➔ Semifinals\n• **Placements:** Semifinal losers play for **3rd Place**; Winners play for **1st Place**.', 
+                inline: false 
+            }
+        )
+        .setColor('#FFD700')
+        .setFooter({ text: 'Volleyball Revengers • National Tournament' });
+
+    return await interaction.reply({ embeds: [embed] });
+}
+        
         if (commandName === 'msg') {
             if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
                 return interaction.reply({ content: '❌ Administrator permission required.', ephemeral: true });
@@ -313,7 +339,6 @@ client.on('interactionCreate', async interaction => {
             return await interaction.reply({ content: `✅ Sent to ${targetChannel}!`, ephemeral: true });
         }
 
-        // --- All Async / PlayFab Commands (DEFER IMMEDIATELY FIRST) ---
         await interaction.deferReply();
 
         if (commandName === 'link') {
