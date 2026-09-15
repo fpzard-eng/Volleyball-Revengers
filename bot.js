@@ -127,6 +127,7 @@ const server = http.createServer(async (req, res) => {
     console.log(`🌐 Webhook server listening on port ${PORT}`);
 });
 
+// Self-ping to prevent Render sleeping
 setInterval(() => {
     const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
     if (renderAppUrl) {
@@ -253,10 +254,11 @@ async function enforceAccountLink(interaction, targetUser = null) {
             .setColor('#FF4B4B')
             .setFooter({ text: 'Volleyball Revengers • Assistant Coach' });
 
+        // Safe check for editReply vs reply
         if (interaction.deferred || interaction.replied) {
-            await interaction.editReply({ embeds: [responseEmbed] });
+            await interaction.editReply({ embeds: [responseEmbed] }).catch(() => {});
         } else {
-            await interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+            await interaction.reply({ embeds: [responseEmbed], ephemeral: true }).catch(() => {});
         }
 
         return null;
@@ -280,22 +282,49 @@ client.on('interactionCreate', async interaction => {
     const { commandName } = interaction;
 
     try {
+        // --- Instant Commands (No API latency needed) ---
         if (commandName === 'website') {
-            await interaction.reply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
+            return await interaction.reply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
         }
-        
-        else if (commandName === 'link') {
+
+        if (commandName === 'club-info') {
+            const embed = new EmbedBuilder()
+                .setTitle('🏐 Club System Information')
+                .setDescription('Clubs in **Volleyball Revengers** allow players to team up, track shared W-L ratios, host scheduled practice sessions, and compete together!')
+                .addFields(
+                    { name: '✨ Features', value: '• Dedicated Club Roster\n• Shared Win/Loss Stats\n• Practice Schedules' },
+                    { name: '🌐 Club Dashboard', value: 'https://fpzard-eng.github.io/Volleyball-Revengers/club' }
+                )
+                .setColor('#1E90D8')
+                .setFooter({ text: 'Volleyball Revengers • Club Manager' });
+
+            return await interaction.reply({ embeds: [embed] });
+        }
+
+        if (commandName === 'msg') {
+            if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+                return interaction.reply({ content: '❌ Administrator permission required.', ephemeral: true });
+            }
+
+            const targetChannel = interaction.options.getChannel('channel');
+            const messageText = interaction.options.getString('message');
+
+            await targetChannel.send(messageText);
+            return await interaction.reply({ content: `✅ Sent to ${targetChannel}!`, ephemeral: true });
+        }
+
+        // --- All Async / PlayFab Commands (DEFER IMMEDIATELY FIRST) ---
+        await interaction.deferReply();
+
+        if (commandName === 'link') {
             const rawCode = interaction.options.getString('code');
             const cleanCode = rawCode.replace(/\D/g, '');
 
             if (cleanCode.length !== 6) {
-                return interaction.reply({
-                    content: '❌ Invalid format! Provide a 6-digit code (e.g. `294-617`).',
-                    ephemeral: true
+                return await interaction.editReply({
+                    content: '❌ Invalid format! Provide a 6-digit code (e.g. `294-617`).'
                 });
             }
-
-            await interaction.deferReply({ ephemeral: true });
 
             const result = await new Promise((resolve) => {
                 PlayFabServer.ExecuteCloudScript({
@@ -323,7 +352,6 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'check-status') {
-            await interaction.deferReply();
             const targetDiscordUser = interaction.options.getUser('target');
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
@@ -363,7 +391,6 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'account') {
-            await interaction.deferReply();
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
@@ -396,7 +423,6 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'club') {
-            await interaction.deferReply();
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
@@ -419,7 +445,6 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'party') {
-            await interaction.deferReply();
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
@@ -441,7 +466,6 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'friends') {
-            await interaction.deferReply();
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
@@ -461,32 +485,6 @@ client.on('interactionCreate', async interaction => {
                 .setFooter({ text: 'Volleyball Revengers • Social Network' });
 
             await interaction.editReply({ embeds: [friendsEmbed] });
-        }
-
-        else if (commandName === 'club-info') {
-            const embed = new EmbedBuilder()
-                .setTitle('🏐 Club System Information')
-                .setDescription('Clubs in **Volleyball Revengers** allow players to team up, track shared W-L ratios, host scheduled practice sessions, and compete together!')
-                .addFields(
-                    { name: '✨ Features', value: '• Dedicated Club Roster\n• Shared Win/Loss Stats\n• Practice Schedules' },
-                    { name: '🌐 Club Dashboard', value: 'https://fpzard-eng.github.io/Volleyball-Revengers/club' }
-                )
-                .setColor('#1E90D8')
-                .setFooter({ text: 'Volleyball Revengers • Club Manager' });
-
-            await interaction.reply({ embeds: [embed] });
-        }
-
-        else if (commandName === 'msg') {
-            if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-                return interaction.reply({ content: '❌ Administrator permission required.', ephemeral: true });
-            }
-
-            const targetChannel = interaction.options.getChannel('channel');
-            const messageText = interaction.options.getString('message');
-
-            await targetChannel.send(messageText);
-            await interaction.reply({ content: `✅ Sent to ${targetChannel}!`, ephemeral: true });
         }
 
     } catch (cmdErr) {
