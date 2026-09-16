@@ -426,16 +426,22 @@ client.on('interactionCreate', async interaction => {
         }
          
         if (commandName === 'msg') {
-            if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-                return interaction.reply({ content: '❌ Administrator permission required.', ephemeral: true });
-            }
+    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+        return await interaction.reply({ content: '❌ Administrator permission required.', flags: MessageFlags.Ephemeral });
+    }
 
-            const targetChannel = interaction.options.getChannel('channel');
-            const messageText = interaction.options.getString('message');
+    const targetChannel = interaction.options.getChannel('channel');
+    const messageText = interaction.options.getString('message');
+    const botPermissions = targetChannel.permissionsFor(interaction.guild.members.me);
+    if (!botPermissions || !botPermissions.has(PermissionFlagsBits.SendMessages)) {
+        return await interaction.reply({ content: `❌ I do not have permission to send messages in ${targetChannel}.`, flags: MessageFlags.Ephemeral });
+    }
 
-            await targetChannel.send(messageText);
-            return await interaction.reply({ content: `✅ Sent to ${targetChannel}!`, ephemeral: true });
-        }
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await targetChannel.send(messageText);
+    return await interaction.editReply({ content: `✅ Sent to ${targetChannel}!` });
+}
+
 
         await interaction.deferReply({ ephemeral: true });
 
