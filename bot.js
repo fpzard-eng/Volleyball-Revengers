@@ -127,7 +127,6 @@ const server = http.createServer(async (req, res) => {
     console.log(`🌐 Webhook server listening on port ${PORT}`);
 });
 
-// Self-ping to prevent Render sleeping
 setInterval(() => {
     const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
     if (renderAppUrl) {
@@ -138,7 +137,6 @@ setInterval(() => {
     }
 }, 300000);
 
-// --- Command Definitions ---
 const commands = [
     new SlashCommandBuilder().setName('website').setDescription('Get the official Volleyball Revengers website link'),
     new SlashCommandBuilder()
@@ -164,8 +162,6 @@ const commands = [
     new SlashCommandBuilder().setName('club-info').setDescription('Learn information about what clubs are in Volleyball Revengers'),
     new SlashCommandBuilder().setName('nt-info').setDescription('Learn about the National Tournament'),
     new SlashCommandBuilder().setName('online-players').setDescription('Show the current online player count'),
-    
-    // --- REPORT COMMANDS ---
     new SlashCommandBuilder()
         .setName('report-player')
         .setDescription('Report an in-game player for exploits, toxicity, or rule violations')
@@ -251,7 +247,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
     }
 })();
 
-// --- PlayFab Helpers ---
 function getPlayerStats(playFabId) {
     return new Promise((resolve) => {
         PlayFabServer.GetPlayerStatistics({ PlayFabId: playFabId }, (error, result) => {
@@ -304,7 +299,6 @@ function getOnlinePlayerCount() {
                 return resolve(parseInt(result.data.Data.OnlinePlayersCount, 10) || 0);
             }
             
-            // Fallback: Query active matches/servers if stored in Internal Data
             PlayFabServer.GetTitleInternalData({ Keys: ['GlobalServerState'] }, (intErr, intResult) => {
                 if (intErr || !intResult?.data?.Data?.GlobalServerState) return resolve(0);
                 try {
@@ -757,8 +751,7 @@ client.on('interactionCreate', async interaction => {
             if (!staffChannel) {
                 return await interaction.editReply({ content: '❌ Unable to find or access the designated Staff Channel.' });
             }
-
-            // Retrieve PlayFab info if available for context
+            
             const [reporterPF, targetPF] = await Promise.all([
                 getPlayFabUserByDiscordId(interaction.user.id),
                 getPlayFabUserByDiscordId(targetUser.id)
@@ -806,18 +799,34 @@ client.on('interactionCreate', async interaction => {
         }
 
     } catch (cmdErr) {
-        console.error(`[Command Error] ${commandName}:`, cmdErr);
-        const errEmbed = new EmbedBuilder()
-            .setTitle('❌ Command Failure')
-            .setDescription('An unexpected error occurred while executing this command.')
-            .setColor('#FF4B4B');
+    console.error(`[Command Error] ${commandName}:`, cmdErr);
 
-        if (interaction.deferred || interaction.replied) {
-            await interaction.editReply({ embeds: [errEmbed] }).catch(() => {});
+    const isPermissionsError = cmdErr.code === 50013;
+    const description = isPermissionsError 
+        ? '❌ I do not have the required permissions to execute this command.' 
+        : 'An unexpected error occurred while executing this command.';
+
+    const errEmbed = new EmbedBuilder()
+        .setTitle('❌ Command Failure')
+        .setDescription(description)
+        .setColor('#FF4B4B')
+        .setTimestamp();
+
+    const responseOptions = { 
+        embeds: [errEmbed], 
+        ephemeral: true 
+    };
+
+    try {
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp(responseOptions);
         } else {
-            await interaction.reply({ embeds: [errEmbed], ephemeral: true }).catch(() => {});
+            await interaction.reply(responseOptions);
         }
+    } catch (sendErr) {
+        console.error(`[Command Error] Failed to send error response for ${commandName}:`, sendErr);
     }
+}
 });
 
 client.login(process.env.DISCORD_BOT_TOKEN);
