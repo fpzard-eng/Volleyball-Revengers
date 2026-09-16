@@ -398,7 +398,7 @@ client.on('interactionCreate', async interaction => {
         if (commandName === 'nt-info') {
     const embed = new EmbedBuilder()
         .setTitle('🏆 NATIONAL TOURNAMENT (NT)')
-        .setDescription('**The Premier Championship for Volleyball Revengers**\n*Follow the road from Open Qualifications to the Grand Finals.*')
+        .setDescription('**The Premier Championship for Volleyball Revengers**')
         .addFields(
             { 
                 name: '🥇 QUALIFICATION ROUND', 
