@@ -427,21 +427,25 @@ client.on('interactionCreate', async interaction => {
          
         if (commandName === 'msg') {
     if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-        return await interaction.reply({ content: '❌ Administrator permission required.', flags: MessageFlags.Ephemeral });
+        return await interaction.reply({ content: '❌ Administrator permission required.', ephemeral: true });
     }
 
-    const targetChannel = interaction.options.getChannel('channel');
+    const channelOption = interaction.options.getChannel('channel');
     const messageText = interaction.options.getString('message');
-    const botPermissions = targetChannel.permissionsFor(interaction.guild.members.me);
-    if (!botPermissions || !botPermissions.has(PermissionFlagsBits.SendMessages)) {
-        return await interaction.reply({ content: `❌ I do not have permission to send messages in ${targetChannel}.`, flags: MessageFlags.Ephemeral });
+    const targetChannel = interaction.guild.channels.cache.get(channelOption.id);
+    if (!targetChannel || !targetChannel.isTextBased()) {
+        return await interaction.reply({ content: '❌ Selected channel is not a valid text channel.', ephemeral: true });
     }
+    await interaction.deferReply({ ephemeral: true });
 
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-    await targetChannel.send(messageText);
-    return await interaction.editReply({ content: `✅ Sent to ${targetChannel}!` });
+    try {
+        await targetChannel.send(messageText);
+        return await interaction.editReply({ content: `✅ Sent to ${targetChannel}!` });
+    } catch (sendErr) {
+        console.error(`[MSG Command Error]:`, sendErr);
+        return await interaction.editReply({ content: `❌ Failed to send message to ${targetChannel}. Check bot permissions.` });
+    }
 }
-
 
         await interaction.deferReply({ ephemeral: true });
 
