@@ -394,37 +394,37 @@ client.on('interactionCreate', async interaction => {
 
             return await interaction.reply({ embeds: [embed], ephemeral: true  });
         }
-
-        if (commandName === 'nt-info') {
-            const embed = new EmbedBuilder()
-                .setTitle('🏆 NATIONAL TOURNAMENT (NT)')
-                .setDescription('**The Premier Championship for Volleyball Revengers**\n*Follow the road from Open Qualifications to the Grand Finals.*')
-                .addFields(
-                    { 
-                        name: '# *🥇 QUALIFICATION ROUND*', 
-                        value: '>>> • **Format:** Single-Elimination Knockout (Best of 3)\n• **Entrants:** Open Entrant Pool\n• **Advancement Goal:** Top **36 Teams** reach the League Stage', 
-                        inline: false
-                    },
-                    { name: ' ', inline: false },
-                    { 
-                        name: '# *🏐 LEAGUE STAGE (36 TEAMS)*', 
-                        value: '>>> • **Structure:** 6 Pools of 6 Teams (Round-Robin)\n• **Match Length:** Best 2-out-of-3 sets\n• **Scoring System:**\n  └ **3 pts:** 2-0 Win | **2 pts:** 2-1 Win\n  └ **1 pt:** 1-2 Loss | **0 pts:** 0-2 Loss\n• **Advancement:** Top 2 per pool (12) + Top 4 Wildcards (**16 total**)', 
-                        inline: false 
-                    },
-                    { name: ' ', inline: false },
-                    { 
-                        name: '# *👑 FINALS — NT PLAYOFFS (16 TEAMS)*', 
-                        value: '>>> • **Format:** Single-Elimination Bracket (Random Seeding)\n• **Match Length:** Best 3-out-of-5 sets\n• **Progression:** Round of 16 ➔ Quarterfinals ➔ Semifinals\n• **Podium Matches:**\n  └ 🥉 **3rd Place Match:** Semifinal Losers\n  └ 🏆 **Grand Final:** Semifinal Winners', 
-                        inline: false 
-                    }
-                )
-                .setColor('#FFD700')
-                .setFooter({ text: 'Volleyball Revengers • National Tournament Infomation' })
-                .setTimestamp();
-
-            return await interaction.reply({ embeds: [embed], ephemeral: true  });
-        }
         
+        if (commandName === 'nt-info') {
+    const embed = new EmbedBuilder()
+        .setTitle('🏆 NATIONAL TOURNAMENT (NT)')
+        .setDescription('**The Premier Championship for Volleyball Revengers**\n*Follow the road from Open Qualifications to the Grand Finals.*')
+        .addFields(
+            { 
+                name: '🥇 QUALIFICATION ROUND', 
+                value: '>>> • **Format:** Single-Elimination Knockout (Best of 3)\n• **Entrants:** Open Entrant Pool\n• **Advancement Goal:** Top **36 Teams** reach the League Stage', 
+                inline: false
+            },
+            { name: '\u200B', value: '\u200B', inline: false },
+            { 
+                name: '🏐 LEAGUE STAGE (36 TEAMS)', 
+                value: '>>> • **Structure:** 6 Pools of 6 Teams (Round-Robin)\n• **Match Length:** Best 2-out-of-3 sets\n• **Scoring System:**\n  └ **3 pts:** 2-0 Win | **2 pts:** 2-1 Win\n  └ **1 pt:** 1-2 Loss | **0 pts:** 0-2 Loss\n• **Advancement:** Top 2 per pool (12) + Top 4 Wildcards (**16 total**)', 
+                inline: false 
+            },
+            { name: '\u200B', value: '\u200B', inline: false },
+            { 
+                name: '👑 FINALS — NT PLAYOFFS (16 TEAMS)', 
+                value: '>>> • **Format:** Single-Elimination Bracket (Random Seeding)\n• **Match Length:** Best 3-out-of-5 sets\n• **Progression:** Round of 16 ➔ Quarterfinals ➔ Semifinals\n• **Podium Matches:**\n  └ 🥉 **3rd Place Match:** Semifinal Losers\n  └ 🏆 **Grand Final:** Semifinal Winners', 
+                inline: false 
+            }
+        )
+        .setColor('#FFD700')
+        .setFooter({ text: 'Volleyball Revengers • National Tournament Information' })
+        .setTimestamp();
+
+    return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+         
         if (commandName === 'msg') {
             if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
                 return interaction.reply({ content: '❌ Administrator permission required.', ephemeral: true });
