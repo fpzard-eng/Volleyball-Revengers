@@ -232,7 +232,7 @@ const commands = [
         .addStringOption(opt => opt.setName('message').setDescription('Message text').setRequired(true))
 ].map(cmd => cmd.toJSON());
 
-const rest = new REST({ version: '10' }).setToken(process.process.env.DISCORD_BOT_TOKEN);
+const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
 
 (async () => {
     try {
