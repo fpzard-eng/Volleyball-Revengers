@@ -232,7 +232,7 @@ const commands = [
         .addStringOption(opt => opt.setName('message').setDescription('Message text').setRequired(true))
 ].map(cmd => cmd.toJSON());
 
-const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
+const rest = new REST({ version: '10' }).setToken(process.process.env.DISCORD_BOT_TOKEN);
 
 (async () => {
     try {
@@ -350,12 +350,7 @@ async function enforceAccountLink(interaction, targetUser = null) {
             .setColor('#FF4B4B')
             .setFooter({ text: 'Volleyball Revengers • Assistant Coach' });
 
-        if (interaction.deferred || interaction.replied) {
-            await interaction.editReply({ embeds: [responseEmbed] }).catch(() => {});
-        } else {
-            await interaction.reply({ embeds: [responseEmbed], ephemeral: true }).catch(() => {});
-        }
-
+        await interaction.editReply({ embeds: [responseEmbed] }).catch(() => {});
         return null;
     }
 
@@ -374,11 +369,14 @@ client.once('clientReady', () => {
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
+    // Beats Discord's 3-second timeout immediately across all commands
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+
     const { commandName } = interaction;
 
     try {
         if (commandName === 'website') {
-            return await interaction.reply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home', ephemeral: true  });
+            return await interaction.editReply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
         }
 
         if (commandName === 'club-info') {
@@ -392,62 +390,59 @@ client.on('interactionCreate', async interaction => {
                 .setColor('#2B2D31')
                 .setFooter({ text: 'Volleyball Revengers • Club Information' });
 
-            return await interaction.reply({ embeds: [embed], ephemeral: true  });
+            return await interaction.editReply({ embeds: [embed] });
         }
         
         if (commandName === 'nt-info') {
-    const embed = new EmbedBuilder()
-        .setTitle('🏆 NATIONAL TOURNAMENT (NT)')
-        .setDescription('**The Premier Championship for Volleyball Revengers**')
-        .addFields(
-            { 
-                name: '🥇 QUALIFICATION ROUND', 
-                value: '>>> • **Format:** Single-Elimination Knockout (Best of 3)\n• **Entrants:** Open Entrant Pool\n• **Advancement Goal:** Top **36 Teams** reach the League Stage', 
-                inline: false
-            },
-            { name: '\u200B', value: '\u200B', inline: false },
-            { 
-                name: '🏐 LEAGUE STAGE (36 TEAMS)', 
-                value: '>>> • **Structure:** 6 Pools of 6 Teams (Round-Robin)\n• **Match Length:** Best 2-out-of-3 sets\n• **Scoring System:**\n  └ **3 pts:** 2-0 Win | **2 pts:** 2-1 Win\n  └ **1 pt:** 1-2 Loss | **0 pts:** 0-2 Loss\n• **Advancement:** Top 2 per pool (12) + Top 4 Wildcards (**16 total**)', 
-                inline: false 
-            },
-            { name: '\u200B', value: '\u200B', inline: false },
-            { 
-                name: '👑 FINALS — NT PLAYOFFS (16 TEAMS)', 
-                value: '>>> • **Format:** Single-Elimination Bracket (Random Seeding)\n• **Match Length:** Best 3-out-of-5 sets\n• **Progression:** Round of 16 ➔ Quarterfinals ➔ Semifinals\n• **Podium Matches:**\n  └ 🥉 **3rd Place Match:** Semifinal Losers\n  └ 🏆 **Grand Final:** Semifinal Winners', 
-                inline: false 
-            }
-        )
-        .setColor('#FFD700')
-        .setFooter({ text: 'Volleyball Revengers • National Tournament Information' })
-        .setTimestamp();
+            const embed = new EmbedBuilder()
+                .setTitle('🏆 NATIONAL TOURNAMENT (NT)')
+                .setDescription('**The Premier Championship for Volleyball Revengers**')
+                .addFields(
+                    { 
+                        name: '🥇 QUALIFICATION ROUND', 
+                        value: '>>> • **Format:** Single-Elimination Knockout (Best of 3)\n• **Entrants:** Open Entrant Pool\n• **Advancement Goal:** Top **36 Teams** reach the League Stage', 
+                        inline: false
+                    },
+                    { name: '\u200B', value: '\u200B', inline: false },
+                    { 
+                        name: '🏐 LEAGUE STAGE (36 TEAMS)', 
+                        value: '>>> • **Structure:** 6 Pools of 6 Teams (Round-Robin)\n• **Match Length:** Best 2-out-of-3 sets\n• **Scoring System:**\n  └ **3 pts:** 2-0 Win | **2 pts:** 2-1 Win\n  └ **1 pt:** 1-2 Loss | **0 pts:** 0-2 Loss\n• **Advancement:** Top 2 per pool (12) + Top 4 Wildcards (**16 total**)', 
+                        inline: false 
+                    },
+                    { name: '\u200B', value: '\u200B', inline: false },
+                    { 
+                        name: '👑 FINALS — NT PLAYOFFS (16 TEAMS)', 
+                        value: '>>> • **Format:** Single-Elimination Bracket (Random Seeding)\n• **Match Length:** Best 3-out-of-5 sets\n• **Progression:** Round of 16 ➔ Quarterfinals ➔ Semifinals\n• **Podium Matches:**\n  └ 🥉 **3rd Place Match:** Semifinal Losers\n  └ 🏆 **Grand Final:** Semifinal Winners', 
+                        inline: false 
+                    }
+                )
+                .setColor('#FFD700')
+                .setFooter({ text: 'Volleyball Revengers • National Tournament Information' })
+                .setTimestamp();
 
-    return await interaction.reply({ embeds: [embed], ephemeral: true });
+            return await interaction.editReply({ embeds: [embed] });
         }
          
         if (commandName === 'msg') {
-    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-        return await interaction.reply({ content: '❌ Administrator permission required.', ephemeral: true });
-    }
+            if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+                return await interaction.editReply({ content: '❌ Administrator permission required.' });
+            }
 
-    const channelOption = interaction.options.getChannel('channel');
-    const messageText = interaction.options.getString('message');
-    const targetChannel = interaction.guild.channels.cache.get(channelOption.id);
-    if (!targetChannel || !targetChannel.isTextBased()) {
-        return await interaction.reply({ content: '❌ Selected channel is not a valid text channel.', ephemeral: true });
-    }
-    await interaction.deferReply({ ephemeral: true });
+            const channelOption = interaction.options.getChannel('channel');
+            const messageText = interaction.options.getString('message');
+            const targetChannel = interaction.guild.channels.cache.get(channelOption.id);
+            if (!targetChannel || !targetChannel.isTextBased()) {
+                return await interaction.editReply({ content: '❌ Selected channel is not a valid text channel.' });
+            }
 
-    try {
-        await targetChannel.send(messageText);
-        return await interaction.editReply({ content: `✅ Sent to ${targetChannel}!` });
-    } catch (sendErr) {
-        console.error(`[MSG Command Error]:`, sendErr);
-        return await interaction.editReply({ content: `❌ Failed to send message to ${targetChannel}. Check bot permissions.` });
-    }
-}
-
-        await interaction.deferReply({ ephemeral: true });
+            try {
+                await targetChannel.send(messageText);
+                return await interaction.editReply({ content: `✅ Sent to ${targetChannel}!` });
+            } catch (sendErr) {
+                console.error(`[MSG Command Error]:`, sendErr);
+                return await interaction.editReply({ content: `❌ Failed to send message to ${targetChannel}. Check bot permissions.` });
+            }
+        }
 
         if (commandName === 'link') {
             const rawCode = interaction.options.getString('code');
@@ -557,7 +552,7 @@ client.on('interactionCreate', async interaction => {
             }
 
             const statusEmbed = new EmbedBuilder()
-                .setTitle(`${statusEmoji} Player Status: ${displayName}`)
+                .setTitle(`${statusEmoji} Player Status:${displayName}`)
                 .setColor(statusColor)
                 .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
                 .addFields(
@@ -687,11 +682,9 @@ client.on('interactionCreate', async interaction => {
                 return await interaction.editReply({ content: '❌ Unable to find or access the designated Staff Channel.' });
             }
 
-            // Perform link lookup on reporter for context
             const reporterAccount = await getPlayFabUserByDiscordId(interaction.user.id);
             const reporterPlayFab = reporterAccount?.user?.PlayFabId ? `\`${reporterAccount.user.PlayFabId}\`` : 'Unlinked';
 
-            // Check if the reported target corresponds to a mentioned user
             const mentionMatch = playerIdentifier.match(/^<@!?(\d+)>$/);
             let suspectAccountDetails = 'Not Linked / Manual Entry';
             if (mentionMatch) {
@@ -709,7 +702,7 @@ client.on('interactionCreate', async interaction => {
                 .addFields(
                     { name: '🎯 Reported Subject', value: `**Identifier Provided:** ${playerIdentifier}\n**PlayFab Match:** ${suspectAccountDetails}`, inline: false },
                     { name: '⚠️ Violation Category', value: `\`${reason}\``, inline: true },
-                    { name: '👤 Reporter', value: `${interaction.user} (PlayFab: ${reporterPlayFab})`, inline: true },
+                    { name: '👤 Reporter', value: `${interaction.user} (PlayFab:${reporterPlayFab})`, inline: true },
                     { name: '📝 Incident Details', value: details, inline: false }
                 )
                 .setFooter({ text: `Volleyball Revengers • Incident ID: ${interaction.id}` })
@@ -809,34 +802,21 @@ client.on('interactionCreate', async interaction => {
         }
 
     } catch (cmdErr) {
-    console.error(`[Command Error] ${commandName}:`, cmdErr);
+        console.error(`[Command Error] ${commandName}:`, cmdErr);
 
-    const isPermissionsError = cmdErr.code === 50013;
-    const description = isPermissionsError 
-        ? '❌ I do not have the required permissions to execute this command.' 
-        : 'An unexpected error occurred while executing this command.';
+        const isPermissionsError = cmdErr.code === 50013;
+        const description = isPermissionsError 
+            ? '❌ I do not have the required permissions to execute this command.' 
+            : 'An unexpected error occurred while executing this command.';
 
-    const errEmbed = new EmbedBuilder()
-        .setTitle('❌ Command Failure')
-        .setDescription(description)
-        .setColor('#FF4B4B')
-        .setTimestamp();
+        const errEmbed = new EmbedBuilder()
+            .setTitle('❌ Command Failure')
+            .setDescription(description)
+            .setColor('#FF4B4B')
+            .setTimestamp();
 
-    const responseOptions = { 
-        embeds: [errEmbed], 
-        ephemeral: true 
-    };
-
-    try {
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp(responseOptions);
-        } else {
-            await interaction.reply(responseOptions);
-        }
-    } catch (sendErr) {
-        console.error(`[Command Error] Failed to send error response for ${commandName}:`, sendErr);
+        await interaction.editReply({ embeds: [errEmbed] }).catch(() => {});
     }
-}
 });
 
 client.login(process.env.DISCORD_BOT_TOKEN);
