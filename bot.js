@@ -27,117 +27,114 @@ const client = new Client({
     ]
 });
 
-const http = require('http');
-const https = require('https');
-
 // --- HTTP Server ---
 const PORT = process.env.PORT || 10000;
 const server = http.createServer(async (req, res) => {
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-    };
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+    };
 
-    if (req.method === 'OPTIONS') {
-        res.writeHead(204, headers);
-        res.end();
-        return;
-    }
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204, headers);
+        res.end();
+        return;
+    }
 
-    if (req.method === 'POST' && req.url === '/api/login-server-custom-id') {
-        let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
-        req.on('end', async () => {
-            try {
-                const { discordId } = JSON.parse(body || '{}');
+    if (req.method === 'POST' && req.url === '/api/login-server-custom-id') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', async () => {
+            try {
+                const { discordId } = JSON.parse(body || '{}');
 
-                if (!discordId) {
-                    res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
-                    return res.end(JSON.stringify({ success: false, error: 'Missing discordId parameter.' }));
-                }
+                if (!discordId) {
+                    res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ success: false, error: 'Missing discordId parameter.' }));
+                }
 
-                PlayFabServer.LoginWithServerCustomId({
-                    ServerCustomId: `DISCORD_${discordId}`,
-                    CreateAccount: true
-                }, (error, result) => {
-                    if (error || !result?.data) {
-                        console.error('[PlayFab Server Auth Error]:', error);
-                        res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
-                        return res.end(JSON.stringify({ 
-                            success: false, 
-                            error: error?.errorMessage || 'Login failed' 
-                        }));
-                    }
+                PlayFabServer.LoginWithServerCustomId({
+                    ServerCustomId: `DISCORD_${discordId}`,
+                    CreateAccount: true
+                }, (error, result) => {
+                    if (error || !result?.data) {
+                        console.error('[PlayFab Server Auth Error]:', error);
+                        res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
+                        return res.end(JSON.stringify({ 
+                            success: false, 
+                            error: error?.errorMessage || 'Login failed' 
+                        }));
+                    }
 
-                    res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
-                    return res.end(JSON.stringify({
-                        success: true,
-                        sessionTicket: result.data.SessionTicket,
-                        playFabId: result.data.PlayFabId,
-                        entityToken: result.data.EntityToken
-                    }));
-                });
-            } catch (err) {
-                console.error('[Server Auth Exception]:', err);
-                res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, error: err.message }));
-            }
-        });
-        return;
-    }
+                    res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({
+                        success: true,
+                        sessionTicket: result.data.SessionTicket,
+                        playFabId: result.data.PlayFabId,
+                        entityToken: result.data.EntityToken
+                    }));
+                });
+            } catch (err) {
+                console.error('[Server Auth Exception]:', err);
+                res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
+        return;
+    }
 
-    if (req.method === 'GET' && req.url.startsWith('/api/user-info')) {
-        try {
-            const urlParams = new URLSearchParams(req.url.split('?')[1]);
-            const discordId = urlParams.get('discordId');
+    if (req.method === 'GET' && req.url.startsWith('/api/user-info')) {
+        try {
+            const urlParams = new URLSearchParams(req.url.split('?')[1]);
+            const discordId = urlParams.get('discordId');
 
-            if (!discordId) {
-                res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
-                return res.end(JSON.stringify({ success: false, error: 'Missing discordId parameter.' }));
-            }
+            if (!discordId) {
+                res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ success: false, error: 'Missing discordId parameter.' }));
+            }
 
-            const { user, reason } = await getPlayFabUserByDiscordId(discordId);
+            const { user, reason } = await getPlayFabUserByDiscordId(discordId);
 
-            if (!user) {
-                res.writeHead(404, { ...headers, 'Content-Type': 'application/json' });
-                return res.end(JSON.stringify({ success: false, reason }));
-            }
+            if (!user) {
+                res.writeHead(404, { ...headers, 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ success: false, reason }));
+            }
 
-            const [stats, userData] = await Promise.all([
-                getPlayerStats(user.PlayFabId),
-                getPlayerData(user.PlayFabId)
-            ]);
+            const [stats, userData] = await Promise.all([
+                getPlayerStats(user.PlayFabId),
+                getPlayerData(user.PlayFabId)
+            ]);
 
-            res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
-            return res.end(JSON.stringify({
-                success: true,
-                playFabId: user.PlayFabId,
-                displayName: user.TitleInfo?.DisplayName || 'Not Set',
-                stats,
-                userData
-            }));
-        } catch (apiErr) {
-            console.error('[API Error] User info endpoint failed:', apiErr);
-            res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
-            return res.end(JSON.stringify({ success: false, error: apiErr.message }));
-        }
-    }
+            res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({
+                success: true,
+                playFabId: user.PlayFabId,
+                displayName: user.TitleInfo?.DisplayName || 'Not Set',
+                stats,
+                userData
+            }));
+        } catch (apiErr) {
+            console.error('[API Error] User info endpoint failed:', apiErr);
+            res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ success: false, error: apiErr.message }));
+        }
+    }
 
-    res.writeHead(200, { ...headers, 'Content-Type': 'text/plain' });
-    res.end('VBR Assistant Coach Bot is running 24/7!');
+    res.writeHead(200, { ...headers, 'Content-Type': 'text/plain' });
+    res.end('VBR Assistant Coach Bot is running 24/7!');
 }).listen(PORT, () => {
-    console.log(`🌐 Webhook server listening on port ${PORT}`);
+    console.log(`🌐 Webhook server listening on port ${PORT}`);
 });
 
 setInterval(() => {
-    const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
-    if (renderAppUrl) {
-        const requester = renderAppUrl.startsWith('https') ? https : http;
-        requester.get(renderAppUrl, (res) => {
-            console.log(`[Heartbeat] Ping sent - Status: ${res.statusCode}`);
-        }).on('error', (err) => console.error(`[Heartbeat Error] ${err.message}`));
-    }
+    const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
+    if (renderAppUrl) {
+        const requester = renderAppUrl.startsWith('https') ? https : http;
+        requester.get(renderAppUrl, (res) => {
+            console.log(`[Heartbeat] Ping sent - Status: ${res.statusCode}`);
+        }).on('error', (err) => console.error(`[Heartbeat Error] ${err.message}`));
+    }
 }, 300000);
 
 const commands = [
@@ -360,15 +357,19 @@ async function enforceAccountLink(interaction, targetUser = null) {
     return user;
 }
 
+// --- Process Safety Listeners ---
 process.on('unhandledRejection', error => console.error('[Unhandled Rejection]:', error));
 process.on('uncaughtException', error => console.error('[Uncaught Exception]:', error));
 
+// --- Bot Login & Events ---
 client.once('clientReady', () => {
     console.log(`🤖 VBR Assistant Coach online as ${client.user.tag}!`);
 });
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
+
+    // Beats Discord's 3-second timeout immediately across all commands
     await interaction.deferReply({ ephemeral: true }).catch(() => {});
 
     const { commandName } = interaction;
@@ -661,7 +662,8 @@ client.on('interactionCreate', async interaction => {
 
             await interaction.editReply({ embeds: [friendsEmbed] });
         }
-            
+
+        // --- REPORT PLAYER IMPLEMENTATION ---
         else if (commandName === 'report-player') {
             const playerIdentifier = interaction.options.getString('player_identifier');
             const reason = interaction.options.getString('reason');
