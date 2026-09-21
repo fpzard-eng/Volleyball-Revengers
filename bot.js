@@ -27,24 +27,37 @@ const client = new Client({
     ]
 });
 
-// --- HTTP Server ---
+const http = require('http');
+const https = require('https');
+
 const PORT = process.env.PORT || 10000;
+const MAX_BODY_SIZE = 1e4;
+
 const server = http.createServer(async (req, res) => {
     const headers = {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': '*', 
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type'
     };
-
+    
     if (req.method === 'OPTIONS') {
         res.writeHead(204, headers);
-        res.end();
-        return;
+        return res.end();
     }
-
+    
     if (req.method === 'POST' && req.url === '/api/login-server-custom-id') {
         let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
+        let bodyLength = 0;
+
+        req.on('data', chunk => {
+            bodyLength += chunk.length;
+            if (bodyLength > MAX_BODY_SIZE) {
+                req.destroy();
+            } else {
+                body += chunk.toString();
+            }
+        });
+
         req.on('end', async () => {
             try {
                 const { discordId } = JSON.parse(body || '{}');
@@ -77,8 +90,10 @@ const server = http.createServer(async (req, res) => {
                 });
             } catch (err) {
                 console.error('[Server Auth Exception]:', err);
-                res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, error: err.message }));
+                if (!res.headersSent) {
+                    res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: 'Invalid JSON payload' }));
+                }
             }
         });
         return;
@@ -86,8 +101,8 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && req.url.startsWith('/api/user-info')) {
         try {
-            const urlParams = new URLSearchParams(req.url.split('?')[1]);
-            const discordId = urlParams.get('discordId');
+            const urlObj = new URL(req.url, `http://${req.headers.host}`);
+            const discordId = urlObj.searchParams.get('discordId');
 
             if (!discordId) {
                 res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
@@ -116,11 +131,14 @@ const server = http.createServer(async (req, res) => {
             }));
         } catch (apiErr) {
             console.error('[API Error] User info endpoint failed:', apiErr);
-            res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
-            return res.end(JSON.stringify({ success: false, error: apiErr.message }));
+            if (!res.headersSent) {
+                res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: apiErr.message }));
+            }
+            return;
         }
     }
-
+    
     res.writeHead(200, { ...headers, 'Content-Type': 'text/plain' });
     res.end('VBR Assistant Coach Bot is running 24/7!');
 }).listen(PORT, () => {
@@ -133,6 +151,7 @@ setInterval(() => {
         const requester = renderAppUrl.startsWith('https') ? https : http;
         requester.get(renderAppUrl, (res) => {
             console.log(`[Heartbeat] Ping sent - Status: ${res.statusCode}`);
+            res.resume();
         }).on('error', (err) => console.error(`[Heartbeat Error] ${err.message}`));
     }
 }, 300000);
@@ -357,19 +376,15 @@ async function enforceAccountLink(interaction, targetUser = null) {
     return user;
 }
 
-// --- Process Safety Listeners ---
 process.on('unhandledRejection', error => console.error('[Unhandled Rejection]:', error));
 process.on('uncaughtException', error => console.error('[Uncaught Exception]:', error));
 
-// --- Bot Login & Events ---
 client.once('clientReady', () => {
     console.log(`🤖 VBR Assistant Coach online as ${client.user.tag}!`);
 });
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
-
-    // Beats Discord's 3-second timeout immediately across all commands
     await interaction.deferReply({ ephemeral: true }).catch(() => {});
 
     const { commandName } = interaction;
@@ -662,8 +677,7 @@ client.on('interactionCreate', async interaction => {
 
             await interaction.editReply({ embeds: [friendsEmbed] });
         }
-
-        // --- REPORT PLAYER IMPLEMENTATION ---
+            
         else if (commandName === 'report-player') {
             const playerIdentifier = interaction.options.getString('player_identifier');
             const reason = interaction.options.getString('reason');
