@@ -15,7 +15,6 @@ const {
 const PlayFab = require('playfab-sdk');
 const PlayFabServer = PlayFab.PlayFabServer;
 
-// --- PlayFab Setup ---
 PlayFab.settings.titleId = process.env.PLAYFAB_TITLE_ID;
 PlayFab.settings.developerSecretKey = process.env.PLAYFAB_SECRET_KEY;
 PlayFab.settings.productionUrl = `https://${process.env.PLAYFAB_TITLE_ID}.playfabapi.com`;
@@ -27,113 +26,6 @@ const client = new Client({
         GatewayIntentBits.DirectMessages
     ]
 });
-
-// --- Promisified PlayFab Helpers ---
-function getPlayerStats(playFabId) {
-    return new Promise((resolve) => {
-        PlayFabServer.GetPlayerStatistics({ PlayFabId: playFabId }, (error, result) => {
-            if (error || !result?.data) return resolve({});
-            const stats = {};
-            (result.data.Statistics || []).forEach(s => { stats[s.StatisticName] = s.Value; });
-            resolve(stats);
-        });
-    });
-}
-
-function getPlayerData(playFabId) {
-    return new Promise((resolve) => {
-        PlayFabServer.GetUserData({ PlayFabId: playFabId }, (error, result) => {
-            if (error || !result?.data) return resolve({});
-            resolve(result.data.Data || {});
-        });
-    });
-}
-
-function getPlayFabUserByDiscordId(discordId) {
-    return new Promise((resolve) => {
-        try {
-            const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
-            PlayFabServer.GetTitleInternalData({
-                Keys: [`DiscordUserMap_${cleanDiscordId}`]             }, (error, result) => {                 if (error) return resolve({ user: null, reason: 'NOT_LINKED' });                  const mappedPlayFabId = result?.data?.Data?.[`DiscordUserMap_${cleanDiscordId}`];
-                if (!mappedPlayFabId) return resolve({ user: null, reason: 'NOT_LINKED' });
-
-                PlayFabServer.GetUserAccountInfo({ PlayFabId: mappedPlayFabId }, (accErr, accResult) => {
-                    if (accErr || !accResult?.data?.UserInfo) {
-                        return resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId: mappedPlayFabId });
-                    }
-                    resolve({ user: accResult.data.UserInfo, reason: 'SUCCESS' });
-                });
-            });
-        } catch {
-            resolve({ user: null, reason: 'NOT_LINKED' });
-        }
-    });
-}
-
-function getOnlinePlayerCount() {
-    return new Promise((resolve) => {
-        PlayFabServer.GetTitleData({ Keys: ['OnlinePlayersCount', 'ActiveSessions'] }, (error, result) => {
-            if (!error && result?.data?.Data?.OnlinePlayersCount) {
-                return resolve(parseInt(result.data.Data.OnlinePlayersCount, 10) || 0);
-            }
-            
-            PlayFabServer.GetTitleInternalData({ Keys: ['GlobalServerState'] }, (intErr, intResult) => {
-                if (intErr || !intResult?.data?.Data?.GlobalServerState) return resolve(0);
-                try {
-                    const serverState = JSON.parse(intResult.data.Data.GlobalServerState);
-                    resolve(serverState.totalOnline || 0);
-                } catch {
-                    resolve(0);
-                }
-            });
-        });
-    });
-}
-
-function logReportToPlayFab(reportType, reportData) {
-    return new Promise((resolve) => {
-        const timestamp = new Date().toISOString();
-        const key = `Report_${reportType}_${Date.now()}`;
-        
-        PlayFabServer.SetTitleInternalData({
-            Key: key,
-            Value: JSON.stringify({ ...reportData, timestamp })
-        }, (error) => {
-            if (error) console.error('[PlayFab Report Logging Error]:', error);
-            resolve(!error);
-        });
-    });
-}
-
-async function enforceAccountLink(interaction, targetUser = null) {
-    const userToVerify = targetUser || interaction.user;
-    const isSelf = userToVerify.id === interaction.user.id;
-    
-    const { user, reason, playFabId } = await getPlayFabUserByDiscordId(userToVerify.id);
-
-    if (!user) {
-        let title = '⚠️ Account Not Linked';
-        let description = isSelf 
-            ? 'You have not linked your Discord account yet! Use `/link <code>` with your in-game code.' 
-            : `**${userToVerify.username}** has not linked their Discord account yet.`;
-
-        if (reason === 'ACCOUNT_NOT_FOUND') {
-            title = '❓ Account Not Found';
-            description = `Linked PlayFab ID \`${playFabId}\` could not be retrieved.`;
-        }
-
-        const responseEmbed = new EmbedBuilder()
-            .setTitle(title)
-            .setDescription(description)
-            .setColor('#FF4B4B')
-            .setFooter({ text: 'Volleyball Revengers • Assistant Coach' });
-
-        await interaction.editReply({ embeds: [responseEmbed] }).catch(() => {});
-        return null;
-    }
-
-    return user;
-}
 
 // --- HTTP Server ---
 const PORT = process.env.PORT || 10000;
@@ -152,15 +44,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && req.url === '/api/login-server-custom-id') {
         let body = '';
-        const MAX_BODY_SIZE = 1e6; // 1 MB payload limit safeguard
-
-        req.on('data', chunk => { 
-            body += chunk.toString(); 
-            if (body.length > MAX_BODY_SIZE) {
-                req.destroy();
-            }
-        });
-
+        req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', async () => {
             try {
                 const { discordId } = JSON.parse(body || '{}');
@@ -243,17 +127,16 @@ const server = http.createServer(async (req, res) => {
     console.log(`🌐 Webhook server listening on port ${PORT}`);
 });
 
-// --- Heartbeat Ping ---
 setInterval(() => {
     const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
     if (renderAppUrl) {
         const requester = renderAppUrl.startsWith('https') ? https : http;
         requester.get(renderAppUrl, (res) => {
-            console.log(`[Heartbeat] Ping sent - Status: ${res.statusCode}`);         }).on('error', (err) => console.error(`[Heartbeat Error] ${err.message}`));
+            console.log(`[Heartbeat] Ping sent - Status: ${res.statusCode}`);
+        }).on('error', (err) => console.error(`[Heartbeat Error] ${err.message}`));
     }
 }, 300000);
 
-// --- Command Definitions ---
 const commands = [
     new SlashCommandBuilder().setName('website').setDescription('Get the official Volleyball Revengers website link'),
     new SlashCommandBuilder()
@@ -310,6 +193,7 @@ const commands = [
                .setDescription('Attach a video/screenshot proving the infraction (Highly Recommended)')
                .setRequired(false)
         ),
+
     new SlashCommandBuilder()
         .setName('report-discord-user')
         .setDescription('Report a community member for Discord server infractions or misconduct')
@@ -341,34 +225,143 @@ const commands = [
                .setDescription('Attach a screenshot of the message or DM interaction')
                .setRequired(false)
         ),
+
     new SlashCommandBuilder().setName('msg').setDescription('Sends custom message (Admin Only)')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addChannelOption(opt => opt.setName('channel').setDescription('Target channel').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setRequired(true))
         .addStringOption(opt => opt.setName('message').setDescription('Message text').setRequired(true))
 ].map(cmd => cmd.toJSON());
 
-// --- Conditional Command Registration ---
-if (process.env.REGISTER_COMMANDS === 'true') {
-    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
-    (async () => {
+const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
+
+(async () => {
+    try {
+        console.log('Registering slash commands...');
+        await rest.put(
+            Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
+            { body: commands }
+        );
+        console.log('Slash commands registered successfully!');
+    } catch (error) {
+        console.error('Error registering commands:', error);
+    }
+})();
+
+function getPlayerStats(playFabId) {
+    return new Promise((resolve) => {
+        PlayFabServer.GetPlayerStatistics({ PlayFabId: playFabId }, (error, result) => {
+            if (error || !result?.data) return resolve({});
+            const stats = {};
+            (result.data.Statistics || []).forEach(s => { stats[s.StatisticName] = s.Value; });
+            resolve(stats);
+        });
+    });
+}
+
+function getPlayerData(playFabId) {
+    return new Promise((resolve) => {
+        PlayFabServer.GetUserData({ PlayFabId: playFabId }, (error, result) => {
+            if (error || !result?.data) return resolve({});
+            resolve(result.data.Data || {});
+        });
+    });
+}
+
+function getPlayFabUserByDiscordId(discordId) {
+    return new Promise((resolve) => {
         try {
-            console.log('Registering slash commands...');
-            await rest.put(
-                Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
-                { body: commands }
-            );
-            console.log('Slash commands registered successfully!');
-        } catch (error) {
-            console.error('Error registering commands:', error);
+            const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
+            PlayFabServer.GetTitleInternalData({
+                Keys: [`DiscordUserMap_${cleanDiscordId}`]
+            }, (error, result) => {
+                if (error) return resolve({ user: null, reason: 'NOT_LINKED' });
+
+                const mappedPlayFabId = result?.data?.Data?.[`DiscordUserMap_${cleanDiscordId}`];
+                if (!mappedPlayFabId) return resolve({ user: null, reason: 'NOT_LINKED' });
+
+                PlayFabServer.GetUserAccountInfo({ PlayFabId: mappedPlayFabId }, (accErr, accResult) => {
+                    if (accErr || !accResult?.data?.UserInfo) {
+                        return resolve({ user: null, reason: 'ACCOUNT_NOT_FOUND', playFabId: mappedPlayFabId });
+                    }
+                    resolve({ user: accResult.data.UserInfo, reason: 'SUCCESS' });
+                });
+            });
+        } catch {
+            resolve({ user: null, reason: 'NOT_LINKED' });
         }
-    })();
+    });
+}
+
+function getOnlinePlayerCount() {
+    return new Promise((resolve) => {
+        PlayFabServer.GetTitleData({ Keys: ['OnlinePlayersCount', 'ActiveSessions'] }, (error, result) => {
+            if (!error && result?.data?.Data?.OnlinePlayersCount) {
+                return resolve(parseInt(result.data.Data.OnlinePlayersCount, 10) || 0);
+            }
+            
+            PlayFabServer.GetTitleInternalData({ Keys: ['GlobalServerState'] }, (intErr, intResult) => {
+                if (intErr || !intResult?.data?.Data?.GlobalServerState) return resolve(0);
+                try {
+                    const serverState = JSON.parse(intResult.data.Data.GlobalServerState);
+                    resolve(serverState.totalOnline || 0);
+                } catch {
+                    resolve(0);
+                }
+            });
+        });
+    });
+}
+
+function logReportToPlayFab(reportType, reportData) {
+    return new Promise((resolve) => {
+        const timestamp = new Date().toISOString();
+        const key = `Report_${reportType}_${Date.now()}`;
+        
+        PlayFabServer.SetTitleInternalData({
+            Key: key,
+            Value: JSON.stringify({ ...reportData, timestamp })
+        }, (error) => {
+            if (error) console.error('[PlayFab Report Logging Error]:', error);
+            resolve(!error);
+        });
+    });
+}
+
+async function enforceAccountLink(interaction, targetUser = null) {
+    const userToVerify = targetUser || interaction.user;
+    const isSelf = userToVerify.id === interaction.user.id;
+    
+    const { user, reason, playFabId } = await getPlayFabUserByDiscordId(userToVerify.id);
+
+    if (!user) {
+        let title = '⚠️ Account Not Linked';
+        let description = isSelf 
+            ? 'You have not linked your Discord account yet! Use `/link <code>` with your in-game code.' 
+            : `**${userToVerify.username}** has not linked their Discord account yet.`;
+
+        if (reason === 'ACCOUNT_NOT_FOUND') {
+            title = '❓ Account Not Found';
+            description = `Linked PlayFab ID \`${playFabId}\` could not be retrieved.`;
+        }
+
+        const responseEmbed = new EmbedBuilder()
+            .setTitle(title)
+            .setDescription(description)
+            .setColor('#FF4B4B')
+            .setFooter({ text: 'Volleyball Revengers • Assistant Coach' });
+
+        await interaction.editReply({ embeds: [responseEmbed] }).catch(() => {});
+        return null;
+    }
+
+    return user;
 }
 
 // --- Process Safety Listeners ---
 process.on('unhandledRejection', error => console.error('[Unhandled Rejection]:', error));
 process.on('uncaughtException', error => console.error('[Uncaught Exception]:', error));
 
-// --- Bot Events ---
+// --- Bot Login & Events ---
 client.once('clientReady', () => {
     console.log(`🤖 VBR Assistant Coach online as ${client.user.tag}!`);
 });
@@ -376,6 +369,7 @@ client.once('clientReady', () => {
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
+    // Beats Discord's 3-second timeout immediately across all commands
     await interaction.deferReply({ ephemeral: true }).catch(() => {});
 
     const { commandName } = interaction;
@@ -489,7 +483,7 @@ client.on('interactionCreate', async interaction => {
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const isSelf = targetDiscordUser.id === interaction.user.id;
 
-            const { user } = await getPlayFabUserByDiscordId(targetDiscordUser.id);
+            const { user, reason, playFabId } = await getPlayFabUserByDiscordId(targetDiscordUser.id);
 
             const isLinkedEmbed = new EmbedBuilder().setTimestamp();
 
@@ -500,7 +494,20 @@ client.on('interactionCreate', async interaction => {
                     .setColor('#00FF7F')
                     .setDescription(isSelf 
                         ? `Your Discord account is linked to PlayFab!` 
-                        : `**${targetDiscordUser.username}**'s Discord account is linked to PlayFab.`)                     .addFields(                         { name: '👤 Discord User', value: `${targetDiscordUser}`, inline: true },                         { name: '🎮 Display Name', value: displayName, inline: true },                         { name: '🆔 PlayFab ID', value: `\`${user.PlayFabId}\``, inline: false }                     )                     .setFooter({ text: 'Volleyball Revengers • Account Verification' });             } else {                 isLinkedEmbed                     .setTitle('❌ Account Not Linked')                     .setColor('#FF4B4B')                     .setDescription(isSelf                          ? 'Your Discord account is not linked to PlayFab yet. Use `/link <code>` to link your account.'                          : `**${targetDiscordUser.username}** has not linked their Discord account yet.`)
+                        : `**${targetDiscordUser.username}**'s Discord account is linked to PlayFab.`)
+                    .addFields(
+                        { name: '👤 Discord User', value: `${targetDiscordUser}`, inline: true },
+                        { name: '🎮 Display Name', value: displayName, inline: true },
+                        { name: '🆔 PlayFab ID', value: `\`${user.PlayFabId}\``, inline: false }
+                    )
+                    .setFooter({ text: 'Volleyball Revengers • Account Verification' });
+            } else {
+                isLinkedEmbed
+                    .setTitle('❌ Account Not Linked')
+                    .setColor('#FF4B4B')
+                    .setDescription(isSelf 
+                        ? 'Your Discord account is not linked to PlayFab yet. Use `/link <code>` to link your account.' 
+                        : `**${targetDiscordUser.username}** has not linked their Discord account yet.`)
                     .setFooter({ text: 'Volleyball Revengers • Account Verification' });
             }
 
@@ -545,7 +552,11 @@ client.on('interactionCreate', async interaction => {
             }
 
             const statusEmbed = new EmbedBuilder()
-                .setTitle(`${statusEmoji} Player Status: ${displayName}`)                 .setColor(statusColor)                 .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))                 .addFields(                     { name: '👤 Discord User', value: `${targetDiscordUser}`, inline: true },
+                .setTitle(`${statusEmoji} Player Status:${displayName}`)
+                .setColor(statusColor)
+                .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
+                .addFields(
+                    { name: '👤 Discord User', value: `${targetDiscordUser}`, inline: true },
                     { name: '🆔 PlayFab ID', value: `\`${playFabId}\``, inline: true },
                     { name: '📡 Status', value: `**${formattedStatus}**`, inline: false }
                 )
@@ -576,8 +587,10 @@ client.on('interactionCreate', async interaction => {
                 .setColor('#1E90D8')
                 .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
                 .addFields(
-                    { name: '🆔 Account Info', value: `**Display Name:** ${displayName}\n**PlayFab ID:** \`${playFabId}\`\n**ELO:** ${getStat('PlayerElo')}`, inline: false },                     { name: '📏 Physical Attributes', value: `**Height:** ${getStat('PlayerHeight') || getData('PlayerHeight')}\n**Reach:** ${getStat('StandingReach')}\n**Wingspan:** ${getStat('Wingspan')}`, inline: true },
-                    { name: '📊 Performance', value: `**Matches:** ${getStat('MatchesPlayed')}\n**Wins:** ${getStat('Wins')}\n**MVPs:** ${getStat('MVP')}`, inline: true },                     { name: '🎯 In-Game Actions', value: `**Kills:** ${getStat('Kills')}\n**Blocks:** ${getStat('Blocks')}\n**Assists:** ${getStat('Assists')}`, inline: false }
+                    { name: '🆔 Account Info', value: `**Display Name:** ${displayName}\n**PlayFab ID:** \`${playFabId}\`\n**ELO:** ${getStat('PlayerElo')}`, inline: false },
+                    { name: '📏 Physical Attributes', value: `**Height:** ${getStat('PlayerHeight') || getData('PlayerHeight')}\n**Reach:** ${getStat('StandingReach')}\n**Wingspan:** ${getStat('Wingspan')}`, inline: true },
+                    { name: '📊 Performance', value: `**Matches:** ${getStat('MatchesPlayed')}\n**Wins:** ${getStat('Wins')}\n**MVPs:** ${getStat('MVP')}`, inline: true },
+                    { name: '🎯 In-Game Actions', value: `**Kills:** ${getStat('Kills')}\n**Blocks:** ${getStat('Blocks')}\n**Assists:** ${getStat('Assists')}`, inline: false }
                 )
                 .setFooter({ text: 'Volleyball Revengers • Player Statistics' })
                 .setTimestamp();
@@ -598,7 +611,29 @@ client.on('interactionCreate', async interaction => {
                 .setTitle(`🛡️ Club Details: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
                 .setColor('#1E90D8')
                 .addFields(
-                    { name: '🏷️ Current Club', value: `**${clubName}**`, inline: false },                     { name: '📩 Pending Invites', value: pendingInvites.length > 0 ? pendingInvites.join(', ') : 'None', inline: false },                     { name: '🌐 Management Portal', value: 'Manage invitations, view stats, and access settings at:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/club', inline: false }                 )                 .setFooter({ text: 'Volleyball Revengers • Club Hub' });              await interaction.editReply({ embeds: [clubEmbed] });         }          else if (commandName === 'party') {             const targetDiscordUser = interaction.options.getUser('target') \vert{}\vert{} interaction.user;             const user = await enforceAccountLink(interaction, targetDiscordUser);             if (!user) return;              const userData = await getPlayerData(user.PlayFabId);             const partyStatus = userData.ActivePartyId?.Value ? `In Party (\`${userData.ActivePartyId.Value}\`)` : 'Not in a Party';             const pendingInvites = userData.PartyInvites?.Value ? JSON.parse(userData.PartyInvites.Value) : [];              const partyEmbed = new EmbedBuilder()                 .setTitle(`🎉 Party Hub: ${user.TitleInfo?.DisplayName \vert{}\vert{} targetDiscordUser.username}`)                 .setColor('#FF007F')                 .addFields(                     { name: '👥 Party Status', value: `**${partyStatus}**`, inline: false },
+                    { name: '🏷️ Current Club', value: `**${clubName}**`, inline: false },
+                    { name: '📩 Pending Invites', value: pendingInvites.length > 0 ? pendingInvites.join(', ') : 'None', inline: false },
+                    { name: '🌐 Management Portal', value: 'Manage invitations, view stats, and access settings at:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/club', inline: false }
+                )
+                .setFooter({ text: 'Volleyball Revengers • Club Hub' });
+
+            await interaction.editReply({ embeds: [clubEmbed] });
+        }
+
+        else if (commandName === 'party') {
+            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+            const user = await enforceAccountLink(interaction, targetDiscordUser);
+            if (!user) return;
+
+            const userData = await getPlayerData(user.PlayFabId);
+            const partyStatus = userData.ActivePartyId?.Value ? `In Party (\`${userData.ActivePartyId.Value}\`)` : 'Not in a Party';
+            const pendingInvites = userData.PartyInvites?.Value ? JSON.parse(userData.PartyInvites.Value) : [];
+
+            const partyEmbed = new EmbedBuilder()
+                .setTitle(`🎉 Party Hub: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
+                .setColor('#FF007F')
+                .addFields(
+                    { name: '👥 Party Status', value: `**${partyStatus}**`, inline: false },
                     { name: '📩 Incoming Invites', value: pendingInvites.length > 0 ? pendingInvites.join(', ') : 'None', inline: false }
                 )
                 .setFooter({ text: 'Volleyball Revengers • Party Hub' });
@@ -619,7 +654,44 @@ client.on('interactionCreate', async interaction => {
                 .setTitle(`🤝 Friends Overview: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
                 .setColor('#00FF7F')
                 .addFields(
-                    { name: `👥 Friends (${friendList.length})`, value: friendList.length > 0 ? friendList.slice(0, 10).join(', ') : 'No friends added yet.', inline: false },                     { name: '📩 Pending Requests', value: pendingRequests.length > 0 ? pendingRequests.join(', ') : 'None', inline: false },                     { name: '🌐 Manage Friends', value: 'Add or remove friends on the dashboard:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/friends', inline: false }                 )                 .setFooter({ text: 'Volleyball Revengers • Social Network' });              await interaction.editReply({ embeds: [friendsEmbed] });         }          else if (commandName === 'report-player') {             const playerIdentifier = interaction.options.getString('player_identifier');             const reason = interaction.options.getString('reason');             const details = interaction.options.getString('details');             const proofAttachment = interaction.options.getAttachment('proof');              const staffChannelId = process.env.DISCORD_STAFF_CHANNEL_ID;             const modRoleId = process.env.DISCORD_MOD_ROLE_ID;              if (!staffChannelId) {                 return await interaction.editReply({ content: '❌ Configuration error: Staff Channel ID is not configured.' });             }              const staffChannel = await client.channels.fetch(staffChannelId).catch(() => null);             if (!staffChannel) {                 return await interaction.editReply({ content: '❌ Unable to find or access the designated Staff Channel.' });             }              const reporterAccount = await getPlayFabUserByDiscordId(interaction.user.id);             const reporterPlayFab = reporterAccount?.user?.PlayFabId ? `\`${reporterAccount.user.PlayFabId}\`` : 'Unlinked';              const mentionMatch = playerIdentifier.match(/^<@!?(\d+)>$/);             let suspectAccountDetails = 'Not Linked / Manual Entry';             if (mentionMatch) {                 const targetId = mentionMatch[1];                 const suspectAccount = await getPlayFabUserByDiscordId(targetId);                 if (suspectAccount?.user?.PlayFabId) {                     suspectAccountDetails = `\`${suspectAccount.user.PlayFabId}\` (${suspectAccount.user.TitleInfo?.DisplayName || 'No Display Name'})`;
+                    { name: `👥 Friends (${friendList.length})`, value: friendList.length > 0 ? friendList.slice(0, 10).join(', ') : 'No friends added yet.', inline: false },
+                    { name: '📩 Pending Requests', value: pendingRequests.length > 0 ? pendingRequests.join(', ') : 'None', inline: false },
+                    { name: '🌐 Manage Friends', value: 'Add or remove friends on the dashboard:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/friends', inline: false }
+                )
+                .setFooter({ text: 'Volleyball Revengers • Social Network' });
+
+            await interaction.editReply({ embeds: [friendsEmbed] });
+        }
+
+        // --- REPORT PLAYER IMPLEMENTATION ---
+        else if (commandName === 'report-player') {
+            const playerIdentifier = interaction.options.getString('player_identifier');
+            const reason = interaction.options.getString('reason');
+            const details = interaction.options.getString('details');
+            const proofAttachment = interaction.options.getAttachment('proof');
+
+            const staffChannelId = process.env.DISCORD_STAFF_CHANNEL_ID;
+            const modRoleId = process.env.DISCORD_MOD_ROLE_ID;
+
+            if (!staffChannelId) {
+                return await interaction.editReply({ content: '❌ Configuration error: Staff Channel ID is not configured.' });
+            }
+
+            const staffChannel = await client.channels.fetch(staffChannelId).catch(() => null);
+            if (!staffChannel) {
+                return await interaction.editReply({ content: '❌ Unable to find or access the designated Staff Channel.' });
+            }
+
+            const reporterAccount = await getPlayFabUserByDiscordId(interaction.user.id);
+            const reporterPlayFab = reporterAccount?.user?.PlayFabId ? `\`${reporterAccount.user.PlayFabId}\`` : 'Unlinked';
+
+            const mentionMatch = playerIdentifier.match(/^<@!?(\d+)>$/);
+            let suspectAccountDetails = 'Not Linked / Manual Entry';
+            if (mentionMatch) {
+                const targetId = mentionMatch[1];
+                const suspectAccount = await getPlayFabUserByDiscordId(targetId);
+                if (suspectAccount?.user?.PlayFabId) {
+                    suspectAccountDetails = `\`${suspectAccount.user.PlayFabId}\` (${suspectAccount.user.TitleInfo?.DisplayName || 'No Display Name'})`;
                 }
             }
 
@@ -641,7 +713,8 @@ client.on('interactionCreate', async interaction => {
                 reportEmbed.addFields({ name: '📎 Attached Proof', value: `[View Full Attachment](${proofAttachment.url}) (${proofAttachment.contentType || 'file'})` });
             }
 
-            const pingMention = modRoleId ? `<@&${modRoleId}>` : '**@Moderation Team**';             await staffChannel.send({ content: `🚨 ${pingMention} - New In-Game Player Report Submitted!`, embeds: [reportEmbed] });
+            const pingMention = modRoleId ? `<@&${modRoleId}>` : '**@Moderation Team**';
+            await staffChannel.send({ content: `🚨 ${pingMention} - New In-Game Player Report Submitted!`, embeds: [reportEmbed] });
             
             logReportToPlayFab('Player', {
                 reporterDiscordId: interaction.user.id,
