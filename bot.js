@@ -30,35 +30,35 @@ const client = new Client({
 const http = require('http');
 const https = require('https');
 
+// --- HTTP Server ---
 const PORT = process.env.PORT || 10000;
-const MAX_BODY_SIZE = 1e4;
+const MAX_BODY_SIZE = 1e6;
 
 const server = http.createServer(async (req, res) => {
     const headers = {
-        'Access-Control-Allow-Origin': '*', 
+        'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type'
     };
-    
+
     if (req.method === 'OPTIONS') {
         res.writeHead(204, headers);
         return res.end();
     }
     
-    if (req.method === 'POST' && req.url === '/api/login-server-custom-id') {
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+
+    if (req.method === 'POST' && parsedUrl.pathname === '/api/login-server-custom-id') {
         let body = '';
-        let bodyLength = 0;
 
         req.on('data', chunk => {
-            bodyLength += chunk.length;
-            if (bodyLength > MAX_BODY_SIZE) {
+            body += chunk.toString();
+            if (body.length > MAX_BODY_SIZE) {
                 req.destroy();
-            } else {
-                body += chunk.toString();
             }
         });
 
-        req.on('end', async () => {
+        req.on('end', () => {
             try {
                 const { discordId } = JSON.parse(body || '{}');
 
@@ -90,19 +90,16 @@ const server = http.createServer(async (req, res) => {
                 });
             } catch (err) {
                 console.error('[Server Auth Exception]:', err);
-                if (!res.headersSent) {
-                    res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, error: 'Invalid JSON payload' }));
-                }
+                res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ success: false, error: 'Invalid JSON payload' }));
             }
         });
         return;
     }
 
-    if (req.method === 'GET' && req.url.startsWith('/api/user-info')) {
+    if (req.method === 'GET' && parsedUrl.pathname === '/api/user-info') {
         try {
-            const urlObj = new URL(req.url, `http://${req.headers.host}`);
-            const discordId = urlObj.searchParams.get('discordId');
+            const discordId = parsedUrl.searchParams.get('discordId');
 
             if (!discordId) {
                 res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
@@ -131,14 +128,11 @@ const server = http.createServer(async (req, res) => {
             }));
         } catch (apiErr) {
             console.error('[API Error] User info endpoint failed:', apiErr);
-            if (!res.headersSent) {
-                res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, error: apiErr.message }));
-            }
-            return;
+            res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ success: false, error: 'Internal server error' }));
         }
     }
-    
+
     res.writeHead(200, { ...headers, 'Content-Type': 'text/plain' });
     res.end('VBR Assistant Coach Bot is running 24/7!');
 }).listen(PORT, () => {
@@ -150,8 +144,8 @@ setInterval(() => {
     if (renderAppUrl) {
         const requester = renderAppUrl.startsWith('https') ? https : http;
         requester.get(renderAppUrl, (res) => {
-            console.log(`[Heartbeat] Ping sent - Status: ${res.statusCode}`);
             res.resume();
+            console.log(`[Heartbeat] Ping sent - Status: ${res.statusCode}`);
         }).on('error', (err) => console.error(`[Heartbeat Error] ${err.message}`));
     }
 }, 300000);
