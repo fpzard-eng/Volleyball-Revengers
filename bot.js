@@ -9,7 +9,10 @@ const {
     SlashCommandBuilder, 
     EmbedBuilder, 
     PermissionFlagsBits, 
-    ChannelType 
+    ChannelType,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
 } = require('discord.js');
 
 const PlayFab = require('playfab-sdk');
@@ -652,12 +655,12 @@ client.on('interactionCreate', async interaction => {
 
     if (!staffChannelId) {
         return await interaction.editReply({ 
-            content: '❌ Configuration error: Staff Channel ID is not configured.' 
+            content: '❌ Configuration error: `DISCORD_STAFF_CHANNEL_ID` is not configured.' 
         });
     }
 
     const staffChannel = await client.channels.fetch(staffChannelId).catch(() => null);
-    if (!staffChannel) {
+    if (!staffChannel || !staffChannel.isTextBased()) {
         return await interaction.editReply({ 
             content: '❌ Unable to find or access the designated Staff Channel.' 
         });
@@ -668,18 +671,18 @@ client.on('interactionCreate', async interaction => {
         getPlayFabUserByDiscordId(targetUser.id).catch(() => null)
     ]);
 
-    const reporterPFText = reporterPF?.user?.PlayFabId ? `\`${reporterPF.user.PlayFabId}\`` : 'Unlinked';
-    const targetPFText = targetPF?.user?.PlayFabId ? `\`${targetPF.user.PlayFabId}\`` : 'Unlinked';
+    const reporterPFText = reporterPF?.user?.PlayFabId ? `\`${reporterPF.user.PlayFabId}\`` : '*Unlinked*';
+    const targetPFText = targetPF?.user?.PlayFabId ? `\`${targetPF.user.PlayFabId}\`` : '*Unlinked*';
 
     const reportEmbed = new EmbedBuilder()
-        .setTitle('🛡️ NEW REPORT')
+        .setTitle('🛡️ NEW COMMUNITY REPORT')
         .setColor('#FF9900')
         .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
         .addFields(
-            { name: '👤 Reported Member', value: `${targetUser} (\`${targetUser.id}\`)\n**Linked PlayFab:** ${targetPFText}`, inline: false },
+            { name: '👤 Reported Member', value: `${targetUser} (\`${targetUser.id}\`)\n**PlayFab ID:** ${targetPFText}`, inline: false },
             { name: '⚠️ Violation Category', value: `\`${reason}\``, inline: true },
-            { name: '📩 Filed By', value: `${interaction.user} (PlayFab: ${reporterPFText})`, inline: true },
-            { name: '📝 Description & Location', value: details, inline: false }
+            { name: '📩 Filed By', value: `${interaction.user}\n**PlayFab ID:** ${reporterPFText}`, inline: true },
+            { name: '📝 Details & Evidence Notes', value: details, inline: false }
         )
         .setFooter({ text: `Volleyball Revengers • Case ID: ${interaction.id}` })
         .setTimestamp();
@@ -722,17 +725,18 @@ client.on('interactionCreate', async interaction => {
     });
 
     await logReportToPlayFab('DiscordUser', {
+        caseId: interaction.id,
         reporterDiscordId: interaction.user.id,
         reportedDiscordId: targetUser.id,
         reason,
         details,
         proofUrl: proofAttachment ? proofAttachment.url : null
-    }).catch(err => console.error('Failed to log report to PlayFab:', err));
+    }).catch(err => console.error('[Report Logging Exception]:', err));
 
     const userReceiptEmbed = new EmbedBuilder()
-        .setTitle('✅ Community Report Filed')
+        .setTitle('✅ Report Successfully Submitted')
         .setColor('#00FF7F')
-        .setDescription(`Your report regarding **${targetUser.username}** has been sent directly to the server moderators.`)
+        .setDescription(`Your report regarding **${targetUser.username}** has been securely dispatched to our moderation team. Thank you for helping keep our community safe!`)
         .setFooter({ text: 'Volleyball Revengers • Community Moderation' });
 
     await interaction.editReply({ embeds: [userReceiptEmbed] });
