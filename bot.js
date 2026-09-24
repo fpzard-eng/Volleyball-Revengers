@@ -163,68 +163,36 @@ const commands = [
     new SlashCommandBuilder().setName('nt-info').setDescription('Learn about the National Tournament'),
     new SlashCommandBuilder().setName('online-players').setDescription('Show the current online player count'),
     new SlashCommandBuilder()
-        .setName('report-player')
-        .setDescription('Report an in-game player for exploits, toxicity, or rule violations')
-        .addStringOption(opt => 
-            opt.setName('player_identifier')
-               .setDescription('In-Game Display Name, PlayFab ID, or linked Discord @mention')
-               .setRequired(true)
-        )
-        .addStringOption(opt => 
-            opt.setName('reason')
-               .setDescription('Select the core category of the violation')
-               .setRequired(true)
-               .addChoices(
-                   { name: 'Cheating / Exploiting / Hacking', value: 'Cheating / Exploiting / Hacking' },
-                   { name: 'Toxic Behavior / Harassment', value: 'Toxic Behavior / Harassment' },
-                   { name: 'Griefing / Intentional Throwing', value: 'Griefing / Intentional Throwing' },
-                   { name: 'Inappropriate Display Name / Customization', value: 'Inappropriate Display Name / Customization' },
-                   { name: 'Bug Abuse', value: 'Bug Abuse' },
-                   { name: 'Other Rule Violation', value: 'Other Rule Violation' }
-               )
-        )
-        .addStringOption(opt => 
-            opt.setName('details')
-               .setDescription('Provide detailed context, match time, or specifics of what occurred')
-               .setRequired(true)
-        )
-        .addAttachmentOption(opt => 
-            opt.setName('proof')
-               .setDescription('Attach a video/screenshot proving the infraction (Highly Recommended)')
-               .setRequired(false)
-        ),
-
-    new SlashCommandBuilder()
-        .setName('report-discord-user')
-        .setDescription('Report a community member for Discord server infractions or misconduct')
-        .addUserOption(opt => 
-            opt.setName('user')
-               .setDescription('The Discord member you are reporting')
-               .setRequired(true)
-        )
-        .addStringOption(opt => 
-            opt.setName('reason')
-               .setDescription('Select the primary reason for reporting this user')
-               .setRequired(true)
-               .addChoices(
-                   { name: 'Harassment / Direct Messages Abuse', value: 'Harassment / Direct Messages Abuse' },
-                   { name: 'Hate Speech / Discriminatory Language', value: 'Hate Speech / Discriminatory Language' },
-                   { name: 'Spam / Scam / Phishing Links', value: 'Spam / Scam / Phishing Links' },
-                   { name: 'Inappropriate Avatar or Profile Text', value: 'Inappropriate Avatar or Profile Text' },
-                   { name: 'NSFW Content', value: 'NSFW Content' },
-                   { name: 'Other Community Infraction', value: 'Other Community Infraction' }
-               )
-        )
-        .addStringOption(opt => 
-            opt.setName('details')
-               .setDescription('Explain what happened and list channels or message links where it occurred')
-               .setRequired(true)
-        )
-        .addAttachmentOption(opt => 
-            opt.setName('proof')
-               .setDescription('Attach a screenshot of the message or DM interaction')
-               .setRequired(false)
-        ),
+    .setName('report')
+    .setDescription('Report a community member for Discord server infractions or misconduct')
+    .addUserOption(opt => 
+        opt.setName('user')
+           .setDescription('The Discord member you are reporting')
+           .setRequired(true)
+    )
+    .addStringOption(opt => 
+        opt.setName('reason')
+           .setDescription('Select the primary reason for reporting this user')
+           .setRequired(true)
+           .addChoices(
+               { name: 'Harassment / Direct Messages Abuse', value: 'Harassment / Direct Messages Abuse' },
+               { name: 'Hate Speech / Discriminatory Language', value: 'Hate Speech / Discriminatory Language' },
+               { name: 'Spam / Scam / Phishing Links', value: 'Spam / Scam / Phishing Links' },
+               { name: 'Inappropriate Avatar or Profile Text', value: 'Inappropriate Avatar or Profile Text' },
+               { name: 'NSFW Content', value: 'NSFW Content' },
+               { name: 'Other Community Infraction', value: 'Other Community Infraction' }
+           )
+    )
+    .addStringOption(opt => 
+        opt.setName('details')
+           .setDescription('Explain what happened and list channels or message links where it occurred')
+           .setRequired(true)
+    )
+    .addAttachmentOption(opt => 
+        opt.setName('proof')
+           .setDescription('Attach a screenshot of the message or DM interaction')
+           .setRequired(false)
+    ),
 
     new SlashCommandBuilder().setName('msg').setDescription('Sends custom message (Admin Only)')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
@@ -368,8 +336,6 @@ client.once('clientReady', () => {
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
-
-    // Beats Discord's 3-second timeout immediately across all commands
     await interaction.deferReply({ ephemeral: true }).catch(() => {});
 
     const { commandName } = interaction;
@@ -663,143 +629,114 @@ client.on('interactionCreate', async interaction => {
             await interaction.editReply({ embeds: [friendsEmbed] });
         }
 
-        // --- REPORT PLAYER IMPLEMENTATION ---
-        else if (commandName === 'report-player') {
-            const playerIdentifier = interaction.options.getString('player_identifier');
-            const reason = interaction.options.getString('reason');
-            const details = interaction.options.getString('details');
-            const proofAttachment = interaction.options.getAttachment('proof');
+        else if (commandName === 'report') {
+    const targetUser = interaction.options.getUser('user');
+    const reason = interaction.options.getString('reason');
+    const details = interaction.options.getString('details');
+    const proofAttachment = interaction.options.getAttachment('proof');
 
-            const staffChannelId = process.env.DISCORD_STAFF_CHANNEL_ID;
-            const modRoleId = process.env.DISCORD_MOD_ROLE_ID;
+    if (targetUser.id === interaction.user.id) {
+        return await interaction.editReply({ 
+            content: '❌ You cannot file a report against yourself.' 
+        });
+    }
 
-            if (!staffChannelId) {
-                return await interaction.editReply({ content: '❌ Configuration error: Staff Channel ID is not configured.' });
-            }
+    if (targetUser.bot) {
+        return await interaction.editReply({ 
+            content: '❌ Automated bot accounts cannot be reported via this system.' 
+        });
+    }
 
-            const staffChannel = await client.channels.fetch(staffChannelId).catch(() => null);
-            if (!staffChannel) {
-                return await interaction.editReply({ content: '❌ Unable to find or access the designated Staff Channel.' });
-            }
+    const staffChannelId = process.env.DISCORD_STAFF_CHANNEL_ID;
+    const modRoleId = process.env.DISCORD_MOD_ROLE_ID;
 
-            const reporterAccount = await getPlayFabUserByDiscordId(interaction.user.id);
-            const reporterPlayFab = reporterAccount?.user?.PlayFabId ? `\`${reporterAccount.user.PlayFabId}\`` : 'Unlinked';
+    if (!staffChannelId) {
+        return await interaction.editReply({ 
+            content: '❌ Configuration error: Staff Channel ID is not configured.' 
+        });
+    }
 
-            const mentionMatch = playerIdentifier.match(/^<@!?(\d+)>$/);
-            let suspectAccountDetails = 'Not Linked / Manual Entry';
-            if (mentionMatch) {
-                const targetId = mentionMatch[1];
-                const suspectAccount = await getPlayFabUserByDiscordId(targetId);
-                if (suspectAccount?.user?.PlayFabId) {
-                    suspectAccountDetails = `\`${suspectAccount.user.PlayFabId}\` (${suspectAccount.user.TitleInfo?.DisplayName || 'No Display Name'})`;
-                }
-            }
+    const staffChannel = await client.channels.fetch(staffChannelId).catch(() => null);
+    if (!staffChannel) {
+        return await interaction.editReply({ 
+            content: '❌ Unable to find or access the designated Staff Channel.' 
+        });
+    }
 
-            const reportEmbed = new EmbedBuilder()
-                .setTitle('🚨 IN-GAME PLAYER REPORT')
-                .setColor('#FF3333')
-                .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-                .addFields(
-                    { name: '🎯 Reported Subject', value: `**Identifier Provided:** ${playerIdentifier}\n**PlayFab Match:** ${suspectAccountDetails}`, inline: false },
-                    { name: '⚠️ Violation Category', value: `\`${reason}\``, inline: true },
-                    { name: '👤 Reporter', value: `${interaction.user} (PlayFab:${reporterPlayFab})`, inline: true },
-                    { name: '📝 Incident Details', value: details, inline: false }
-                )
-                .setFooter({ text: `Volleyball Revengers • Incident ID: ${interaction.id}` })
-                .setTimestamp();
+    const [reporterPF, targetPF] = await Promise.all([
+        getPlayFabUserByDiscordId(interaction.user.id).catch(() => null),
+        getPlayFabUserByDiscordId(targetUser.id).catch(() => null)
+    ]);
 
-            if (proofAttachment) {
-                reportEmbed.setImage(proofAttachment.url);
-                reportEmbed.addFields({ name: '📎 Attached Proof', value: `[View Full Attachment](${proofAttachment.url}) (${proofAttachment.contentType || 'file'})` });
-            }
+    const reporterPFText = reporterPF?.user?.PlayFabId ? `\`${reporterPF.user.PlayFabId}\`` : 'Unlinked';
+    const targetPFText = targetPF?.user?.PlayFabId ? `\`${targetPF.user.PlayFabId}\`` : 'Unlinked';
 
-            const pingMention = modRoleId ? `<@&${modRoleId}>` : '**@Moderation Team**';
-            await staffChannel.send({ content: `🚨 ${pingMention} - New In-Game Player Report Submitted!`, embeds: [reportEmbed] });
-            
-            logReportToPlayFab('Player', {
-                reporterDiscordId: interaction.user.id,
-                targetIdentifier: playerIdentifier,
-                reason,
-                details,
-                proofUrl: proofAttachment ? proofAttachment.url : null
-            });
+    const reportEmbed = new EmbedBuilder()
+        .setTitle('🛡️ NEW REPORT')
+        .setColor('#FF9900')
+        .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
+        .addFields(
+            { name: '👤 Reported Member', value: `${targetUser} (\`${targetUser.id}\`)\n**Linked PlayFab:** ${targetPFText}`, inline: false },
+            { name: '⚠️ Violation Category', value: `\`${reason}\``, inline: true },
+            { name: '📩 Filed By', value: `${interaction.user} (PlayFab: ${reporterPFText})`, inline: true },
+            { name: '📝 Description & Location', value: details, inline: false }
+        )
+        .setFooter({ text: `Volleyball Revengers • Case ID: ${interaction.id}` })
+        .setTimestamp();
 
-            const userReceiptEmbed = new EmbedBuilder()
-                .setTitle('✅ Player Report Submitted')
-                .setColor('#00FF7F')
-                .setDescription('Thank you for helping keep **Volleyball Revengers** fair and competitive! Our moderation team has been pinged and will review the evidence.')
-                .addFields(
-                    { name: 'Target Reported', value: playerIdentifier, inline: true },
-                    { name: 'Category', value: reason, inline: true }
-                )
-                .setFooter({ text: 'Volleyball Revengers • Staff Operations' });
-
-            await interaction.editReply({ embeds: [userReceiptEmbed] });
+    if (proofAttachment) {
+        const isImage = proofAttachment.contentType?.startsWith('image/');
+        if (isImage) {
+            reportEmbed.setImage(proofAttachment.url);
         }
+        reportEmbed.addFields({ 
+            name: '📎 Evidence File', 
+            value: `[View Attachment](${proofAttachment.url}) (${proofAttachment.name})` 
+        });
+    }
 
-        else if (commandName === 'report-discord-user') {
-            const targetUser = interaction.options.getUser('user');
-            const reason = interaction.options.getString('reason');
-            const details = interaction.options.getString('details');
-            const proofAttachment = interaction.options.getAttachment('proof');
+    const staffActionRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`report_resolve_${interaction.id}`)
+            .setLabel('Resolve')
+            .setStyle(ButtonStyle.Success)
+            .setEmoji('✅'),
+        new ButtonBuilder()
+            .setCustomId(`report_dismiss_${interaction.id}`)
+            .setLabel('Dismiss')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('✖️'),
+        new ButtonBuilder()
+            .setCustomId(`report_ban_${targetUser.id}`)
+            .setLabel('Ban User')
+            .setStyle(ButtonStyle.Danger)
+            .setEmoji('🔨')
+    );
 
-            const staffChannelId = process.env.DISCORD_STAFF_CHANNEL_ID;
-            const modRoleId = process.env.DISCORD_MOD_ROLE_ID;
+    const pingMention = modRoleId ? `<@&${modRoleId}>` : '**@Moderation Team**';
+    
+    await staffChannel.send({ 
+        content: `🛡️ ${pingMention} - New Community Misconduct Report Received!`, 
+        embeds: [reportEmbed],
+        components: [staffActionRow]
+    });
 
-            if (!staffChannelId) {
-                return await interaction.editReply({ content: '❌ Configuration error: Staff Channel ID is not configured.' });
-            }
+    await logReportToPlayFab('DiscordUser', {
+        reporterDiscordId: interaction.user.id,
+        reportedDiscordId: targetUser.id,
+        reason,
+        details,
+        proofUrl: proofAttachment ? proofAttachment.url : null
+    }).catch(err => console.error('Failed to log report to PlayFab:', err));
 
-            const staffChannel = await client.channels.fetch(staffChannelId).catch(() => null);
-            if (!staffChannel) {
-                return await interaction.editReply({ content: '❌ Unable to find or access the designated Staff Channel.' });
-            }
-            
-            const [reporterPF, targetPF] = await Promise.all([
-                getPlayFabUserByDiscordId(interaction.user.id),
-                getPlayFabUserByDiscordId(targetUser.id)
-            ]);
+    const userReceiptEmbed = new EmbedBuilder()
+        .setTitle('✅ Community Report Filed')
+        .setColor('#00FF7F')
+        .setDescription(`Your report regarding **${targetUser.username}** has been sent directly to the server moderators.`)
+        .setFooter({ text: 'Volleyball Revengers • Community Moderation' });
 
-            const reporterPFText = reporterPF?.user?.PlayFabId ? `\`${reporterPF.user.PlayFabId}\`` : 'Unlinked';
-            const targetPFText = targetPF?.user?.PlayFabId ? `\`${targetPF.user.PlayFabId}\`` : 'Unlinked';
-
-            const reportEmbed = new EmbedBuilder()
-                .setTitle('🛡️ DISCORD COMMUNITY MEMBER REPORT')
-                .setColor('#FF9900')
-                .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
-                .addFields(
-                    { name: '👤 Reported Member', value: `${targetUser} (\`${targetUser.id}\`)\n**Linked PlayFab:** ${targetPFText}`, inline: false },
-                    { name: '⚠️ Violation Category', value: `\`${reason}\``, inline: true },
-                    { name: '📩 Filed By', value: `${interaction.user} (PlayFab: ${reporterPFText})`, inline: true },
-                    { name: '📝 Description & Location', value: details, inline: false }
-                )
-                .setFooter({ text: `Volleyball Revengers • Case ID: ${interaction.id}` })
-                .setTimestamp();
-
-            if (proofAttachment) {
-                reportEmbed.setImage(proofAttachment.url);
-                reportEmbed.addFields({ name: '📎 Evidence File', value: `[View Full Image/Proof](${proofAttachment.url})` });
-            }
-
-            const pingMention = modRoleId ? `<@&${modRoleId}>` : '**@Moderation Team**';
-            await staffChannel.send({ content: `🛡️ ${pingMention} - New Community Misconduct Report Received!`, embeds: [reportEmbed] });
-            
-            logReportToPlayFab('DiscordUser', {
-                reporterDiscordId: interaction.user.id,
-                reportedDiscordId: targetUser.id,
-                reason,
-                details,
-                proofUrl: proofAttachment ? proofAttachment.url : null
-            });
-
-            const userReceiptEmbed = new EmbedBuilder()
-                .setTitle('✅ Community Report Filed')
-                .setColor('#00FF7F')
-                .setDescription(`Your report regarding **${targetUser.username}** has been sent directly to the server moderators. We appreciate your vigilance in maintaining a safe community.`)
-                .setFooter({ text: 'Volleyball Revengers • Community Moderation' });
-
-            await interaction.editReply({ embeds: [userReceiptEmbed] });
-        }
+    await interaction.editReply({ embeds: [userReceiptEmbed] });
+}
 
     } catch (cmdErr) {
         console.error(`[Command Error] ${commandName}:`, cmdErr);
