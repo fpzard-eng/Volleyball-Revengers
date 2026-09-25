@@ -30,7 +30,9 @@ const client = new Client({
     ]
 });
 
-// --- HTTP Server ---
+// ===================================================================
+// HTTP Server & Webhook Listener
+// ===================================================================
 const PORT = process.env.PORT || 10000;
 const server = http.createServer(async (req, res) => {
     const headers = {
@@ -42,6 +44,36 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') {
         res.writeHead(204, headers);
         res.end();
+        return;
+    }
+    
+    if (req.method === 'POST' && req.url === '/send-dm') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', async () => {
+            try {
+                const { discordId, message } = JSON.parse(body || '{}');
+
+                if (!discordId || !message) {
+                    res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ success: false, error: 'Missing discordId or message parameter.' }));
+                }
+
+                const targetUser = await client.users.fetch(discordId).catch(() => null);
+                if (!targetUser) {
+                    res.writeHead(404, { ...headers, 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ success: false, error: 'Discord user not found.' }));
+                }
+
+                await targetUser.send(message);
+                res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                console.error('[Send DM Endpoint Error]:', err);
+                res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+        });
         return;
     }
 
@@ -140,6 +172,9 @@ setInterval(() => {
     }
 }, 300000);
 
+// ===================================================================
+// Slash Commands Setup
+// ===================================================================
 const commands = [
     new SlashCommandBuilder().setName('website').setDescription('Get the official Volleyball Revengers website link'),
     new SlashCommandBuilder()
@@ -164,7 +199,7 @@ const commands = [
         .addUserOption(opt => opt.setName('target').setDescription('Check another player\'s friends list (optional)').setRequired(false)),
     new SlashCommandBuilder().setName('club-info').setDescription('Learn information about what clubs are in Volleyball Revengers'),
     new SlashCommandBuilder().setName('nt-info').setDescription('Learn about the National Tournament'),
-    new SlashCommandBuilder().setName('online-players').setDescription('Show the current online player count'),
+    new SlashCommandBuilder().setName('online-players').setDescription('Show current global online player count'),
     new SlashCommandBuilder()
     .setName('report')
     .setDescription('Report a community member for Discord server infractions or misconduct')
@@ -218,6 +253,29 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
     }
 })();
 
+// ===================================================================
+// Helper Functions & CloudScript Execution Wrappers
+// ===================================================================
+function executeCloudScript(functionName, functionParameter = {}, playFabId = null) {
+    return new Promise((resolve) => {
+        const payload = {
+            FunctionName: functionName,
+            FunctionParameter: functionParameter,
+            GeneratePlayStreamEvent: true
+        };
+        if (playFabId) payload.PlayFabId = playFabId;
+
+        PlayFabServer.ExecuteCloudScript(payload, (error, result) => {
+            if (error || !result?.data?.FunctionResult) {
+                console.error(`[CloudScript Error - ${functionName}]:`, error || result?.data?.Error);
+                resolve({ success: false, error: error?.errorMessage || 'CloudScript Execution Failed' });
+            } else {
+                resolve(result.data.FunctionResult);
+            }
+        });
+    });
+}
+
 function getPlayerStats(playFabId) {
     return new Promise((resolve) => {
         PlayFabServer.GetPlayerStatistics({ PlayFabId: playFabId }, (error, result) => {
@@ -260,28 +318,6 @@ function getPlayFabUserByDiscordId(discordId) {
         } catch {
             resolve({ user: null, reason: 'NOT_LINKED' });
         }
-    });
-}
-
-function getOnlinePlayerCount() {
-    return new Promise((resolve) => {
-        PlayFabServer.ExecuteCloudScript({
-            FunctionName: 'getGlobalOnlinePlayerCount',
-            FunctionParameter: {}
-        }, (error, result) => {
-            if (error || !result?.data?.FunctionResult) {
-                console.error('[CloudScript getGlobalOnlinePlayerCount Error]:', error);
-                return resolve(0);
-            }
-
-            const functionResult = result.data.FunctionResult;
-            if (functionResult.success) {
-                resolve(functionResult.onlineCount || 0);
-            } else {
-                console.error('[CloudScript getGlobalOnlinePlayerCount Failed]:', functionResult.error);
-                resolve(0);
-            }
-        });
     });
 }
 
@@ -330,11 +366,12 @@ async function enforceAccountLink(interaction, targetUser = null) {
     return user;
 }
 
-// --- Process Safety Listeners ---
 process.on('unhandledRejection', error => console.error('[Unhandled Rejection]:', error));
 process.on('uncaughtException', error => console.error('[Uncaught Exception]:', error));
 
-// --- Bot Login & Events ---
+// ===================================================================
+// Interaction Event Listener
+// ===================================================================
 client.once('clientReady', () => {
     console.log(`🤖 VBR Assistant Coach online as ${client.user.tag}!`);
 });
@@ -425,18 +462,10 @@ client.on('interactionCreate', async interaction => {
                 });
             }
 
-            const result = await new Promise((resolve) => {
-                PlayFabServer.ExecuteCloudScript({
-                    FunctionName: "LinkDiscord",
-                    FunctionParameter: {
-                        Code: cleanCode,
-                        DiscordUserId: String(interaction.user.id),
-                        DiscordUsername: String(interaction.user.username)
-                    }
-                }, (error, res) => {
-                    if (error || !res?.data?.FunctionResult) resolve({ success: false, message: 'PlayFab execution failed.' });
-                    else resolve(res.data.FunctionResult);
-                });
+            const result = await executeCloudScript("LinkDiscord", {
+                Code: cleanCode,
+                DiscordUserId: String(interaction.user.id),
+                DiscordUsername: String(interaction.user.username)
             });
 
             const embed = new EmbedBuilder()
@@ -454,7 +483,7 @@ client.on('interactionCreate', async interaction => {
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const isSelf = targetDiscordUser.id === interaction.user.id;
 
-            const { user, reason, playFabId } = await getPlayFabUserByDiscordId(targetDiscordUser.id);
+            const { user, playFabId } = await getPlayFabUserByDiscordId(targetDiscordUser.id);
 
             const isLinkedEmbed = new EmbedBuilder().setTimestamp();
 
@@ -486,7 +515,8 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'online-players') {
-            const count = await getOnlinePlayerCount();
+            const cloudResult = await executeCloudScript("getGlobalOnlinePlayerCount");
+            const count = cloudResult.success ? (cloudResult.onlineCount || 0) : 0;
 
             const onlineEmbed = new EmbedBuilder()
                 .setTitle('🌐 Online Players')
@@ -596,16 +626,23 @@ client.on('interactionCreate', async interaction => {
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
 
-            const userData = await getPlayerData(user.PlayFabId);
+            const [userData, inbox] = await Promise.all([
+                getPlayerData(user.PlayFabId),
+                executeCloudScript("getInboxData", {}, user.PlayFabId)
+            ]);
+
             const partyStatus = userData.ActivePartyId?.Value ? `In Party (\`${userData.ActivePartyId.Value}\`)` : 'Not in a Party';
-            const pendingInvites = userData.PartyInvites?.Value ? JSON.parse(userData.PartyInvites.Value) : [];
+            
+            const partyInvites = Array.isArray(inbox) 
+                ? inbox.filter(item => item.Type === 1).map(inv => `From **${inv.SenderDisplayName}** (ID: \`${inv.PayloadId}\`)`) 
+                : [];
 
             const partyEmbed = new EmbedBuilder()
                 .setTitle(`🎉 Party Hub: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
                 .setColor('#FF007F')
                 .addFields(
                     { name: '👥 Party Status', value: `**${partyStatus}**`, inline: false },
-                    { name: '📩 Incoming Invites', value: pendingInvites.length > 0 ? pendingInvites.join(', ') : 'None', inline: false }
+                    { name: '📩 Pending Party Invites', value: partyInvites.length > 0 ? partyInvites.join('\n') : 'None', inline: false }
                 )
                 .setFooter({ text: 'Volleyball Revengers • Party Hub' });
 
@@ -635,114 +672,114 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'report') {
-    const targetUser = interaction.options.getUser('user');
-    const reason = interaction.options.getString('reason');
-    const details = interaction.options.getString('details');
-    const proofAttachment = interaction.options.getAttachment('proof');
+            const targetUser = interaction.options.getUser('user');
+            const reason = interaction.options.getString('reason');
+            const details = interaction.options.getString('details');
+            const proofAttachment = interaction.options.getAttachment('proof');
 
-    if (targetUser.id === interaction.user.id) {
-        return await interaction.editReply({ 
-            content: '❌ You cannot file a report against yourself.' 
-        });
-    }
+            if (targetUser.id === interaction.user.id) {
+                return await interaction.editReply({ 
+                    content: '❌ You cannot file a report against yourself.' 
+                });
+            }
 
-    if (targetUser.bot) {
-        return await interaction.editReply({ 
-            content: '❌ Automated bot accounts cannot be reported via this system.' 
-        });
-    }
+            if (targetUser.bot) {
+                return await interaction.editReply({ 
+                    content: '❌ Automated bot accounts cannot be reported via this system.' 
+                });
+            }
 
-    const staffChannelId = process.env.DISCORD_STAFF_CHANNEL_ID;
-    const modRoleId = process.env.DISCORD_MOD_ROLE_ID;
+            const staffChannelId = process.env.DISCORD_STAFF_CHANNEL_ID;
+            const modRoleId = process.env.DISCORD_MOD_ROLE_ID;
 
-    if (!staffChannelId) {
-        return await interaction.editReply({ 
-            content: '❌ Configuration error: `DISCORD_STAFF_CHANNEL_ID` is not configured.' 
-        });
-    }
+            if (!staffChannelId) {
+                return await interaction.editReply({ 
+                    content: '❌ Configuration error: `DISCORD_STAFF_CHANNEL_ID` is not configured.' 
+                });
+            }
 
-    const staffChannel = await client.channels.fetch(staffChannelId).catch(() => null);
-    if (!staffChannel || !staffChannel.isTextBased()) {
-        return await interaction.editReply({ 
-            content: '❌ Unable to find or access the designated Staff Channel.' 
-        });
-    }
+            const staffChannel = await client.channels.fetch(staffChannelId).catch(() => null);
+            if (!staffChannel || !staffChannel.isTextBased()) {
+                return await interaction.editReply({ 
+                    content: '❌ Unable to find or access the designated Staff Channel.' 
+                });
+            }
 
-    const [reporterPF, targetPF] = await Promise.all([
-        getPlayFabUserByDiscordId(interaction.user.id).catch(() => null),
-        getPlayFabUserByDiscordId(targetUser.id).catch(() => null)
-    ]);
+            const [reporterPF, targetPF] = await Promise.all([
+                getPlayFabUserByDiscordId(interaction.user.id).catch(() => null),
+                getPlayFabUserByDiscordId(targetUser.id).catch(() => null)
+            ]);
 
-    const reporterPFText = reporterPF?.user?.PlayFabId ? `\`${reporterPF.user.PlayFabId}\`` : '*Unlinked*';
-    const targetPFText = targetPF?.user?.PlayFabId ? `\`${targetPF.user.PlayFabId}\`` : '*Unlinked*';
+            const reporterPFText = reporterPF?.user?.PlayFabId ? `\`${reporterPF.user.PlayFabId}\`` : '*Unlinked*';
+            const targetPFText = targetPF?.user?.PlayFabId ? `\`${targetPF.user.PlayFabId}\`` : '*Unlinked*';
 
-    const reportEmbed = new EmbedBuilder()
-        .setTitle('🛡️ NEW COMMUNITY REPORT')
-        .setColor('#FF9900')
-        .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
-        .addFields(
-            { name: '👤 Reported Member', value: `${targetUser} (\`${targetUser.id}\`)\n**PlayFab ID:** ${targetPFText}`, inline: false },
-            { name: '⚠️ Violation Category', value: `\`${reason}\``, inline: true },
-            { name: '📩 Filed By', value: `${interaction.user}\n**PlayFab ID:** ${reporterPFText}`, inline: true },
-            { name: '📝 Details & Evidence Notes', value: details, inline: false }
-        )
-        .setFooter({ text: `Volleyball Revengers • Case ID: ${interaction.id}` })
-        .setTimestamp();
+            const reportEmbed = new EmbedBuilder()
+                .setTitle('🛡️ NEW COMMUNITY REPORT')
+                .setColor('#FF9900')
+                .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
+                .addFields(
+                    { name: '👤 Reported Member', value: `${targetUser} (\`${targetUser.id}\`)\n**PlayFab ID:** ${targetPFText}`, inline: false },
+                    { name: '⚠️ Violation Category', value: `\`${reason}\``, inline: true },
+                    { name: '📩 Filed By', value: `${interaction.user}\n**PlayFab ID:** ${reporterPFText}`, inline: true },
+                    { name: '📝 Details & Evidence Notes', value: details, inline: false }
+                )
+                .setFooter({ text: `Volleyball Revengers • Case ID: ${interaction.id}` })
+                .setTimestamp();
 
-    if (proofAttachment) {
-        const isImage = proofAttachment.contentType?.startsWith('image/');
-        if (isImage) {
-            reportEmbed.setImage(proofAttachment.url);
+            if (proofAttachment) {
+                const isImage = proofAttachment.contentType?.startsWith('image/');
+                if (isImage) {
+                    reportEmbed.setImage(proofAttachment.url);
+                }
+                reportEmbed.addFields({ 
+                    name: '📎 Evidence File', 
+                    value: `[View Attachment](${proofAttachment.url}) (${proofAttachment.name})` 
+                });
+            }
+
+            const staffActionRow = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`report_resolve_${interaction.id}`)
+                    .setLabel('Resolve')
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji('✅'),
+                new ButtonBuilder()
+                    .setCustomId(`report_dismiss_${interaction.id}`)
+                    .setLabel('Dismiss')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('✖️'),
+                new ButtonBuilder()
+                    .setCustomId(`report_ban_${targetUser.id}`)
+                    .setLabel('Ban User')
+                    .setStyle(ButtonStyle.Danger)
+                    .setEmoji('🔨')
+            );
+
+            const pingMention = modRoleId ? `<@&${modRoleId}>` : '**@Moderation Team**';
+            
+            await staffChannel.send({ 
+                content: `🛡️ ${pingMention} - New Community Misconduct Report Received!`, 
+                embeds: [reportEmbed],
+                components: [staffActionRow]
+            });
+
+            await logReportToPlayFab('DiscordUser', {
+                caseId: interaction.id,
+                reporterDiscordId: interaction.user.id,
+                reportedDiscordId: targetUser.id,
+                reason,
+                details,
+                proofUrl: proofAttachment ? proofAttachment.url : null
+            }).catch(err => console.error('[Report Logging Exception]:', err));
+
+            const userReceiptEmbed = new EmbedBuilder()
+                .setTitle('✅ Report Successfully Submitted')
+                .setColor('#00FF7F')
+                .setDescription(`Your report regarding **${targetUser.username}** has been securely dispatched to our moderation team. Thank you for helping keep our community safe!`)
+                .setFooter({ text: 'Volleyball Revengers • Community Moderation' });
+
+            await interaction.editReply({ embeds: [userReceiptEmbed] });
         }
-        reportEmbed.addFields({ 
-            name: '📎 Evidence File', 
-            value: `[View Attachment](${proofAttachment.url}) (${proofAttachment.name})` 
-        });
-    }
-
-    const staffActionRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId(`report_resolve_${interaction.id}`)
-            .setLabel('Resolve')
-            .setStyle(ButtonStyle.Success)
-            .setEmoji('✅'),
-        new ButtonBuilder()
-            .setCustomId(`report_dismiss_${interaction.id}`)
-            .setLabel('Dismiss')
-            .setStyle(ButtonStyle.Secondary)
-            .setEmoji('✖️'),
-        new ButtonBuilder()
-            .setCustomId(`report_ban_${targetUser.id}`)
-            .setLabel('Ban User')
-            .setStyle(ButtonStyle.Danger)
-            .setEmoji('🔨')
-    );
-
-    const pingMention = modRoleId ? `<@&${modRoleId}>` : '**@Moderation Team**';
-    
-    await staffChannel.send({ 
-        content: `🛡️ ${pingMention} - New Community Misconduct Report Received!`, 
-        embeds: [reportEmbed],
-        components: [staffActionRow]
-    });
-
-    await logReportToPlayFab('DiscordUser', {
-        caseId: interaction.id,
-        reporterDiscordId: interaction.user.id,
-        reportedDiscordId: targetUser.id,
-        reason,
-        details,
-        proofUrl: proofAttachment ? proofAttachment.url : null
-    }).catch(err => console.error('[Report Logging Exception]:', err));
-
-    const userReceiptEmbed = new EmbedBuilder()
-        .setTitle('✅ Report Successfully Submitted')
-        .setColor('#00FF7F')
-        .setDescription(`Your report regarding **${targetUser.username}** has been securely dispatched to our moderation team. Thank you for helping keep our community safe!`)
-        .setFooter({ text: 'Volleyball Revengers • Community Moderation' });
-
-    await interaction.editReply({ embeds: [userReceiptEmbed] });
-}
 
     } catch (cmdErr) {
         console.error(`[Command Error] ${commandName}:`, cmdErr);
