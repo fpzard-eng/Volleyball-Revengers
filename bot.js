@@ -705,11 +705,17 @@ client.on('messageCreate', async message => {
 // ===================================================================
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    
+try {
+    await interaction.deferReply({ ephemeral: true });
+} catch (deferErr) {
+    console.error('[Interaction Acknowledge Error]:', deferErr);
+    return;
+}
 
-    const { commandName } = interaction;
-    const config = getGuildConfig(interaction.guild.id);
-
+const { commandName } = interaction;
+const config = getGuildConfig(interaction.guild?.id || '');
+    
     try {
         if (commandName === 'level') {
             if (!checkPermission(interaction, 'verified')) {
@@ -1464,6 +1470,15 @@ client.on('interactionCreate', async interaction => {
             return await interaction.editReply({ content: '✅ Report successfully dispatched to moderation team.' });
         }
 
+else {
+    console.warn(
+        `[Command Handler Missing] /${commandName} was registered but has no handler.`
+    );
+
+    return await interaction.editReply({
+        content: `⚠️ The /${commandName} command is registered, but its functionality is not implemented in this bot version yet.`
+    });
+}
     } catch (cmdErr) {
         console.error(`[Command Error] ${commandName}:`, cmdErr);
         await interaction.editReply({ content: 'An unexpected error occurred while executing this command.' }).catch(() => {});
