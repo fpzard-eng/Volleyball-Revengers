@@ -35,12 +35,9 @@ const client = new Client({
     ]
 });
 
-// ===================================================================
-// Guild Configurations & In-Memory XP State
-// ===================================================================
 const guildSettings = new Map();
-const userXP = new Map(); // Key: "guildId_userId" -> { xp: number, level: number }
-const xpCooldowns = new Set(); // Stores user IDs on 15s XP cooldown
+const userXP = new Map();
+const xpCooldowns = new Set();
 
 function getGuildConfig(guildId) {
     if (!guildSettings.has(guildId)) {
@@ -72,11 +69,8 @@ function getXPForLevel(level) {
     return 5 * (level ** 2) + (50 * level) + 100;
 }
 
-// ===================================================================
-// Webhook & Heartbeat Server
-// ===================================================================
 const PORT = process.env.PORT || 10000;
-http.createServer(async (req, res) => {
+const server = http.createServer(async (req, res) => {
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -95,6 +89,7 @@ http.createServer(async (req, res) => {
         req.on('end', async () => {
             try {
                 const { discordId, message } = JSON.parse(body || '{}');
+
                 if (!discordId || !message) {
                     res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
                     return res.end(JSON.stringify({ success: false, error: 'Missing parameters.' }));
@@ -103,13 +98,14 @@ http.createServer(async (req, res) => {
                 const targetUser = await client.users.fetch(discordId).catch(() => null);
                 if (!targetUser) {
                     res.writeHead(404, { ...headers, 'Content-Type': 'application/json' });
-                    return res.end(JSON.stringify({ success: false, error: 'User not found.' }));
+                    return res.end(JSON.stringify({ success: false, error: 'Discord user not found.' }));
                 }
 
                 await targetUser.send(message);
                 res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
                 return res.end(JSON.stringify({ success: true }));
             } catch (err) {
+                console.error('[Send DM Endpoint Error]:', err);
                 res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
                 return res.end(JSON.stringify({ success: false, error: err.message }));
             }
@@ -127,13 +123,12 @@ setInterval(() => {
     const renderAppUrl = process.env.RENDER_EXTERNAL_URL;
     if (renderAppUrl) {
         const requester = renderAppUrl.startsWith('https') ? https : http;
-        requester.get(renderAppUrl, () => {}).on('error', () => {});
+        requester.get(renderAppUrl, (res) => {
+            console.log(`[Heartbeat] Ping sent - Status: ${res.statusCode}`);
+        }).on('error', (err) => console.error(`[Heartbeat Error] ${err.message}`));
     }
 }, 300000);
 
-// ===================================================================
-// Slash Commands Definition
-// ===================================================================
 const commands = [
     new SlashCommandBuilder().setName('about').setDescription('Displays information about Volleyball Revengers and development status'),
     new SlashCommandBuilder().setName('info').setDescription('Generates a categorized listing of all slash commands'),
@@ -277,34 +272,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
     }
 })();
 
-// ===================================================================
-// PlayFab Helpers & Safe Async Invokers
-// ===================================================================
-function executeCloudScript(functionName, functionParameter = {}, playFabId = null) {
-    return new Promise((resolve) => {
-        const payload = { FunctionName: functionName, FunctionParameter: functionParameter, GeneratePlayStreamEvent: true };
-        if (playFabId) payload.PlayFabId = playFabId;
-
-        PlayFabServer.ExecuteCloudScript(payload, (error, result) => {
-            if (error || !result?.data?.FunctionResult) {
-                resolve({ success: false, error: error?.errorMessage || 'CloudScript Failed' });
-            } else {
-                resolve(result.data.FunctionResult);
-            }
-        });
-    });
-}
-
-function rewardAeroCoins(playFabId, amount) {
-    return new Promise((resolve) => {
-        PlayFabServer.SubtractUserVirtualCurrency({
-            PlayFabId: playFabId,
-            VirtualCurrency: "AC",
-            Amount: -amount
-        }, (error) => resolve(!error));
-    });
-}
-
 function fetchPlayFabLeaderboard(statisticName) {
     return new Promise((resolve) => {
         PlayFabServer.GetLeaderboard({
@@ -345,7 +312,9 @@ function getPlayFabUserByDiscordId(discordId) {
     return new Promise((resolve) => {
         try {
             const cleanDiscordId = String(discordId).replace(/['"]+/g, '').trim();
-            PlayFabServer.GetTitleInternalData({ Keys: [`DiscordUserMap_${cleanDiscordId}`] }, (error, result) => {
+            PlayFabServer.GetTitleInternalData({
+                Keys: [`DiscordUserMap_${cleanDiscordId}`]
+            }, (error, result) => {
                 if (error) return resolve({ user: null, reason: 'NOT_LINKED' });
 
                 const mappedPlayFabId = result?.data?.Data?.[`DiscordUserMap_${cleanDiscordId}`];
@@ -364,6 +333,37 @@ function getPlayFabUserByDiscordId(discordId) {
     });
 }
 
+function executeCloudScript(functionName, functionParameter = {}, playFabId = null) {
+    return new Promise((resolve) => {
+        const payload = {
+            FunctionName: functionName,
+            FunctionParameter: functionParameter,
+            GeneratePlayStreamEvent: true
+        };
+        if (playFabId) payload.PlayFabId = playFabId;
+
+        PlayFabServer.ExecuteCloudScript(payload, (error, result) => {
+            if (error || !result?.data?.FunctionResult) {
+                resolve({ success: false, error: error?.errorMessage || 'CloudScript Failed' });
+            } else {
+                resolve(result.data.FunctionResult);
+            }
+        });
+    });
+}
+
+function rewardAeroCoins(playFabId, amount) {
+    return new Promise((resolve) => {
+        PlayFabServer.SubtractUserVirtualCurrency({
+            PlayFabId: playFabId,
+            VirtualCurrency: "AC",
+            Amount: -amount
+        }, (error) => {
+            resolve(!error);
+        });
+    });
+}
+
 async function sendGuildLog(guild, logType, embed) {
     const config = getGuildConfig(guild.id);
     if (!config.logsChannelId) return;
@@ -372,7 +372,7 @@ async function sendGuildLog(guild, logType, embed) {
     if (logType === 'mod' && !config.logSettings.modActions) return;
 
     const channel = await guild.channels.fetch(config.logsChannelId).catch(() => null);
-    if (channel?.isTextBased()) {
+    if (channel && channel.isTextBased()) {
         await channel.send({ embeds: [embed] }).catch(() => {});
     }
 }
@@ -387,12 +387,15 @@ function checkPermission(interaction, requiredType) {
 
     if (requiredType === 'mod') {
         if (member.permissions.has(PermissionFlagsBits.Administrator) || member.permissions.has(PermissionFlagsBits.BanMembers)) return true;
-        return Boolean(config.modRoleId && member.roles.cache.has(config.modRoleId));
+        if (config.modRoleId && member.roles.cache.has(config.modRoleId)) return true;
+        return false;
     }
 
     if (requiredType === 'staff') {
         if (member.permissions.has(PermissionFlagsBits.Administrator) || member.permissions.has(PermissionFlagsBits.ModerateMembers)) return true;
-        return Boolean((config.staffRoleId && member.roles.cache.has(config.staffRoleId)) || (config.modRoleId && member.roles.cache.has(config.modRoleId)));
+        if (config.staffRoleId && member.roles.cache.has(config.staffRoleId)) return true;
+        if (config.modRoleId && member.roles.cache.has(config.modRoleId)) return true;
+        return false;
     }
 
     if (requiredType === 'verified') {
@@ -436,9 +439,6 @@ async function enforceAccountLink(interaction, targetUser = null) {
 process.on('unhandledRejection', error => console.error('[Unhandled Rejection]:', error));
 process.on('uncaughtException', error => console.error('[Uncaught Exception]:', error));
 
-// ===================================================================
-// Typing Listener & Leveling System
-// ===================================================================
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.guild) return;
 
@@ -460,18 +460,25 @@ client.on('messageCreate', async message => {
         const config = getGuildConfig(message.guild.id);
         const { user: pfUser } = await getPlayFabUserByDiscordId(message.author.id);
 
-        let rewardNote = pfUser 
-            ? (await rewardAeroCoins(pfUser.PlayFabId, 100) ? "\n💰 **+100 Aero-Coins (AC)** added to your PlayFab account!" : "") 
-            : "\n💡 *Link your PlayFab account using `/link <code>` to earn Aero-Coins on level-up!*";
-
-        if (userData.level % 10 === 0 && userData.level <= 100) {
-            const role = message.guild.roles.cache.find(r => r.name === `Level ${userData.level}`);
-            if (role) await message.member.roles.add(role).catch(() => {});
+        let rewardNote = "";
+        if (pfUser) {
+            const granted = await rewardAeroCoins(pfUser.PlayFabId, 100);
+            if (granted) rewardNote = "\n💰 **+100 Aero-Coins (AC)** added to your VBR PlayFab account!";
+        } else {
+            rewardNote = "\n💡 *Link your PlayFab account using `/link <code>` to receive Aero-Coins on level-up!*";
         }
-
+        
+        if (userData.level % 10 === 0 && userData.level <= 100) {
+            const milestoneRoleName = `Level ${userData.level}`;
+            const existingRole = message.guild.roles.cache.find(r => r.name === milestoneRoleName);
+            if (existingRole) {
+                await message.member.roles.add(existingRole).catch(() => {});
+            }
+        }
+        
         if (config.levelsChannelId) {
             const levelsChan = await message.guild.channels.fetch(config.levelsChannelId).catch(() => null);
-            if (levelsChan?.isTextBased()) {
+            if (levelsChan && levelsChan.isTextBased()) {
                 const levelUpEmbed = new EmbedBuilder()
                     .setTitle('🎉 LEVEL UP!')
                     .setDescription(`Congratulations ${message.author}! You reached **Level ${userData.level}**!${rewardNote}`)
@@ -493,43 +500,46 @@ client.once('clientReady', () => {
 
 client.on('guildMemberAdd', async member => {
     const config = getGuildConfig(member.guild.id);
-    if (config.unverifiedRoleId) await member.roles.add(config.unverifiedRoleId).catch(() => {});
+    
+    if (config.unverifiedRoleId) {
+        await member.roles.add(config.unverifiedRoleId).catch(() => {});
+    }
 
     if (config.verificationChannelId) {
         const channel = await member.guild.channels.fetch(config.verificationChannelId).catch(() => null);
-        if (channel?.isTextBased()) {
+        if (channel && channel.isTextBased()) {
             const verifyEmbed = new EmbedBuilder()
                 .setTitle('🏐 Welcome to Volleyball Revengers!')
-                .setDescription(`Welcome ${member}! Please click the **Verify Account** button below to complete server verification.`)
+                .setDescription(`Welcome ${member}! Please click the **Verify Account** button below to complete server verification and optional Meta/PlayFab account linking.`)
                 .setColor('#00D4FF')
                 .setFooter({ text: 'Volleyball Revengers • Verification System' });
 
             const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('verify_member_btn').setLabel('Verify Account').setStyle(ButtonStyle.Success).setEmoji('✅')
+                new ButtonBuilder()
+                    .setCustomId('verify_member_btn')
+                    .setLabel('Verify Account')
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji('✅')
             );
 
             await channel.send({ content: `${member}`, embeds: [verifyEmbed], components: [row] }).catch(() => {});
         }
     }
 
-    const logEmbed = new EmbedBuilder().setTitle('📥 Member Joined').setDescription(`${member.user.tag} (\`${member.id}\`) joined.`).setColor('#00FF7F').setTimestamp();
+    const logEmbed = new EmbedBuilder()
+        .setTitle('📥 Member Joined')
+        .setDescription(`${member.user.tag} (\`${member.id}\`) joined the server.`)
+        .setColor('#00FF7F')
+        .setTimestamp();
     await sendGuildLog(member.guild, 'member', logEmbed);
 });
 
-client.on('guildMemberRemove', async member => {
-    const logEmbed = new EmbedBuilder().setTitle('📤 Member Left').setDescription(`${member.user.tag} (\`${member.id}\`) left.`).setColor('#FF4B4B').setTimestamp();
-    await sendGuildLog(member.guild, 'member', logEmbed);
-});
-
-// ===================================================================
-// Interaction Router (Buttons, Modals, Slash Commands)
-// ===================================================================
 client.on('interactionCreate', async interaction => {
-    const config = getGuildConfig(interaction.guild?.id || '');
-
-    // 1. Verification Button Modal Popup (DO NOT defer before showing modal!)
     if (interaction.isButton() && interaction.customId === 'verify_member_btn') {
-        const modal = new ModalBuilder().setCustomId('verification_modal').setTitle('VBR Member Verification');
+        const modal = new ModalBuilder()
+            .setCustomId('verification_modal')
+            .setTitle('VBR Member Verification');
+
         const usernameInput = new TextInputBuilder()
             .setCustomId('meta_username_input')
             .setLabel('Meta / VBR Username or PlayFab ID')
@@ -541,7 +551,6 @@ client.on('interactionCreate', async interaction => {
         return await interaction.showModal(modal);
     }
 
-    // 2. Verification Modal Submission
     if (interaction.isModalSubmit() && interaction.customId === 'verification_modal') {
         await interaction.deferReply({ ephemeral: true });
 
@@ -556,52 +565,53 @@ client.on('interactionCreate', async interaction => {
                     DiscordUserId: String(interaction.user.id),
                     DiscordUsername: String(interaction.user.username)
                 });
-                linkMessage = result.success ? `\n🔗 **Account Linked:** Linked to PlayFab ID \`${result.linkedPlayerId}\`!` : `\n⚠️ **Linking Failed:** ${result.message || 'Invalid code.'}`;
+                linkMessage = result.success 
+                    ? `\n🔗 **Account Linked:** Linked to PlayFab ID \`${result.linkedPlayerId}\`!` 
+                    : `\n⚠️ **Linking Failed:** ${result.message || 'Invalid code.'}`;
             } else {
                 linkMessage = `\n📝 **Meta Username Logged:** Saved as \`${enteredUsername}\`.`;
             }
         } else {
-            linkMessage = `\n💡 *Account linking skipped. Use \`/link <code>\` anytime.*`;
+            linkMessage = `\n💡 *Account linking skipped. You can link anytime using \`/link <code>\`.*`;
         }
 
-        try {
-            if (config.unverifiedRoleId) await interaction.member.roles.remove(config.unverifiedRoleId).catch(() => {});
-            if (config.verifiedRoleId) await interaction.member.roles.add(config.verifiedRoleId).catch(() => {});
+        const config = getGuildConfig(interaction.guild?.id || '');
+        if (config.unverifiedRoleId) await interaction.member.roles.remove(config.unverifiedRoleId).catch(() => {});
+        if (config.verifiedRoleId) await interaction.member.roles.add(config.verifiedRoleId).catch(() => {});
 
-            const successEmbed = new EmbedBuilder().setTitle('✅ Verification Complete!').setDescription(`Welcome, ${interaction.user}! Full access granted.${linkMessage}`).setColor('#00FF7F');
-            await interaction.editReply({ embeds: [successEmbed] });
+        const successEmbed = new EmbedBuilder()
+            .setTitle('✅ Verification Complete!')
+            .setDescription(`Welcome to the server, ${interaction.user}! You have been granted full member access.${linkMessage}`)
+            .setColor('#00FF7F');
 
-            if (config.welcomeChannelId) {
-                const welcomeChan = await interaction.guild.channels.fetch(config.welcomeChannelId).catch(() => null);
-                if (welcomeChan?.isTextBased()) {
-                    const welcomeEmbed = new EmbedBuilder()
-                        .setTitle(`🏐 Welcome to Volleyball Revengers, ${interaction.user.username}!`)
-                        .setDescription(`Hey ${interaction.user}! Jump into chat, earn XP to level up, and climb the Leaderboards!`)
-                        .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-                        .setColor('#00D4FF')
-                        .setTimestamp();
+        await interaction.editReply({ embeds: [successEmbed] });
 
-                    await welcomeChan.send({ content: `🎉 Welcome ${interaction.user}!`, embeds: [welcomeEmbed] }).catch(() => {});
-                }
+        if (config.welcomeChannelId) {
+            const welcomeChan = await interaction.guild.channels.fetch(config.welcomeChannelId).catch(() => null);
+            if (welcomeChan && welcomeChan.isTextBased()) {
+                const welcomeEmbed = new EmbedBuilder()
+                    .setTitle(`🏐 Welcome to Volleyball Revengers, ${interaction.user.username}!`)
+                    .setDescription(`Hey ${interaction.user}! Welcome to the official server. Jump into chat, earn XP to level up, and climb the Leaderboards!`)
+                    .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+                    .setColor('#00D4FF')
+                    .setTimestamp();
+
+                await welcomeChan.send({ content: `🎉 Welcome ${interaction.user}!`, embeds: [welcomeEmbed] }).catch(() => {});
             }
-        } catch (err) {
-            await interaction.editReply({ content: '❌ Failed to assign roles.' });
         }
         return;
     }
 
-    // 3. Command Interactions
     if (!interaction.isChatInputCommand()) return;
-
-    // Immediately defer all slash commands to guarantee response within 3 seconds
     await interaction.deferReply({ ephemeral: true }).catch(() => {});
 
     const { commandName } = interaction;
+    const config = getGuildConfig(interaction.guild.id);
 
     try {
         if (commandName === 'level') {
             if (!checkPermission(interaction, 'verified')) {
-                return await interaction.editReply({ content: '❌ Verified role required.' });
+                return await interaction.editReply({ content: '❌ You must have the Verified role to use `/level`.' });
             }
 
             const key = `${interaction.guild.id}_${interaction.user.id}`;
@@ -635,7 +645,7 @@ client.on('interactionCreate', async interaction => {
 
         if (commandName === 'leaderboard') {
             if (!checkPermission(interaction, 'verified')) {
-                return await interaction.editReply({ content: '❌ Verified role required.' });
+                return await interaction.editReply({ content: '❌ You must have the Verified role to use `/leaderboard`.' });
             }
 
             const boardType = interaction.options.getString('type');
@@ -652,7 +662,7 @@ client.on('interactionCreate', async interaction => {
                 const top10 = serverEntries.slice(0, 10);
 
                 if (top10.length === 0) {
-                    leaderboardText = "*No level data recorded yet.*";
+                    leaderboardText = "*No level data recorded yet. Start chatting in the server!*";
                 } else {
                     top10.forEach((e, idx) => {
                         const crown = idx === 0 ? "👑 **#1 (In-Game XP Boost)** " : `**#${idx + 1}** `;
@@ -666,17 +676,79 @@ client.on('interactionCreate', async interaction => {
                 } else {
                     entries.forEach((entry, idx) => {
                         const crown = idx === 0 ? "👑 **#1** " : `**#${idx + 1}** `;
-                        leaderboardText += `${crown}**${entry.DisplayName || entry.PlayFabId}** — \`${entry.StatValue}\` ${boardType}\n`;
+                        const displayName = entry.DisplayName || entry.PlayFabId;
+                        leaderboardText += `${crown}**${displayName}** — \`${entry.StatValue}\` ${boardType}\n`;
                     });
                 }
             }
 
-            const lbEmbed = new EmbedBuilder().setTitle(`🏆 Top 10 Leaderboard: ${boardType}`).setDescription(leaderboardText).setColor('#FFD700');
+            const lbEmbed = new EmbedBuilder()
+                .setTitle(`🏆 Top 10 Leaderboard: ${boardType}`)
+                .setDescription(leaderboardText)
+                .setColor('#FFD700')
+                .setFooter({ text: 'Volleyball Revengers • Official Leaderboards' });
+
             return await interaction.editReply({ embeds: [lbEmbed] });
         }
 
+        if (commandName === 'rewards') {
+            const rewardsEmbed = new EmbedBuilder()
+                .setTitle('🏆 Locker Room | Official Level Rewards')
+                .setDescription(
+                    '**Level 10 Perks:** None. You just look cool!\n\n' +
+                    '**Level 20 Perks:** Grants Image & Reaction permissions & your chances of becoming one of the Test Drivers goes up.\n\n' +
+                    '**Level 30 Perks:** Grants a greater chance of getting selected to become a part of the Support Team. Support Team members have a chance of being promoted to moderator.\n\n' +
+                    '**Level 40 Perks:** *Coming Soon*\n\n' +
+                    '**Level 50 Perks:** *Coming Soon*\n\n' +
+                    '**Level 60 Perks:** *Coming Soon*\n\n' +
+                    '**Level 70 Perks:** *Coming Soon*\n\n' +
+                    '**Level 80 Perks:** *Coming Soon*\n\n' +
+                    '**Level 90 Perks:** *Coming Soon*\n\n' +
+                    '**Level 100 Perks:** *Coming Soon*'
+                )
+                .setColor('#1E90D8')
+                .setFooter({ text: 'Volleyball Revengers • Level Rewards System' });
+
+            return await interaction.editReply({ embeds: [rewardsEmbed] });
+        }
+
+        if (commandName === 'about') {
+            if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must have the Verified role to use this command.' });
+            }
+
+            const aboutEmbed = new EmbedBuilder()
+                .setTitle('🏐 About Volleyball Revengers')
+                .setDescription('**Volleyball Revengers** is an immersive VR Volleyball title developed in Unity.\n\n⚠️ **Development Status Update:** Currently, active game feature updates are on pause to allow the developer to focus on advancing **3D Modeling & Animation** skills. Development will resume stronger soon!')
+                .setColor('#FF9900')
+                .setFooter({ text: 'Volleyball Revengers • Developer Note' });
+
+            return await interaction.editReply({ embeds: [aboutEmbed] });
+        }
+
+        if (commandName === 'info') {
+            if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must have the Verified role to use this command.' });
+            }
+
+            const infoEmbed = new EmbedBuilder()
+                .setTitle('🏐 VBR Assistant Coach • Slash Command Directory')
+                .setDescription(`The server prefix is set to \`${config.prefix}\`. Below is the complete catalog of commands:`)
+                .addFields(
+                    { name: '👥 Public & Levels', value: '• `/about` — Game overview\n• `/info` — Slash directory\n• `/level` — Check server rank card\n• `/leaderboard` — View Top 10 leaderboards\n• `/rewards` — Locker Room perks\n• `/link <code>` — Link Discord to PlayFab' },
+                    { name: '🎉 Social & Competitive', value: '• `/club` — Club hub & invites\n• `/party` — Party hub & invites\n• `/friends` — Friend requests & roster\n• `/online-players` — Live online counter' },
+                    { name: '🛡️ Moderation & Staff', value: '• `/ban` — Discord server ban\n• `/ban-player` — In-game account ban\n• `/timeout` — User server timeout\n• `/mute-player` — VC mute\n• `/kick` — Kick user\n• `/lookup` — Multi-platform lookup\n• `/staff-break` — On-break role' },
+                    { name: '⚙️ Administration', value: '• `/setup` — Channels & role setup\n• `/log-settings` — Audit log toggles\n• `/msg` — Official embed/text dispatcher' }
+                )
+                .setColor('#00D4FF');
+
+            return await interaction.editReply({ embeds: [infoEmbed] });
+        }
+
         if (commandName === 'setup') {
-            if (!checkPermission(interaction, 'owner')) return await interaction.editReply({ content: '❌ Owner permissions required.' });
+            if (!checkPermission(interaction, 'owner')) {
+                return await interaction.editReply({ content: '❌ Only the Server Owner can use the setup command.' });
+            }
 
             const prefixOpt = interaction.options.getString('prefix');
             const verifiedRole = interaction.options.getRole('verified_role');
@@ -710,41 +782,65 @@ client.on('interactionCreate', async interaction => {
                 .setTitle('⚙️ Server Setup Updated')
                 .setColor('#00FF7F')
                 .addFields(
-                    { name: 'Prefix', value: `\`${config.prefix}\``, inline: true },
+                    { name: 'Command Prefix', value: `\`${config.prefix}\``, inline: true },
                     { name: 'Verified Role', value: config.verifiedRoleId ? `<@&${config.verifiedRoleId}>` : 'Not Set', inline: true },
                     { name: 'Unverified Role', value: config.unverifiedRoleId ? `<@&${config.unverifiedRoleId}>` : 'Not Set', inline: true },
+                    { name: 'Staff Role', value: config.staffRoleId ? `<@&${config.staffRoleId}>` : 'Not Set', inline: true },
+                    { name: 'Moderation Role', value: config.modRoleId ? `<@&${config.modRoleId}>` : 'Not Set', inline: true },
+                    { name: 'On-Break Role', value: config.onBreakRoleId ? `<@&${config.onBreakRoleId}>` : 'Not Set', inline: true },
                     { name: 'Verification Channel', value: config.verificationChannelId ? `<#${config.verificationChannelId}>` : 'Not Set', inline: true },
                     { name: 'Welcome Channel', value: config.welcomeChannelId ? `<#${config.welcomeChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Levels Channel', value: config.levelsChannelId ? `<#${config.levelsChannelId}>` : 'Not Set', inline: true }
+                    { name: 'Levels Channel', value: config.levelsChannelId ? `<#${config.levelsChannelId}>` : 'Not Set', inline: true },
+                    { name: 'Reports Channel', value: config.reportsChannelId ? `<#${config.reportsChannelId}>` : 'Not Set', inline: true },
+                    { name: 'Staff Breaks Channel', value: config.staffBreaksChannelId ? `<#${config.staffBreaksChannelId}>` : 'Not Set', inline: true },
+                    { name: 'Logs Channel', value: config.logsChannelId ? `<#${config.logsChannelId}>` : 'Not Set', inline: true },
+                    { name: 'Logins/Logouts Channel', value: config.loginsLogoutsChannelId ? `<#${config.loginsLogoutsChannelId}>` : 'Not Set', inline: true }
                 );
 
             return await interaction.editReply({ embeds: [setupEmbed] });
         }
 
-        if (commandName === 'account') {
-            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
-            const user = await enforceAccountLink(interaction, targetDiscordUser);
-            if (!user) return;
+        if (commandName === 'ban') {
+            if (!checkPermission(interaction, 'mod')) {
+                return await interaction.editReply({ content: '❌ You require Moderation permissions to use `/ban`.' });
+            }
 
-            const [stats, userData] = await Promise.all([getPlayerStats(user.PlayFabId), getPlayerData(user.PlayFabId)]);
-            const getStat = (k) => stats[k] ?? 0;
+            const targetUser = interaction.options.getUser('user');
+            const duration = interaction.options.getString('duration');
+            const reason = interaction.options.getString('reason');
 
-            const accountEmbed = new EmbedBuilder()
-                .setTitle(`🏐 Player Profile: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
-                .setColor('#1E90D8')
-                .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
+            const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+            if (member) {
+                await member.ban({ reason: `[${duration}] ${reason}` });
+            }
+
+            const banEmbed = new EmbedBuilder()
+                .setTitle('🔨 User Banned')
+                .setColor('#FF4B4B')
                 .addFields(
-                    { name: '🆔 Account Info', value: `**PlayFab ID:** \`${user.PlayFabId}\`\n**ELO:** ${getStat('PlayerElo')}`, inline: false },
-                    { name: '📊 Performance', value: `**Matches:** ${getStat('MatchesPlayed')}\n**Wins:** ${getStat('Wins')}\n**MVPs:** ${getStat('MVP')}`, inline: true },
-                    { name: '🎯 Actions', value: `**Kills:** ${getStat('Kills')}\n**Blocks:** ${getStat('Blocks')}\n**Assists:** ${getStat('Assists')}`, inline: true }
+                    { name: 'User', value: `${targetUser.tag} (\`${targetUser.id}\`)`, inline: true },
+                    { name: 'Duration', value: duration, inline: true },
+                    { name: 'Reason', value: reason, inline: false },
+                    { name: 'Moderator', value: `${interaction.user}`, inline: true }
                 );
 
-            return await interaction.editReply({ embeds: [accountEmbed] });
+            await sendGuildLog(interaction.guild, 'mod', banEmbed);
+            return await interaction.editReply({ embeds: [banEmbed] });
+        }
+
+        if (commandName === 'website') {
+            return await interaction.editReply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
         }
 
         if (commandName === 'link') {
-            const cleanCode = interaction.options.getString('code').replace(/\D/g, '');
-            if (cleanCode.length !== 6) return await interaction.editReply({ content: '❌ Provide a 6-digit code.' });
+            const rawCode = interaction.options.getString('code');
+            const cleanCode = rawCode.replace(/\D/g, '');
+
+            if (cleanCode.length !== 6) {
+                return await interaction.editReply({
+                    content: '❌ Invalid format! Provide a 6-digit code (e.g. `294-617`).'
+                });
+            }
 
             const result = await executeCloudScript("LinkDiscord", {
                 Code: cleanCode,
@@ -752,41 +848,57 @@ client.on('interactionCreate', async interaction => {
                 DiscordUsername: String(interaction.user.username)
             });
 
+            const embed = new EmbedBuilder()
+                .setTitle(result.success ? '🎉 Account Linked!' : '❌ Link Failed')
+                .setDescription(result.success 
+                    ? `Linked **${interaction.user.username}** to PlayFab ID \`${result.linkedPlayerId}\`.`
+                    : (result.message || 'The code is invalid or expired.'))
+                .setColor(result.success ? '#00FF7F' : '#FF4B4B')
+                .setFooter({ text: 'Volleyball Revengers • Profile Linker' });
+
             if (result.success && config.verifiedRoleId) {
                 await interaction.member.roles.add(config.verifiedRoleId).catch(() => {});
                 if (config.unverifiedRoleId) await interaction.member.roles.remove(config.unverifiedRoleId).catch(() => {});
             }
 
-            return await interaction.editReply({
-                embeds: [new EmbedBuilder()
-                    .setTitle(result.success ? '🎉 Account Linked!' : '❌ Link Failed')
-                    .setDescription(result.success ? `Linked **${interaction.user.username}** to PlayFab ID \`${result.linkedPlayerId}\`.` : result.message || 'Expired code.')
-                    .setColor(result.success ? '#00FF7F' : '#FF4B4B')]
-            });
+            await interaction.editReply({ embeds: [embed] });
         }
 
-        if (commandName === 'rewards') {
-            return await interaction.editReply({ embeds: [new EmbedBuilder()
-                .setTitle('🏆 Locker Room | Official Level Rewards')
-                .setDescription(
-                    '**Level 10 Perks:** None. You just look cool!\n\n' +
-                    '**Level 20 Perks:** Grants Image & Reaction permissions & test driver eligibility.\n\n' +
-                    '**Level 30 Perks:** Grants Support Team selection eligibility.\n\n' +
-                    '**Levels 40-100 Perks:** *Coming Soon*'
-                ).setColor('#1E90D8')] });
-        }
+        else if (commandName === 'account') {
+            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+            const user = await enforceAccountLink(interaction, targetDiscordUser);
+            if (!user) return;
 
-        if (commandName === 'about') {
-            return await interaction.editReply({ embeds: [new EmbedBuilder().setTitle('🏐 About Volleyball Revengers').setDescription('Developed in Unity. Feature updates currently on pause to focus on 3D Modeling & Animation.').setColor('#FF9900')] });
-        }
+            const playFabId = user.PlayFabId;
+            const displayName = user.TitleInfo?.DisplayName || 'Unknown Player';
 
-        if (commandName === 'website') {
-            return await interaction.editReply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
+            const [stats, userData] = await Promise.all([
+                getPlayerStats(playFabId),
+                getPlayerData(playFabId)
+            ]);
+
+            const getStat = (k) => stats[k] ?? 0;
+            const getData = (k) => userData[k]?.Value ?? 'N/A';
+
+            const accountEmbed = new EmbedBuilder()
+                .setTitle(`🏐 Player Profile: ${displayName}`)
+                .setColor('#1E90D8')
+                .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
+                .addFields(
+                    { name: '🆔 Account Info', value: `**Display Name:** ${displayName}\n**PlayFab ID:** \`${playFabId}\`\n**ELO:** ${getStat('PlayerElo')}`, inline: false },
+                    { name: '📏 Physical Attributes', value: `**Height:** ${getStat('PlayerHeight') || getData('PlayerHeight')}\n**Reach:** ${getStat('StandingReach')}\n**Wingspan:** ${getStat('Wingspan')}`, inline: true },
+                    { name: '📊 Performance', value: `**Matches:** ${getStat('MatchesPlayed')}\n**Wins:** ${getStat('Wins')}\n**MVPs:** ${getStat('MVP')}`, inline: true },
+                    { name: '🎯 In-Game Actions', value: `**Kills:** ${getStat('Kills')}\n**Blocks:** ${getStat('Blocks')}\n**Assists:** ${getStat('Assists')}`, inline: false }
+                )
+                .setFooter({ text: 'Volleyball Revengers • Player Statistics' })
+                .setTimestamp();
+
+            await interaction.editReply({ embeds: [accountEmbed] });
         }
 
     } catch (cmdErr) {
         console.error(`[Command Error] ${commandName}:`, cmdErr);
-        await interaction.editReply({ content: 'An error occurred while executing this command.' }).catch(() => {});
+        await interaction.editReply({ content: 'An unexpected error occurred while executing this command.' }).catch(() => {});
     }
 });
 
