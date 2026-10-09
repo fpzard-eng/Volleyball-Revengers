@@ -35,9 +35,12 @@ const client = new Client({
     ]
 });
 
+// ===================================================================
+// In-Memory Storage: Guild Configs, XP Levels & Cooldowns
+// ===================================================================
 const guildSettings = new Map();
-const userXP = new Map();
-const xpCooldowns = new Set();
+const userXP = new Map(); // Key: "guildId_userId" -> { xp: number, level: number }
+const xpCooldowns = new Set(); // Stores user IDs on 15s XP cooldown
 
 function getGuildConfig(guildId) {
     if (!guildSettings.has(guildId)) {
@@ -69,6 +72,9 @@ function getXPForLevel(level) {
     return 5 * (level ** 2) + (50 * level) + 100;
 }
 
+// ===================================================================
+// HTTP Server & Webhook Listener
+// ===================================================================
 const PORT = process.env.PORT || 10000;
 const server = http.createServer(async (req, res) => {
     const headers = {
@@ -129,6 +135,9 @@ setInterval(() => {
     }
 }, 300000);
 
+// ===================================================================
+// Slash Commands Setup
+// ===================================================================
 const commands = [
     new SlashCommandBuilder().setName('about').setDescription('Displays information about Volleyball Revengers and development status'),
     new SlashCommandBuilder().setName('info').setDescription('Generates a categorized listing of all slash commands'),
@@ -176,50 +185,60 @@ const commands = [
     new SlashCommandBuilder().setName('club-info').setDescription('Learn information about what clubs are in Volleyball Revengers'),
     new SlashCommandBuilder().setName('nt-info').setDescription('Learn about the National Tournament'),
     new SlashCommandBuilder().setName('online-players').setDescription('Show current global online player count'),
+    
+    // Moderation & Administrative Commands
     new SlashCommandBuilder()
         .setName('ban')
         .setDescription('Bans a user from the Discord server')
         .addUserOption(opt => opt.setName('user').setDescription('The user to ban').setRequired(true))
         .addStringOption(opt => opt.setName('duration').setDescription('Ban duration (e.g., 7d, 30d, permanent)').setRequired(true))
         .addStringOption(opt => opt.setName('reason').setDescription('Reason for the ban').setRequired(true)),
+    
     new SlashCommandBuilder()
         .setName('ban-player')
         .setDescription('Bans a player in-game via PlayFab')
         .addStringOption(opt => opt.setName('player').setDescription('PlayFab ID, Username, or Discord Mention').setRequired(true))
         .addStringOption(opt => opt.setName('duration').setDescription('Ban duration in hours').setRequired(true))
         .addStringOption(opt => opt.setName('reason').setDescription('Reason for in-game ban').setRequired(true)),
+
     new SlashCommandBuilder()
         .setName('timeout')
         .setDescription('Timeout a user in the server')
         .addUserOption(opt => opt.setName('user').setDescription('User to timeout').setRequired(true))
         .addStringOption(opt => opt.setName('duration').setDescription('Timeout duration in minutes').setRequired(true))
         .addStringOption(opt => opt.setName('reason').setDescription('Reason for timeout').setRequired(true)),
+
     new SlashCommandBuilder()
         .setName('mute-player')
         .setDescription('Bans a player from in-game Voice Chat')
         .addStringOption(opt => opt.setName('player').setDescription('PlayFab ID, Username, or Discord Mention').setRequired(true))
         .addStringOption(opt => opt.setName('duration').setDescription('Mute duration in hours').setRequired(true))
         .addStringOption(opt => opt.setName('reason').setDescription('Reason for VC mute').setRequired(true)),
+
     new SlashCommandBuilder()
         .setName('kick')
         .setDescription('Kicks a user from the server')
         .addUserOption(opt => opt.setName('user').setDescription('User to kick').setRequired(true))
         .addStringOption(opt => opt.setName('reason').setDescription('Reason for kick').setRequired(true)),
+
     new SlashCommandBuilder()
         .setName('lookup')
         .setDescription('Looks up a player based on Username, Discord Account, or Game ID')
         .addStringOption(opt => opt.setName('player').setDescription('Username, Discord ID/Mention, or PlayFab ID').setRequired(true)),
+
     new SlashCommandBuilder()
         .setName('staff-break')
         .setDescription('Puts you on break and notifies the staff breaks channel')
         .addStringOption(opt => opt.setName('duration').setDescription('Duration of break').setRequired(true))
         .addStringOption(opt => opt.setName('reason').setDescription('Reason for break').setRequired(true)),
+
     new SlashCommandBuilder()
         .setName('log-settings')
         .setDescription('Toggle daily log summaries and log channel preferences')
         .addBooleanOption(opt => opt.setName('daily_summary').setDescription('Toggle daily summary').setRequired(false))
         .addBooleanOption(opt => opt.setName('member_events').setDescription('Toggle member joins/leaves logging').setRequired(false))
         .addBooleanOption(opt => opt.setName('mod_actions').setDescription('Toggle moderation actions logging').setRequired(false)),
+
     new SlashCommandBuilder()
         .setName('setup')
         .setDescription('Configure server roles, channels, and command prefix')
@@ -236,6 +255,7 @@ const commands = [
         .addChannelOption(opt => opt.setName('staff_breaks_channel').setDescription('Channel for staff break logs'))
         .addChannelOption(opt => opt.setName('logs_channel').setDescription('Channel for general server logs'))
         .addChannelOption(opt => opt.setName('logins_logouts_channel').setDescription('Channel for game logins/logouts')),
+
     new SlashCommandBuilder()
         .setName('report')
         .setDescription('Report a community member for Discord server infractions or misconduct')
@@ -251,6 +271,7 @@ const commands = [
             ))
         .addStringOption(opt => opt.setName('details').setDescription('Explain what happened').setRequired(true))
         .addAttachmentOption(opt => opt.setName('proof').setDescription('Attach evidence screenshot').setRequired(false)),
+
     new SlashCommandBuilder().setName('msg').setDescription('Sends custom message (Admin Only)')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addChannelOption(opt => opt.setName('channel').setDescription('Target channel').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setRequired(true))
@@ -272,6 +293,9 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
     }
 })();
 
+// ===================================================================
+// PlayFab Helpers & CloudScript Wrappers
+// ===================================================================
 function executeCloudScript(functionName, functionParameter = {}, playFabId = null) {
     return new Promise((resolve) => {
         const payload = {
@@ -445,9 +469,13 @@ async function enforceAccountLink(interaction, targetUser = null) {
     return user;
 }
 
+// Process Safety
 process.on('unhandledRejection', error => console.error('[Unhandled Rejection]:', error));
 process.on('uncaughtException', error => console.error('[Uncaught Exception]:', error));
 
+// ===================================================================
+// Typing Listener: Level System & XP Processing (15s Cooldown)
+// ===================================================================
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.guild) return;
 
@@ -455,10 +483,10 @@ client.on('messageCreate', async message => {
     if (xpCooldowns.has(key)) return;
 
     xpCooldowns.add(key);
-    setTimeout(() => xpCooldowns.delete(key), 15000);
+    setTimeout(() => xpCooldowns.delete(key), 15000); // 15s XP cooldown
 
     let userData = userXP.get(key) || { xp: 0, level: 0 };
-    const gainedXP = Math.floor(Math.random() * 11) + 15;
+    const gainedXP = Math.floor(Math.random() * 11) + 15; // 15-25 XP
     userData.xp += gainedXP;
 
     const nextLevelXP = getXPForLevel(userData.level);
@@ -477,7 +505,8 @@ client.on('messageCreate', async message => {
         } else {
             rewardNote = "\n💡 *Link your PlayFab account using `/link <code>` to receive Aero-Coins on level-up!*";
         }
-        
+
+        // Milestone Role Assignment
         if (userData.level % 10 === 0 && userData.level <= 100) {
             const milestoneRoleName = `Level ${userData.level}`;
             const existingRole = message.guild.roles.cache.find(r => r.name === milestoneRoleName);
@@ -485,7 +514,8 @@ client.on('messageCreate', async message => {
                 await message.member.roles.add(existingRole).catch(() => {});
             }
         }
-        
+
+        // Send Level Up Announcement to Levels Channel
         if (config.levelsChannelId) {
             const levelsChan = await message.guild.channels.fetch(config.levelsChannelId).catch(() => null);
             if (levelsChan && levelsChan.isTextBased()) {
@@ -504,6 +534,9 @@ client.on('messageCreate', async message => {
     }
 });
 
+// ===================================================================
+// Guild Member Add & Event Listeners
+// ===================================================================
 client.once('clientReady', () => {
     console.log(`🤖 VBR Assistant Coach online as ${client.user.tag}!`);
 });
@@ -553,6 +586,9 @@ client.on('guildMemberRemove', async member => {
     await sendGuildLog(member.guild, 'member', logEmbed);
 });
 
+// ===================================================================
+// Modal & Verification Interaction Handlers
+// ===================================================================
 client.on('interactionCreate', async interaction => {
     const config = getGuildConfig(interaction.guild?.id || '');
 
@@ -563,7 +599,7 @@ client.on('interactionCreate', async interaction => {
 
         const usernameInput = new TextInputBuilder()
             .setCustomId('meta_username_input')
-            .setLabel('Meta / VBR Username or PlayFab ID')
+            .setLabel('Meta / VBR Username or 6-Digit Code')
             .setStyle(TextInputStyle.Short)
             .setPlaceholder('Enter username, 6-digit code, or leave blank to skip')
             .setRequired(false);
@@ -637,6 +673,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+// Text Prefix Command Listener (!)
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.guild) return;
 
@@ -663,10 +700,11 @@ client.on('messageCreate', async message => {
     }
 });
 
+// ===================================================================
+// Slash Interaction Event Listener
+// ===================================================================
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
-
-    // Acknowledge interaction within the 3-second limit to prevent timeouts
     await interaction.deferReply({ ephemeral: true }).catch(() => {});
 
     const { commandName } = interaction;
@@ -681,6 +719,7 @@ client.on('interactionCreate', async interaction => {
             const key = `${interaction.guild.id}_${interaction.user.id}`;
             const data = userXP.get(key) || { xp: 0, level: 0 };
             const neededXP = getXPForLevel(data.level);
+
             const serverEntries = [];
             userXP.forEach((val, k) => {
                 const [gId, uId] = k.split('_');
@@ -811,6 +850,142 @@ client.on('interactionCreate', async interaction => {
                 .setColor('#00D4FF');
 
             return await interaction.editReply({ embeds: [infoEmbed] });
+        }
+
+        if (commandName === 'club-info') {
+            const embed = new EmbedBuilder()
+                .setTitle('🏐 Club System Overview')
+                .setDescription('Clubs are the core competitive units in Volleyball Revengers. Build your roster, compete in regional circuits, and climb the standings toward full release.')
+                .addFields(
+                    { name: '👥 Roster Capacity', value: '• **Standard Roster:** 12 Players\n• **Max Roster (with Coaches):** 14 Players', inline: true },
+                    { name: '🏆 Competitive Paths', value: '• Open Gym / Regional Matches\n• Qualification Play-Ins\n• National Tournament (NT)', inline: false }
+                )
+                .setColor('#2B2D31')
+                .setFooter({ text: 'Volleyball Revengers • Club Information' });
+
+            return await interaction.editReply({ embeds: [embed] });
+        }
+
+        if (commandName === 'nt-info') {
+            const embed = new EmbedBuilder()
+                .setTitle('🏆 NATIONAL TOURNAMENT (NT)')
+                .setDescription('**The Premier Championship for Volleyball Revengers**')
+                .addFields(
+                    { 
+                        name: '🥇 QUALIFICATION ROUND', 
+                        value: '>>> • **Format:** Single-Elimination Knockout (Best of 3)\n• **Entrants:** Open Entrant Pool\n• **Advancement Goal:** Top **36 Teams** reach the League Stage', 
+                        inline: false
+                    },
+                    { name: '\u200B', value: '\u200B', inline: false },
+                    { 
+                        name: '🏐 LEAGUE STAGE (36 TEAMS)', 
+                        value: '>>> • **Structure:** 6 Pools of 6 Teams (Round-Robin)\n• **Match Length:** Best 2-out-of-3 sets\n• **Scoring System:**\n  └ **3 pts:** 2-0 Win | **2 pts:** 2-1 Win\n  └ **1 pt:** 1-2 Loss | **0 pts:** 0-2 Loss\n• **Advancement:** Top 2 per pool (12) + Top 4 Wildcards (**16 total**)', 
+                        inline: false 
+                    },
+                    { name: '\u200B', value: '\u200B', inline: false },
+                    { 
+                        name: '👑 FINALS — NT PLAYOFFS (16 TEAMS)', 
+                        value: '>>> • **Format:** Single-Elimination Bracket (Random Seeding)\n• **Match Length:** Best 3-out-of-5 sets\n• **Progression:** Round of 16 ➔ Quarterfinals ➔ Semifinals\n• **Podium Matches:**\n  └ 🥉 **3rd Place Match:** Semifinal Losers\n  └ 🏆 **Grand Final:** Semifinal Winners', 
+                        inline: false 
+                    }
+                )
+                .setColor('#FFD700')
+                .setFooter({ text: 'Volleyball Revengers • National Tournament Information' })
+                .setTimestamp();
+
+            return await interaction.editReply({ embeds: [embed] });
+        }
+
+        if (commandName === 'msg') {
+            if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+                return await interaction.editReply({ content: '❌ Administrator permission required.' });
+            }
+
+            const channelOption = interaction.options.getChannel('channel');
+            const messageText = interaction.options.getString('message');
+            const targetChannel = interaction.guild.channels.cache.get(channelOption.id);
+            if (!targetChannel || !targetChannel.isTextBased()) {
+                return await interaction.editReply({ content: '❌ Selected channel is not a valid text channel.' });
+            }
+
+            try {
+                await targetChannel.send(messageText);
+                return await interaction.editReply({ content: `✅ Sent to ${targetChannel}!` });
+            } catch (sendErr) {
+                console.error(`[MSG Command Error]:`, sendErr);
+                return await interaction.editReply({ content: `❌ Failed to send message to ${targetChannel}. Check bot permissions.` });
+            }
+        }
+
+        if (commandName === 'club') {
+            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+            const user = await enforceAccountLink(interaction, targetDiscordUser);
+            if (!user) return;
+
+            const userData = await getPlayerData(user.PlayFabId);
+            const clubName = userData.ClubName?.Value || 'Free Agent (No Club)';
+            const pendingInvites = userData.ClubInvites?.Value ? JSON.parse(userData.ClubInvites.Value) : [];
+
+            const clubEmbed = new EmbedBuilder()
+                .setTitle(`🛡️ Club Details: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
+                .setColor('#1E90D8')
+                .addFields(
+                    { name: '🏷️ Current Club', value: `**${clubName}**`, inline: false },
+                    { name: '📩 Pending Invites', value: pendingInvites.length > 0 ? pendingInvites.join(', ') : 'None', inline: false },
+                    { name: '🌐 Management Portal', value: 'Manage invitations, view stats, and access settings at:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/club', inline: false }
+                )
+                .setFooter({ text: 'Volleyball Revengers • Club Hub' });
+
+            await interaction.editReply({ embeds: [clubEmbed] });
+        }
+
+        if (commandName === 'party') {
+            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+            const user = await enforceAccountLink(interaction, targetDiscordUser);
+            if (!user) return;
+
+            const [userData, inbox] = await Promise.all([
+                getPlayerData(user.PlayFabId),
+                executeCloudScript("getInboxData", {}, user.PlayFabId)
+            ]);
+
+            const partyStatus = userData.ActivePartyId?.Value ? `In Party (\`${userData.ActivePartyId.Value}\`)` : 'Not in a Party';
+            const partyInvites = Array.isArray(inbox) 
+                ? inbox.filter(item => item.Type === 1).map(inv => `From **${inv.SenderDisplayName}** (ID: \`${inv.PayloadId}\`)`) 
+                : [];
+
+            const partyEmbed = new EmbedBuilder()
+                .setTitle(`🎉 Party Hub: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
+                .setColor('#FF007F')
+                .addFields(
+                    { name: '👥 Party Status', value: `**${partyStatus}**`, inline: false },
+                    { name: '📩 Pending Party Invites', value: partyInvites.length > 0 ? partyInvites.join('\n') : 'None', inline: false }
+                )
+                .setFooter({ text: 'Volleyball Revengers • Party Hub' });
+
+            await interaction.editReply({ embeds: [partyEmbed] });
+        }
+
+        if (commandName === 'friends') {
+            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+            const user = await enforceAccountLink(interaction, targetDiscordUser);
+            if (!user) return;
+
+            const userData = await getPlayerData(user.PlayFabId);
+            const friendList = userData.FriendList?.Value ? JSON.parse(userData.FriendList.Value) : [];
+            const pendingRequests = userData.FriendRequests?.Value ? JSON.parse(userData.FriendRequests.Value) : [];
+
+            const friendsEmbed = new EmbedBuilder()
+                .setTitle(`🤝 Friends Overview: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
+                .setColor('#00FF7F')
+                .addFields(
+                    { name: `👥 Friends (${friendList.length})`, value: friendList.length > 0 ? friendList.slice(0, 10).join(', ') : 'No friends added yet.', inline: false },
+                    { name: '📩 Pending Requests', value: pendingRequests.length > 0 ? pendingRequests.join(', ') : 'None', inline: false },
+                    { name: '🌐 Manage Friends', value: 'Add or remove friends on the dashboard:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/friends', inline: false }
+                )
+                .setFooter({ text: 'Volleyball Revengers • Social Network' });
+
+            await interaction.editReply({ embeds: [friendsEmbed] });
         }
 
         if (commandName === 'setup') {
