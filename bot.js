@@ -92,7 +92,7 @@ const server = http.createServer(async (req, res) => {
 
                 if (!discordId || !message) {
                     res.writeHead(400, { ...headers, 'Content-Type': 'application/json' });
-                    return res.end(JSON.stringify({ success: false, error: 'Missing parameters.' }));
+                    return res.end(JSON.stringify({ success: false, error: 'Missing discordId or message parameter.' }));
                 }
 
                 const targetUser = await client.users.fetch(discordId).catch(() => null);
@@ -272,6 +272,43 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
     }
 })();
 
+function executeCloudScript(functionName, functionParameter = {}, playFabId = null) {
+    return new Promise((resolve) => {
+        const payload = {
+            FunctionName: functionName,
+            FunctionParameter: functionParameter,
+            GeneratePlayStreamEvent: true
+        };
+        if (playFabId) payload.PlayFabId = playFabId;
+
+        PlayFabServer.ExecuteCloudScript(payload, (error, result) => {
+            if (error || !result?.data?.FunctionResult) {
+                console.error(`[CloudScript Error - ${functionName}]:`, error || result?.data?.Error);
+                resolve({ success: false, error: error?.errorMessage || 'CloudScript Execution Failed' });
+            } else {
+                resolve(result.data.FunctionResult);
+            }
+        });
+    });
+}
+
+function rewardAeroCoins(playFabId, amount) {
+    return new Promise((resolve) => {
+        PlayFabServer.SubtractUserVirtualCurrency({
+            PlayFabId: playFabId,
+            VirtualCurrency: "AC",
+            Amount: -amount
+        }, (error) => {
+            if (error) {
+                console.error("[PlayFab AC Grant Error]:", error);
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        });
+    });
+}
+
 function fetchPlayFabLeaderboard(statisticName) {
     return new Promise((resolve) => {
         PlayFabServer.GetLeaderboard({
@@ -280,6 +317,7 @@ function fetchPlayFabLeaderboard(statisticName) {
             MaxResultsCount: 10
         }, (error, result) => {
             if (error || !result?.data?.Leaderboard) {
+                console.error(`[Leaderboard Fetch Error - ${statisticName}]:`, error);
                 resolve([]);
             } else {
                 resolve(result.data.Leaderboard);
@@ -333,37 +371,6 @@ function getPlayFabUserByDiscordId(discordId) {
     });
 }
 
-function executeCloudScript(functionName, functionParameter = {}, playFabId = null) {
-    return new Promise((resolve) => {
-        const payload = {
-            FunctionName: functionName,
-            FunctionParameter: functionParameter,
-            GeneratePlayStreamEvent: true
-        };
-        if (playFabId) payload.PlayFabId = playFabId;
-
-        PlayFabServer.ExecuteCloudScript(payload, (error, result) => {
-            if (error || !result?.data?.FunctionResult) {
-                resolve({ success: false, error: error?.errorMessage || 'CloudScript Failed' });
-            } else {
-                resolve(result.data.FunctionResult);
-            }
-        });
-    });
-}
-
-function rewardAeroCoins(playFabId, amount) {
-    return new Promise((resolve) => {
-        PlayFabServer.SubtractUserVirtualCurrency({
-            PlayFabId: playFabId,
-            VirtualCurrency: "AC",
-            Amount: -amount
-        }, (error) => {
-            resolve(!error);
-        });
-    });
-}
-
 async function sendGuildLog(guild, logType, embed) {
     const config = getGuildConfig(guild.id);
     if (!config.logsChannelId) return;
@@ -383,7 +390,9 @@ function checkPermission(interaction, requiredType) {
 
     if (interaction.guild.ownerId === member.id) return true;
 
-    if (requiredType === 'owner') return interaction.guild.ownerId === member.id;
+    if (requiredType === 'owner') {
+        return interaction.guild.ownerId === member.id;
+    }
 
     if (requiredType === 'mod') {
         if (member.permissions.has(PermissionFlagsBits.Administrator) || member.permissions.has(PermissionFlagsBits.BanMembers)) return true;
@@ -449,7 +458,8 @@ client.on('messageCreate', async message => {
     setTimeout(() => xpCooldowns.delete(key), 15000);
 
     let userData = userXP.get(key) || { xp: 0, level: 0 };
-    userData.xp += Math.floor(Math.random() * 11) + 15;
+    const gainedXP = Math.floor(Math.random() * 11) + 15;
+    userData.xp += gainedXP;
 
     const nextLevelXP = getXPForLevel(userData.level);
 
@@ -502,7 +512,7 @@ client.on('guildMemberAdd', async member => {
     const config = getGuildConfig(member.guild.id);
     
     if (config.unverifiedRoleId) {
-        await member.roles.add(config.unverifiedRoleId).catch(() => {});
+        await member.roles.add(config.unverifiedRoleId).catch(err => console.error('[Role Add Error]:', err));
     }
 
     if (config.verificationChannelId) {
@@ -534,7 +544,18 @@ client.on('guildMemberAdd', async member => {
     await sendGuildLog(member.guild, 'member', logEmbed);
 });
 
+client.on('guildMemberRemove', async member => {
+    const logEmbed = new EmbedBuilder()
+        .setTitle('📤 Member Left')
+        .setDescription(`${member.user.tag} (\`${member.id}\`) left the server.`)
+        .setColor('#FF4B4B')
+        .setTimestamp();
+    await sendGuildLog(member.guild, 'member', logEmbed);
+});
+
 client.on('interactionCreate', async interaction => {
+    const config = getGuildConfig(interaction.guild?.id || '');
+
     if (interaction.isButton() && interaction.customId === 'verify_member_btn') {
         const modal = new ModalBuilder()
             .setCustomId('verification_modal')
@@ -547,8 +568,11 @@ client.on('interactionCreate', async interaction => {
             .setPlaceholder('Enter username, 6-digit code, or leave blank to skip')
             .setRequired(false);
 
-        modal.addComponents(new ActionRowBuilder().addComponents(usernameInput));
-        return await interaction.showModal(modal);
+        const firstActionRow = new ActionRowBuilder().addComponents(usernameInput);
+        modal.addComponents(firstActionRow);
+
+        await interaction.showModal(modal);
+        return;
     }
 
     if (interaction.isModalSubmit() && interaction.customId === 'verification_modal') {
@@ -565,9 +589,11 @@ client.on('interactionCreate', async interaction => {
                     DiscordUserId: String(interaction.user.id),
                     DiscordUsername: String(interaction.user.username)
                 });
-                linkMessage = result.success 
-                    ? `\n🔗 **Account Linked:** Linked to PlayFab ID \`${result.linkedPlayerId}\`!` 
-                    : `\n⚠️ **Linking Failed:** ${result.message || 'Invalid code.'}`;
+                if (result.success) {
+                    linkMessage = `\n🔗 **Account Linked:** Linked to PlayFab ID \`${result.linkedPlayerId}\`!`;
+                } else {
+                    linkMessage = `\n⚠️ **Linking Failed:** ${result.message || 'Invalid code.'}`;
+                }
             } else {
                 linkMessage = `\n📝 **Meta Username Logged:** Saved as \`${enteredUsername}\`.`;
             }
@@ -575,34 +601,72 @@ client.on('interactionCreate', async interaction => {
             linkMessage = `\n💡 *Account linking skipped. You can link anytime using \`/link <code>\`.*`;
         }
 
-        const config = getGuildConfig(interaction.guild?.id || '');
-        if (config.unverifiedRoleId) await interaction.member.roles.remove(config.unverifiedRoleId).catch(() => {});
-        if (config.verifiedRoleId) await interaction.member.roles.add(config.verifiedRoleId).catch(() => {});
-
-        const successEmbed = new EmbedBuilder()
-            .setTitle('✅ Verification Complete!')
-            .setDescription(`Welcome to the server, ${interaction.user}! You have been granted full member access.${linkMessage}`)
-            .setColor('#00FF7F');
-
-        await interaction.editReply({ embeds: [successEmbed] });
-
-        if (config.welcomeChannelId) {
-            const welcomeChan = await interaction.guild.channels.fetch(config.welcomeChannelId).catch(() => null);
-            if (welcomeChan && welcomeChan.isTextBased()) {
-                const welcomeEmbed = new EmbedBuilder()
-                    .setTitle(`🏐 Welcome to Volleyball Revengers, ${interaction.user.username}!`)
-                    .setDescription(`Hey ${interaction.user}! Welcome to the official server. Jump into chat, earn XP to level up, and climb the Leaderboards!`)
-                    .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-                    .setColor('#00D4FF')
-                    .setTimestamp();
-
-                await welcomeChan.send({ content: `🎉 Welcome ${interaction.user}!`, embeds: [welcomeEmbed] }).catch(() => {});
+        try {
+            if (config.unverifiedRoleId) {
+                await interaction.member.roles.remove(config.unverifiedRoleId).catch(() => {});
             }
-        }
-        return;
-    }
+            if (config.verifiedRoleId) {
+                await interaction.member.roles.add(config.verifiedRoleId).catch(() => {});
+            }
 
+            const successEmbed = new EmbedBuilder()
+                .setTitle('✅ Verification Complete!')
+                .setDescription(`Welcome to the server, ${interaction.user}! You have been granted full member access.${linkMessage}`)
+                .setColor('#00FF7F');
+
+            await interaction.editReply({ embeds: [successEmbed] });
+
+            if (config.welcomeChannelId) {
+                const welcomeChan = await interaction.guild.channels.fetch(config.welcomeChannelId).catch(() => null);
+                if (welcomeChan && welcomeChan.isTextBased()) {
+                    const welcomeEmbed = new EmbedBuilder()
+                        .setTitle(`🏐 Welcome to Volleyball Revengers, ${interaction.user.username}!`)
+                        .setDescription(`Hey ${interaction.user}! Welcome to the official server. Jump into chat, earn XP to level up, and climb the Leaderboards!`)
+                        .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+                        .setColor('#00D4FF')
+                        .setTimestamp();
+
+                    await welcomeChan.send({ content: `🎉 Welcome ${interaction.user}!`, embeds: [welcomeEmbed] }).catch(() => {});
+                }
+            }
+
+        } catch (err) {
+            console.error('[Verification Execution Error]:', err);
+            await interaction.editReply({ content: '❌ Failed to update roles. Please inform a server moderator.' });
+        }
+    }
+});
+
+client.on('messageCreate', async message => {
+    if (message.author.bot || !message.guild) return;
+
+    const config = getGuildConfig(message.guild.id);
+    const prefix = config.prefix || '!';
+
+    if (!message.content.startsWith(prefix)) return;
+
+    const args = message.content.slice(prefix.length).trim().split(/ +/);
+    const commandName = args.shift().toLowerCase();
+
+    if (commandName === 'help' || commandName === 'info') {
+        const helpEmbed = new EmbedBuilder()
+            .setTitle('🏐 VBR Assistant Coach • Commands Menu')
+            .setDescription(`Current prefix: \`${prefix}\` (Change using \`/setup\`)\nUse slash commands (\`/\`) or prefix commands (\`${prefix}\`).`)
+            .addFields(
+                { name: '👥 Player Commands', value: '`/about`, `/info`, `/level`, `/leaderboard`, `/rewards`, `/account`, `/club`, `/party`, `/friends`, `/is-linked`, `/check-status`, `/online-players`, `/report`' },
+                { name: '🛡️ Staff & Moderation', value: '`/ban`, `/ban-player`, `/timeout`, `/mute-player`, `/kick`, `/lookup`, `/staff-break`' },
+                { name: '⚙️ Server Management', value: '`/setup`, `/log-settings`, `/msg`' }
+            )
+            .setColor('#1E90D8');
+
+        await message.reply({ embeds: [helpEmbed] }).catch(() => {});
+    }
+});
+
+client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
+
+    // Acknowledge interaction within the 3-second limit to prevent timeouts
     await interaction.deferReply({ ephemeral: true }).catch(() => {});
 
     const { commandName } = interaction;
@@ -617,11 +681,12 @@ client.on('interactionCreate', async interaction => {
             const key = `${interaction.guild.id}_${interaction.user.id}`;
             const data = userXP.get(key) || { xp: 0, level: 0 };
             const neededXP = getXPForLevel(data.level);
-
             const serverEntries = [];
             userXP.forEach((val, k) => {
                 const [gId, uId] = k.split('_');
-                if (gId === interaction.guild.id) serverEntries.push({ userId: uId, ...val });
+                if (gId === interaction.guild.id) {
+                    serverEntries.push({ userId: uId, ...val });
+                }
             });
 
             serverEntries.sort((a, b) => b.level !== a.level ? b.level - a.level : b.xp - a.xp);
@@ -655,7 +720,9 @@ client.on('interactionCreate', async interaction => {
                 const serverEntries = [];
                 userXP.forEach((val, k) => {
                     const [gId, uId] = k.split('_');
-                    if (gId === interaction.guild.id) serverEntries.push({ userId: uId, ...val });
+                    if (gId === interaction.guild.id) {
+                        serverEntries.push({ userId: uId, ...val });
+                    }
                 });
 
                 serverEntries.sort((a, b) => b.level !== a.level ? b.level - a.level : b.xp - a.xp);
@@ -671,6 +738,7 @@ client.on('interactionCreate', async interaction => {
                 }
             } else {
                 const entries = await fetchPlayFabLeaderboard(boardType);
+
                 if (entries.length === 0) {
                     leaderboardText = `*No records found for ${boardType} leaderboard.*`;
                 } else {
@@ -800,6 +868,31 @@ client.on('interactionCreate', async interaction => {
             return await interaction.editReply({ embeds: [setupEmbed] });
         }
 
+        if (commandName === 'log-settings') {
+            if (!checkPermission(interaction, 'owner')) {
+                return await interaction.editReply({ content: '❌ Only the Server Owner can adjust log settings.' });
+            }
+
+            const dailySum = interaction.options.getBoolean('daily_summary');
+            const memberEv = interaction.options.getBoolean('member_events');
+            const modAct = interaction.options.getBoolean('mod_actions');
+
+            if (dailySum !== null) config.logSettings.dailySummary = dailySum;
+            if (memberEv !== null) config.logSettings.memberEvents = memberEv;
+            if (modAct !== null) config.logSettings.modActions = modAct;
+
+            const logEmbed = new EmbedBuilder()
+                .setTitle('📝 Audit Log Settings Configured')
+                .setColor('#00D4FF')
+                .addFields(
+                    { name: 'Daily Summaries', value: config.logSettings.dailySummary ? '✅ Enabled' : '❌ Disabled', inline: true },
+                    { name: 'Member Join/Leave Events', value: config.logSettings.memberEvents ? '✅ Enabled' : '❌ Disabled', inline: true },
+                    { name: 'Moderation Actions', value: config.logSettings.modActions ? '✅ Enabled' : '❌ Disabled', inline: true }
+                );
+
+            return await interaction.editReply({ embeds: [logEmbed] });
+        }
+
         if (commandName === 'ban') {
             if (!checkPermission(interaction, 'mod')) {
                 return await interaction.editReply({ content: '❌ You require Moderation permissions to use `/ban`.' });
@@ -811,7 +904,7 @@ client.on('interactionCreate', async interaction => {
 
             const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
             if (member) {
-                await member.ban({ reason: `[${duration}] ${reason}` });
+                await member.ban({ reason: `[${duration}]${reason}` });
             }
 
             const banEmbed = new EmbedBuilder()
@@ -826,6 +919,213 @@ client.on('interactionCreate', async interaction => {
 
             await sendGuildLog(interaction.guild, 'mod', banEmbed);
             return await interaction.editReply({ embeds: [banEmbed] });
+        }
+
+        if (commandName === 'ban-player') {
+            if (!checkPermission(interaction, 'mod')) {
+                return await interaction.editReply({ content: '❌ You require Moderation permissions to use `/ban-player`.' });
+            }
+
+            const playerInput = interaction.options.getString('player');
+            const durationHours = parseInt(interaction.options.getString('duration'), 10) || 24;
+            const reason = interaction.options.getString('reason');
+
+            let targetPlayFabId = playerInput;
+            if (playerInput.startsWith('<@') && playerInput.endsWith('>')) {
+                const cleanId = playerInput.replace(/[<@!>]/g, '');
+                const { user } = await getPlayFabUserByDiscordId(cleanId);
+                if (user) targetPlayFabId = user.PlayFabId;
+            }
+
+            const banResult = await new Promise((resolve) => {
+                PlayFabServer.BanUsers({
+                    Bans: [{
+                        PlayFabId: targetPlayFabId,
+                        DurationInHours: durationHours,
+                        Reason: reason
+                    }]
+                }, (err, res) => {
+                    if (err || !res?.data) resolve({ success: false, error: err?.errorMessage || 'Ban failed' });
+                    else resolve({ success: true, banId: res.data.BanData?.[0]?.BanId });
+                });
+            });
+
+            const gameBanEmbed = new EmbedBuilder()
+                .setTitle(banResult.success ? '🚫 In-Game Player Banned' : '❌ Ban Failed')
+                .setColor(banResult.success ? '#FF4B4B' : '#808080')
+                .addFields(
+                    { name: 'PlayFab ID', value: `\`${targetPlayFabId}\``, inline: true },
+                    { name: 'Duration', value: `${durationHours} Hours`, inline: true },
+                    { name: 'Reason', value: reason, inline: false }
+                );
+
+            if (banResult.success) await sendGuildLog(interaction.guild, 'mod', gameBanEmbed);
+            return await interaction.editReply({ embeds: [gameBanEmbed] });
+        }
+
+        if (commandName === 'timeout') {
+            if (!checkPermission(interaction, 'staff')) {
+                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/timeout`.' });
+            }
+
+            const targetUser = interaction.options.getUser('user');
+            const minutes = parseInt(interaction.options.getString('duration'), 10) || 10;
+            const reason = interaction.options.getString('reason');
+
+            const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+            if (!member) {
+                return await interaction.editReply({ content: '❌ User not found in this server.' });
+            }
+
+            await member.timeout(minutes * 60 * 1000, reason);
+
+            const timeoutEmbed = new EmbedBuilder()
+                .setTitle('⏳ User Timed Out')
+                .setColor('#FF9900')
+                .addFields(
+                    { name: 'User', value: `${targetUser.tag}`, inline: true },
+                    { name: 'Duration', value: `${minutes} Minutes`, inline: true },
+                    { name: 'Reason', value: reason, inline: false }
+                );
+
+            await sendGuildLog(interaction.guild, 'mod', timeoutEmbed);
+            return await interaction.editReply({ embeds: [timeoutEmbed] });
+        }
+
+        if (commandName === 'mute-player') {
+            if (!checkPermission(interaction, 'staff')) {
+                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/mute-player`.' });
+            }
+
+            const playerInput = interaction.options.getString('player');
+            const duration = interaction.options.getString('duration');
+            const reason = interaction.options.getString('reason');
+
+            let targetPlayFabId = playerInput;
+            if (playerInput.startsWith('<@') && playerInput.endsWith('>')) {
+                const cleanId = playerInput.replace(/[<@!>]/g, '');
+                const { user } = await getPlayFabUserByDiscordId(cleanId);
+                if (user) targetPlayFabId = user.PlayFabId;
+            }
+
+            await executeCloudScript('blockPlayerSignal', { TargetId: targetPlayFabId });
+
+            const muteEmbed = new EmbedBuilder()
+                .setTitle('🎙️ In-Game Voice Chat Muted')
+                .setColor('#FF9900')
+                .addFields(
+                    { name: 'Target Player', value: `\`${targetPlayFabId}\``, inline: true },
+                    { name: 'Duration', value: duration, inline: true },
+                    { name: 'Reason', value: reason, inline: false }
+                );
+
+            await sendGuildLog(interaction.guild, 'mod', muteEmbed);
+            return await interaction.editReply({ embeds: [muteEmbed] });
+        }
+
+        if (commandName === 'kick') {
+            if (!checkPermission(interaction, 'staff')) {
+                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/kick`.' });
+            }
+
+            const targetUser = interaction.options.getUser('user');
+            const reason = interaction.options.getString('reason');
+
+            const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+            if (!member) {
+                return await interaction.editReply({ content: '❌ User not found in this server.' });
+            }
+
+            await member.kick(reason);
+
+            const kickEmbed = new EmbedBuilder()
+                .setTitle('👢 User Kicked')
+                .setColor('#FF9900')
+                .addFields(
+                    { name: 'User', value: `${targetUser.tag}`, inline: true },
+                    { name: 'Reason', value: reason, inline: false }
+                );
+
+            await sendGuildLog(interaction.guild, 'mod', kickEmbed);
+            return await interaction.editReply({ embeds: [kickEmbed] });
+        }
+
+        if (commandName === 'lookup') {
+            const playerInput = interaction.options.getString('player').replace(/[<@!>]/g, '');
+
+            let pfUser = null;
+            if (/^\d{17,19}$/.test(playerInput)) {
+                const res = await getPlayFabUserByDiscordId(playerInput);
+                pfUser = res.user;
+            }
+
+            if (!pfUser) {
+                pfUser = await new Promise((resolve) => {
+                    PlayFabServer.GetUserAccountInfo({ PlayFabId: playerInput }, (err, res) => {
+                        if (!err && res?.data?.UserInfo) resolve(res.data.UserInfo);
+                        else {
+                            PlayFabServer.GetUserAccountInfo({ TitleDisplayName: playerInput }, (err2, res2) => {
+                                if (!err2 && res2?.data?.UserInfo) resolve(res2.data.UserInfo);
+                                else resolve(null);
+                            });
+                        }
+                    });
+                });
+            }
+
+            if (!pfUser) {
+                return await interaction.editReply({ content: '❌ No matching player profile found in PlayFab.' });
+            }
+
+            const [stats, userData] = await Promise.all([
+                getPlayerStats(pfUser.PlayFabId),
+                getPlayerData(pfUser.PlayFabId)
+            ]);
+
+            const lookupEmbed = new EmbedBuilder()
+                .setTitle(`🔍 Player Lookup: ${pfUser.TitleInfo?.DisplayName || 'Unknown'}`)
+                .setColor('#00D4FF')
+                .addFields(
+                    { name: 'PlayFab ID', value: `\`${pfUser.PlayFabId}\``, inline: true },
+                    { name: 'Created', value: `<t:${Math.floor(new Date(pfUser.Created).getTime() / 1000)}:R>`, inline: true },
+                    { name: 'Linked Discord ID', value: userData.DiscordUserId?.Value ? `<@${userData.DiscordUserId.Value}> (\`${userData.DiscordUserId.Value}\`)` : '*Unlinked*', inline: false },
+                    { name: 'ELO Rating', value: `${stats.PlayerElo ?? 0}`, inline: true },
+                    { name: 'Total Matches', value: `${stats.MatchesPlayed ?? 0}`, inline: true }
+                );
+
+            return await interaction.editReply({ embeds: [lookupEmbed] });
+        }
+
+        if (commandName === 'staff-break') {
+            if (!checkPermission(interaction, 'staff')) {
+                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/staff-break`.' });
+            }
+
+            const duration = interaction.options.getString('duration');
+            const reason = interaction.options.getString('reason');
+
+            if (config.onBreakRoleId) {
+                await interaction.member.roles.add(config.onBreakRoleId).catch(() => {});
+            }
+
+            const breakEmbed = new EmbedBuilder()
+                .setTitle('🏖️ Staff Member On Break')
+                .setColor('#FF9900')
+                .setDescription(`${interaction.user} has officially gone on break.`)
+                .addFields(
+                    { name: 'Duration', value: duration, inline: true },
+                    { name: 'Reason', value: reason, inline: false }
+                )
+                .setTimestamp();
+
+            if (config.staffBreaksChannelId) {
+                const breakChannel = await interaction.guild.channels.fetch(config.staffBreaksChannelId).catch(() => null);
+                if (breakChannel && breakChannel.isTextBased()) {
+                    await breakChannel.send({ embeds: [breakEmbed] });
+                }
+            }
+
+            return await interaction.editReply({ content: '✅ Your break status has been logged and role applied.' });
         }
 
         if (commandName === 'website') {
@@ -864,6 +1164,55 @@ client.on('interactionCreate', async interaction => {
             await interaction.editReply({ embeds: [embed] });
         }
 
+        else if (commandName === 'is-linked') {
+            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+            const isSelf = targetDiscordUser.id === interaction.user.id;
+
+            const { user } = await getPlayFabUserByDiscordId(targetDiscordUser.id);
+
+            const isLinkedEmbed = new EmbedBuilder().setTimestamp();
+
+            if (user) {
+                const displayName = user.TitleInfo?.DisplayName || 'Not Set';
+                isLinkedEmbed
+                    .setTitle('🔗 Account Linked')
+                    .setColor('#00FF7F')
+                    .setDescription(isSelf 
+                        ? `Your Discord account is linked to PlayFab!` 
+                        : `**${targetDiscordUser.username}**'s Discord account is linked to PlayFab.`)
+                    .addFields(
+                        { name: '👤 Discord User', value: `${targetDiscordUser}`, inline: true },
+                        { name: '🎮 Display Name', value: displayName, inline: true },
+                        { name: '🆔 PlayFab ID', value: `\`${user.PlayFabId}\``, inline: false }
+                    )
+                    .setFooter({ text: 'Volleyball Revengers • Account Verification' });
+            } else {
+                isLinkedEmbed
+                    .setTitle('❌ Account Not Linked')
+                    .setColor('#FF4B4B')
+                    .setDescription(isSelf 
+                        ? 'Your Discord account is not linked to PlayFab yet. Use `/link <code>` to link your account.' 
+                        : `**${targetDiscordUser.username}** has not linked their Discord account yet.`)
+                    .setFooter({ text: 'Volleyball Revengers • Account Verification' });
+            }
+
+            await interaction.editReply({ embeds: [isLinkedEmbed] });
+        }
+
+        else if (commandName === 'online-players') {
+            const cloudResult = await executeCloudScript("getGlobalOnlinePlayerCount");
+            const count = cloudResult.success ? (cloudResult.onlineCount || 0) : 0;
+
+            const onlineEmbed = new EmbedBuilder()
+                .setTitle('🌐 Online Players')
+                .setColor('#00D4FF')
+                .setDescription(`There are currently **${count}** player${count === 1 ? '' : 's'} online in **Volleyball Revengers**!`)
+                .setFooter({ text: 'Volleyball Revengers • Live Server Monitor' })
+                .setTimestamp();
+
+            await interaction.editReply({ embeds: [onlineEmbed] });
+        }
+
         else if (commandName === 'account') {
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
@@ -894,6 +1243,50 @@ client.on('interactionCreate', async interaction => {
                 .setTimestamp();
 
             await interaction.editReply({ embeds: [accountEmbed] });
+        }
+
+        else if (commandName === 'report') {
+            const targetUser = interaction.options.getUser('user');
+            const reason = interaction.options.getString('reason');
+            const details = interaction.options.getString('details');
+            const proofAttachment = interaction.options.getAttachment('proof');
+
+            if (targetUser.id === interaction.user.id) {
+                return await interaction.editReply({ content: '❌ You cannot file a report against yourself.' });
+            }
+
+            const staffChannelId = config.reportsChannelId || process.env.DISCORD_STAFF_CHANNEL_ID;
+            const modRoleId = config.modRoleId || process.env.DISCORD_MOD_ROLE_ID;
+
+            if (!staffChannelId) {
+                return await interaction.editReply({ content: '❌ Configuration error: Reports channel is not configured.' });
+            }
+
+            const staffChannel = await client.channels.fetch(staffChannelId).catch(() => null);
+            if (!staffChannel || !staffChannel.isTextBased()) {
+                return await interaction.editReply({ content: '❌ Unable to find or access the designated Reports Channel.' });
+            }
+
+            const reportEmbed = new EmbedBuilder()
+                .setTitle('🛡️ NEW COMMUNITY REPORT')
+                .setColor('#FF9900')
+                .addFields(
+                    { name: '👤 Reported Member', value: `${targetUser} (\`${targetUser.id}\`)`, inline: false },
+                    { name: '⚠️ Violation Category', value: `\`${reason}\``, inline: true },
+                    { name: '📩 Filed By', value: `${interaction.user}`, inline: true },
+                    { name: '📝 Details', value: details, inline: false }
+                )
+                .setFooter({ text: `Volleyball Revengers • Case ID: ${interaction.id}` })
+                .setTimestamp();
+
+            if (proofAttachment?.contentType?.startsWith('image/')) {
+                reportEmbed.setImage(proofAttachment.url);
+            }
+
+            const pingMention = modRoleId ? `<@&${modRoleId}>` : '**@Moderation Team**';
+            await staffChannel.send({ content: `🛡️ ${pingMention} - New Report Received!`, embeds: [reportEmbed] });
+
+            return await interaction.editReply({ content: '✅ Report successfully dispatched to moderation team.' });
         }
 
     } catch (cmdErr) {
