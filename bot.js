@@ -814,10 +814,10 @@ client.on('interactionCreate', async interaction => {
                 .setTitle('🏆 Locker Room | Official Level Rewards')
                 .setDescription(
                     '**Level 10 Perks:** None. You just look cool!\n\n' +
-                    '**Level 20 Perks:** Grants Image & Reaction permissions & your chances of becoming one of the Test Drivers goes up.\n\n' +
-                    '**Level 30 Perks:** Grants a greater chance of getting selected to become a part of the Support Team. Support Team members have a chance of being promoted to moderator.\n\n' +
-                    '**Level 40 Perks:** *Coming Soon*\n\n' +
-                    '**Level 50 Perks:** *Coming Soon*\n\n' +
+                    '**Level 20 Perks:** Grants Image & Reaction permissions.\n\n' +
+                    '**Level 30 Perks:** Grants a greater chance of being selected to become a part of the Support Team. Support Team members have a chance of being promoted to moderator.\n\n' +
+                    '**Level 40 Perks:** Grants a greater chance of being selected to become a part of the Testing Squad.\n\n' +
+                    '**Level 50 Perks:** Grants a greater chance of being selected to become a part of the Moderation Team & you get 1k Aero-Coins.\n\n' +
                     '**Level 60 Perks:** *Coming Soon*\n\n' +
                     '**Level 70 Perks:** *Coming Soon*\n\n' +
                     '**Level 80 Perks:** *Coming Soon*\n\n' +
