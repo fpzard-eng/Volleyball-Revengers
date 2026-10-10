@@ -15,7 +15,8 @@ const {
     ButtonStyle,
     ModalBuilder,
     TextInputBuilder,
-    TextInputStyle
+    TextInputStyle,
+    MessageFlags
 } = require('discord.js');
 
 const PlayFab = require('playfab-sdk');
@@ -461,59 +462,59 @@ process.on('uncaughtException', error => console.error('[Uncaught Exception]:', 
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.guild) return;
 
+    // --- Part 1: XP & Leveling Logic ---
     const key = `${message.guild.id}_${message.author.id}`;
-    if (xpCooldowns.has(key)) return;
+    if (!xpCooldowns.has(key)) {
+        xpCooldowns.add(key);
+        setTimeout(() => xpCooldowns.delete(key), 15000);
 
-    xpCooldowns.add(key);
-    setTimeout(() => xpCooldowns.delete(key), 15000);
+        let userData = userXP.get(key) || { xp: 0, level: 0 };
+        const gainedXP = Math.floor(Math.random() * 11) + 15;
+        userData.xp += gainedXP;
 
-    let userData = userXP.get(key) || { xp: 0, level: 0 };
-    const gainedXP = Math.floor(Math.random() * 11) + 15;
-    userData.xp += gainedXP;
+        const nextLevelXP = getXPForLevel(userData.level);
 
-    const nextLevelXP = getXPForLevel(userData.level);
+        if (userData.xp >= nextLevelXP) {
+            userData.level += 1;
+            userXP.set(key, userData);
 
-    if (userData.xp >= nextLevelXP) {
-        userData.level += 1;
-        userXP.set(key, userData);
+            const config = getGuildConfig(message.guild.id);
+            const { user: pfUser } = await getPlayFabUserByDiscordId(message.author.id);
 
-        const config = getGuildConfig(message.guild.id);
-        const { user: pfUser } = await getPlayFabUserByDiscordId(message.author.id);
+            let rewardNote = "";
+            if (pfUser) {
+                const granted = await rewardAeroCoins(pfUser.PlayFabId, 100);
+                if (granted) rewardNote = "\n💰 **+100 Aero-Coins (AC)** added to your VBR PlayFab account!";
+            } else {
+                rewardNote = "\n💡 *Link your PlayFab account using `/link <code>` to receive Aero-Coins on level-up!*";
+            }
+            
+            if (userData.level % 10 === 0 && userData.level <= 100) {
+                const milestoneRoleName = `Level ${userData.level}`;
+                const existingRole = message.guild.roles.cache.find(r => r.name === milestoneRoleName);
+                if (existingRole) {
+                    await message.member.roles.add(existingRole).catch(() => {});
+                }
+            }
+            
+            if (config.levelsChannelId) {
+                const levelsChan = await message.guild.channels.fetch(config.levelsChannelId).catch(() => null);
+                if (levelsChan && levelsChan.isTextBased()) {
+                    const levelUpEmbed = new EmbedBuilder()
+                        .setTitle('🎉 LEVEL UP!')
+                        .setDescription(`Congratulations ${message.author}! You reached **Level ${userData.level}**!${rewardNote}`)
+                        .setColor('#00FF7F')
+                        .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+                        .setFooter({ text: 'Volleyball Revengers • Leveling System' });
 
-        let rewardNote = "";
-        if (pfUser) {
-            const granted = await rewardAeroCoins(pfUser.PlayFabId, 100);
-            if (granted) rewardNote = "\n💰 **+100 Aero-Coins (AC)** added to your VBR PlayFab account!";
+                    await levelsChan.send({ content: `${message.author}`, embeds: [levelUpEmbed] }).catch(() => {});
+                }
+            }
         } else {
-            rewardNote = "\n💡 *Link your PlayFab account using `/link <code>` to receive Aero-Coins on level-up!*";
+            userXP.set(key, userData);
         }
-        
-        if (userData.level % 10 === 0 && userData.level <= 100) {
-            const milestoneRoleName = `Level ${userData.level}`;
-            const existingRole = message.guild.roles.cache.find(r => r.name === milestoneRoleName);
-            if (existingRole) {
-                await message.member.roles.add(existingRole).catch(() => {});
-            }
-        }
-        
-        if (config.levelsChannelId) {
-            const levelsChan = await message.guild.channels.fetch(config.levelsChannelId).catch(() => null);
-            if (levelsChan && levelsChan.isTextBased()) {
-                const levelUpEmbed = new EmbedBuilder()
-                    .setTitle('🎉 LEVEL UP!')
-                    .setDescription(`Congratulations ${message.author}! You reached **Level ${userData.level}**!${rewardNote}`)
-                    .setColor('#00FF7F')
-                    .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
-                    .setFooter({ text: 'Volleyball Revengers • Leveling System' });
-
-                await levelsChan.send({ content: `${message.author}`, embeds: [levelUpEmbed] }).catch(() => {});
-            }
-        }
-    } else {
-        userXP.set(key, userData);
     }
-});
-
+    
 client.once('clientReady', () => {
     console.log(`🤖 VBR Assistant Coach online as ${client.user.tag}!`);
 });
@@ -586,7 +587,7 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.isModalSubmit() && interaction.customId === 'verification_modal') {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
         const enteredUsername = interaction.fields.getTextInputValue('meta_username_input').trim();
         let linkMessage = "";
@@ -675,7 +676,7 @@ client.on('messageCreate', async message => {
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => {});
 
     const { commandName } = interaction;
     const config = getGuildConfig(interaction.guild?.id || '');
