@@ -462,7 +462,6 @@ process.on('uncaughtException', error => console.error('[Uncaught Exception]:', 
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.guild) return;
 
-    // --- Part 1: XP & Leveling Logic ---
     const key = `${message.guild.id}_${message.author.id}`;
     if (!xpCooldowns.has(key)) {
         xpCooldowns.add(key);
@@ -681,21 +680,20 @@ client.on('interactionCreate', async interaction => {
     try {
         if (commandName === 'about') {
             if (!checkPermission(interaction, 'verified')) {
-                return await interaction.editReply({ content: '❌ You must have the Verified role to use this command.' });
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
             }
 
             const aboutEmbed = new EmbedBuilder()
                 .setTitle('🏐 About Volleyball Revengers')
                 .setDescription('**Volleyball Revengers** is an immersive VR Volleyball title developed in Unity.\n\n⚠️ **Development Status Update:** Currently, active game feature updates are on pause to allow @lizardyness to focus on advancing **3D Modeling & Animation** skills. Development will resume stronger soon!')
                 .setColor('#FF9900')
-                .setFooter({ text: 'Volleyball Revengers • Developer Note' });
 
             return await interaction.editReply({ embeds: [aboutEmbed] });
         }
 
         else if (commandName === 'info') {
-            if (!checkPermission(interaction, 'verified')) {
-                return await interaction.editReply({ content: '❌ You must have the Verified role to use this command.' });
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
             }
 
             const infoEmbed = new EmbedBuilder()
@@ -711,12 +709,16 @@ client.on('interactionCreate', async interaction => {
         }
         
         else if (commandName === 'website') {
-            return await interaction.editReply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
+            return await interaction.editReply({ content: '🌐 **Official VBR Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
         }
 
          else if (commandName === 'level') {
-            if (!checkPermission(interaction, 'verified')) {
-                return await interaction.editReply({ content: '❌ You must have the Verified role to use `/level`.' });
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
             }
 
             const key = `${interaction.guild.id}_${interaction.user.id}`;
@@ -751,8 +753,8 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'leaderboard') {
-            if (!checkPermission(interaction, 'verified')) {
-                return await interaction.editReply({ content: '❌ You must have the Verified role to use `/leaderboard`.' });
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
             }
 
             const boardType = interaction.options.getString('type');
@@ -802,6 +804,10 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'rewards') {
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const rewardsEmbed = new EmbedBuilder()
                 .setTitle('🏆 Locker Room | Official Level Rewards')
                 .setDescription(
@@ -817,12 +823,16 @@ client.on('interactionCreate', async interaction => {
                     '**Level 100 Perks:** *Coming Soon*'
                 )
                 .setColor('#1E90D8')
-                .setFooter({ text: 'Volleyball Revengers • Level Rewards System' });
+                .setFooter({ text: 'Volleyball Revengers • Level Rewards' });
 
             return await interaction.editReply({ embeds: [rewardsEmbed] });
         }
 
         else if (commandName === 'link') {
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const rawCode = interaction.options.getString('code');
             const cleanCode = rawCode.replace(/\D/g, '');
 
@@ -855,6 +865,10 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'is-linked') {
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const isSelf = targetDiscordUser.id === interaction.user.id;
 
@@ -890,6 +904,10 @@ client.on('interactionCreate', async interaction => {
         }
         
         else if (commandName === 'check-status') {
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const targetDiscordUser = interaction.options.getUser('target');
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
@@ -929,6 +947,10 @@ client.on('interactionCreate', async interaction => {
         }
         
         else if (commandName === 'account') {
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
@@ -961,6 +983,10 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'club') {
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
@@ -983,6 +1009,10 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'party') {
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
@@ -1010,6 +1040,10 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'friends') {
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
             if (!user) return;
@@ -1032,6 +1066,10 @@ client.on('interactionCreate', async interaction => {
         }
         
         else if (commandName === 'club-info') {
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const embed = new EmbedBuilder()
                 .setTitle('🏐 Club System Overview')
                 .setDescription('Clubs are the core competitive units in Volleyball Revengers. Build your roster, compete in regional circuits, and climb the standings toward full release.')
@@ -1046,6 +1084,10 @@ client.on('interactionCreate', async interaction => {
         }
         
         else if (commandName === 'nt-info') {
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const embed = new EmbedBuilder()
                 .setTitle('🏆 NATIONAL TOURNAMENT (NT)')
                 .setDescription('**The Premier Championship for Volleyball Revengers**')
@@ -1076,6 +1118,10 @@ client.on('interactionCreate', async interaction => {
         }
         
         else if (commandName === 'online-players') {
+             if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const cloudResult = await executeCloudScript("getGlobalOnlinePlayerCount");
             const count = cloudResult.success ? (cloudResult.onlineCount || 0) : 0;
 
@@ -1091,7 +1137,7 @@ client.on('interactionCreate', async interaction => {
 
         else if (commandName === 'ban') {
             if (!checkPermission(interaction, 'mod')) {
-                return await interaction.editReply({ content: '❌ You require Moderation permissions to use `/ban`.' });
+                return await interaction.editReply({ content: '❌ You require Moderation permissions to use this command.' });
             }
 
             const targetUser = interaction.options.getUser('user');
@@ -1119,9 +1165,9 @@ client.on('interactionCreate', async interaction => {
 
         else if (commandName === 'ban-player') {
             if (!checkPermission(interaction, 'mod')) {
-                return await interaction.editReply({ content: '❌ You require Moderation permissions to use `/ban-player`.' });
+                return await interaction.editReply({ content: '❌ You require Moderation permissions to use this command.' });
             }
-
+            
             const playerInput = interaction.options.getString('player');
             const durationHours = parseInt(interaction.options.getString('duration'), 10) || 24;
             const reason = interaction.options.getString('reason');
@@ -1161,7 +1207,7 @@ client.on('interactionCreate', async interaction => {
 
         else if (commandName === 'timeout') {
             if (!checkPermission(interaction, 'staff')) {
-                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/timeout`.' });
+                return await interaction.editReply({ content: '❌ You must be a Staff member to use this command.' });
             }
 
             const targetUser = interaction.options.getUser('user');
@@ -1190,7 +1236,7 @@ client.on('interactionCreate', async interaction => {
 
         else if (commandName === 'mute-player') {
             if (!checkPermission(interaction, 'staff')) {
-                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/mute-player`.' });
+                return await interaction.editReply({ content: '❌ You must be a Staff member to use this command.' });
             }
 
             const playerInput = interaction.options.getString('player');
@@ -1220,10 +1266,10 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'kick') {
-            if (!checkPermission(interaction, 'staff')) {
-                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/kick`.' });
+           if (!checkPermission(interaction, 'staff')) {
+                return await interaction.editReply({ content: '❌ You must be a Staff member to use this command.' });
             }
-
+            
             const targetUser = interaction.options.getUser('user');
             const reason = interaction.options.getString('reason');
 
@@ -1294,7 +1340,7 @@ client.on('interactionCreate', async interaction => {
 
         else if (commandName === 'staff-break') {
             if (!checkPermission(interaction, 'staff')) {
-                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/staff-break`.' });
+                return await interaction.editReply({ content: '❌ You must be a Staff member to use this command.' });
             }
 
             const duration = interaction.options.getString('duration');
@@ -1405,6 +1451,10 @@ client.on('interactionCreate', async interaction => {
         }
 
         else if (commandName === 'report') {
+            if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
+            }
+            
             const targetUser = interaction.options.getUser('user');
             const reason = interaction.options.getString('reason');
             const details = interaction.options.getString('details');
