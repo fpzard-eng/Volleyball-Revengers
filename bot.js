@@ -35,12 +35,9 @@ const client = new Client({
     ]
 });
 
-// ===================================================================
-// In-Memory Storage: Guild Configs, XP Levels & Cooldowns
-// ===================================================================
 const guildSettings = new Map();
-const userXP = new Map(); // Key: "guildId_userId" -> { xp: number, level: number }
-const xpCooldowns = new Set(); // Stores user IDs on 15s XP cooldown
+const userXP = new Map();
+const xpCooldowns = new Set();
 
 function getGuildConfig(guildId) {
     if (!guildSettings.has(guildId)) {
@@ -72,9 +69,6 @@ function getXPForLevel(level) {
     return 5 * (level ** 2) + (50 * level) + 100;
 }
 
-// ===================================================================
-// HTTP Server & Webhook Listener
-// ===================================================================
 const PORT = process.env.PORT || 10000;
 const server = http.createServer(async (req, res) => {
     const headers = {
@@ -135,9 +129,6 @@ setInterval(() => {
     }
 }, 300000);
 
-// ===================================================================
-// Slash Commands Setup
-// ===================================================================
 const commands = [
     new SlashCommandBuilder().setName('about').setDescription('Displays information about Volleyball Revengers and development status'),
     new SlashCommandBuilder().setName('info').setDescription('Generates a categorized listing of all slash commands'),
@@ -185,8 +176,6 @@ const commands = [
     new SlashCommandBuilder().setName('club-info').setDescription('Learn information about what clubs are in Volleyball Revengers'),
     new SlashCommandBuilder().setName('nt-info').setDescription('Learn about the National Tournament'),
     new SlashCommandBuilder().setName('online-players').setDescription('Show current global online player count'),
-    
-    // Moderation & Administrative Commands
     new SlashCommandBuilder()
         .setName('ban')
         .setDescription('Bans a user from the Discord server')
@@ -293,9 +282,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
     }
 })();
 
-// ===================================================================
-// PlayFab Helpers & CloudScript Wrappers
-// ===================================================================
 function executeCloudScript(functionName, functionParameter = {}, playFabId = null) {
     return new Promise((resolve) => {
         const payload = {
@@ -469,13 +455,9 @@ async function enforceAccountLink(interaction, targetUser = null) {
     return user;
 }
 
-// Process Safety
 process.on('unhandledRejection', error => console.error('[Unhandled Rejection]:', error));
 process.on('uncaughtException', error => console.error('[Uncaught Exception]:', error));
 
-// ===================================================================
-// Typing Listener: Level System & XP Processing (15s Cooldown)
-// ===================================================================
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.guild) return;
 
@@ -483,10 +465,10 @@ client.on('messageCreate', async message => {
     if (xpCooldowns.has(key)) return;
 
     xpCooldowns.add(key);
-    setTimeout(() => xpCooldowns.delete(key), 15000); // 15s XP cooldown
+    setTimeout(() => xpCooldowns.delete(key), 15000);
 
     let userData = userXP.get(key) || { xp: 0, level: 0 };
-    const gainedXP = Math.floor(Math.random() * 11) + 15; // 15-25 XP
+    const gainedXP = Math.floor(Math.random() * 11) + 15;
     userData.xp += gainedXP;
 
     const nextLevelXP = getXPForLevel(userData.level);
@@ -505,8 +487,7 @@ client.on('messageCreate', async message => {
         } else {
             rewardNote = "\n💡 *Link your PlayFab account using `/link <code>` to receive Aero-Coins on level-up!*";
         }
-
-        // Milestone Role Assignment
+        
         if (userData.level % 10 === 0 && userData.level <= 100) {
             const milestoneRoleName = `Level ${userData.level}`;
             const existingRole = message.guild.roles.cache.find(r => r.name === milestoneRoleName);
@@ -514,8 +495,7 @@ client.on('messageCreate', async message => {
                 await message.member.roles.add(existingRole).catch(() => {});
             }
         }
-
-        // Send Level Up Announcement to Levels Channel
+        
         if (config.levelsChannelId) {
             const levelsChan = await message.guild.channels.fetch(config.levelsChannelId).catch(() => null);
             if (levelsChan && levelsChan.isTextBased()) {
@@ -534,9 +514,6 @@ client.on('messageCreate', async message => {
     }
 });
 
-// ===================================================================
-// Guild Member Add & Event Listeners
-// ===================================================================
 client.once('clientReady', () => {
     console.log(`🤖 VBR Assistant Coach online as ${client.user.tag}!`);
 });
@@ -586,9 +563,6 @@ client.on('guildMemberRemove', async member => {
     await sendGuildLog(member.guild, 'member', logEmbed);
 });
 
-// ===================================================================
-// Modal & Verification Interaction Handlers
-// ===================================================================
 client.on('interactionCreate', async interaction => {
     const config = getGuildConfig(interaction.guild?.id || '');
 
@@ -673,7 +647,6 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Text Prefix Command Listener (!)
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.guild) return;
 
@@ -700,24 +673,50 @@ client.on('messageCreate', async message => {
     }
 });
 
-// ===================================================================
-// Slash Interaction Event Listener
-// ===================================================================
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
-    
-try {
-    await interaction.deferReply({ ephemeral: true });
-} catch (deferErr) {
-    console.error('[Interaction Acknowledge Error]:', deferErr);
-    return;
-}
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
 
-const { commandName } = interaction;
-const config = getGuildConfig(interaction.guild?.id || '');
+    const { commandName } = interaction;
+    const config = getGuildConfig(interaction.guild?.id || '');
     
     try {
-        if (commandName === 'level') {
+        if (commandName === 'about') {
+            if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must have the Verified role to use this command.' });
+            }
+
+            const aboutEmbed = new EmbedBuilder()
+                .setTitle('🏐 About Volleyball Revengers')
+                .setDescription('**Volleyball Revengers** is an immersive VR Volleyball title developed in Unity.\n\n⚠️ **Development Status Update:** Currently, active game feature updates are on pause to allow @lizardyness to focus on advancing **3D Modeling & Animation** skills. Development will resume stronger soon!')
+                .setColor('#FF9900')
+                .setFooter({ text: 'Volleyball Revengers • Developer Note' });
+
+            return await interaction.editReply({ embeds: [aboutEmbed] });
+        }
+
+        else if (commandName === 'info') {
+            if (!checkPermission(interaction, 'verified')) {
+                return await interaction.editReply({ content: '❌ You must have the Verified role to use this command.' });
+            }
+
+            const infoEmbed = new EmbedBuilder()
+                .setTitle('🏐 VBR Assistant Coach • Slash Command Directory')
+                .setDescription(`The server prefix is set to \`${config.prefix}\`. Below is the complete catalog of commands:`)
+                .addFields(
+                    { name: '👥 Public & Levels', value: '• `/about` — Game overview\n• `/info` — Slash directory\n• `/level` — Check server rank card\n• `/leaderboard` — View Top 10 leaderboards\n• `/rewards` — Locker Room perks\n• `/link <code>` — Link Discord to PlayFab' },
+                    { name: '🎉 Social & Competitive', value: '• `/club` — Club hub & invites\n• `/party` — Party hub & invites\n• `/friends` — Friend requests & roster\n• `/online-players` — Live online counter' },
+                )
+                .setColor('#00D4FF');
+
+            return await interaction.editReply({ embeds: [infoEmbed] });
+        }
+        
+        else if (commandName === 'website') {
+            return await interaction.editReply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
+        }
+
+         else if (commandName === 'level') {
             if (!checkPermission(interaction, 'verified')) {
                 return await interaction.editReply({ content: '❌ You must have the Verified role to use `/level`.' });
             }
@@ -753,7 +752,7 @@ const config = getGuildConfig(interaction.guild?.id || '');
             return await interaction.editReply({ embeds: [levelCardEmbed] });
         }
 
-        if (commandName === 'leaderboard') {
+        else if (commandName === 'leaderboard') {
             if (!checkPermission(interaction, 'verified')) {
                 return await interaction.editReply({ content: '❌ You must have the Verified role to use `/leaderboard`.' });
             }
@@ -804,7 +803,7 @@ const config = getGuildConfig(interaction.guild?.id || '');
             return await interaction.editReply({ embeds: [lbEmbed] });
         }
 
-        if (commandName === 'rewards') {
+        else if (commandName === 'rewards') {
             const rewardsEmbed = new EmbedBuilder()
                 .setTitle('🏆 Locker Room | Official Level Rewards')
                 .setDescription(
@@ -825,495 +824,7 @@ const config = getGuildConfig(interaction.guild?.id || '');
             return await interaction.editReply({ embeds: [rewardsEmbed] });
         }
 
-        if (commandName === 'about') {
-            if (!checkPermission(interaction, 'verified')) {
-                return await interaction.editReply({ content: '❌ You must have the Verified role to use this command.' });
-            }
-
-            const aboutEmbed = new EmbedBuilder()
-                .setTitle('🏐 About Volleyball Revengers')
-                .setDescription('**Volleyball Revengers** is an immersive VR Volleyball title developed in Unity.\n\n⚠️ **Development Status Update:** Currently, active game feature updates are on pause to allow the developer to focus on advancing **3D Modeling & Animation** skills. Development will resume stronger soon!')
-                .setColor('#FF9900')
-                .setFooter({ text: 'Volleyball Revengers • Developer Note' });
-
-            return await interaction.editReply({ embeds: [aboutEmbed] });
-        }
-
-        if (commandName === 'info') {
-            if (!checkPermission(interaction, 'verified')) {
-                return await interaction.editReply({ content: '❌ You must have the Verified role to use this command.' });
-            }
-
-            const infoEmbed = new EmbedBuilder()
-                .setTitle('🏐 VBR Assistant Coach • Slash Command Directory')
-                .setDescription(`The server prefix is set to \`${config.prefix}\`. Below is the complete catalog of commands:`)
-                .addFields(
-                    { name: '👥 Public & Levels', value: '• `/about` — Game overview\n• `/info` — Slash directory\n• `/level` — Check server rank card\n• `/leaderboard` — View Top 10 leaderboards\n• `/rewards` — Locker Room perks\n• `/link <code>` — Link Discord to PlayFab' },
-                    { name: '🎉 Social & Competitive', value: '• `/club` — Club hub & invites\n• `/party` — Party hub & invites\n• `/friends` — Friend requests & roster\n• `/online-players` — Live online counter' },
-                    { name: '🛡️ Moderation & Staff', value: '• `/ban` — Discord server ban\n• `/ban-player` — In-game account ban\n• `/timeout` — User server timeout\n• `/mute-player` — VC mute\n• `/kick` — Kick user\n• `/lookup` — Multi-platform lookup\n• `/staff-break` — On-break role' },
-                    { name: '⚙️ Administration', value: '• `/setup` — Channels & role setup\n• `/log-settings` — Audit log toggles\n• `/msg` — Official embed/text dispatcher' }
-                )
-                .setColor('#00D4FF');
-
-            return await interaction.editReply({ embeds: [infoEmbed] });
-        }
-
-        if (commandName === 'club-info') {
-            const embed = new EmbedBuilder()
-                .setTitle('🏐 Club System Overview')
-                .setDescription('Clubs are the core competitive units in Volleyball Revengers. Build your roster, compete in regional circuits, and climb the standings toward full release.')
-                .addFields(
-                    { name: '👥 Roster Capacity', value: '• **Standard Roster:** 12 Players\n• **Max Roster (with Coaches):** 14 Players', inline: true },
-                    { name: '🏆 Competitive Paths', value: '• Open Gym / Regional Matches\n• Qualification Play-Ins\n• National Tournament (NT)', inline: false }
-                )
-                .setColor('#2B2D31')
-                .setFooter({ text: 'Volleyball Revengers • Club Information' });
-
-            return await interaction.editReply({ embeds: [embed] });
-        }
-
-        if (commandName === 'nt-info') {
-            const embed = new EmbedBuilder()
-                .setTitle('🏆 NATIONAL TOURNAMENT (NT)')
-                .setDescription('**The Premier Championship for Volleyball Revengers**')
-                .addFields(
-                    { 
-                        name: '🥇 QUALIFICATION ROUND', 
-                        value: '>>> • **Format:** Single-Elimination Knockout (Best of 3)\n• **Entrants:** Open Entrant Pool\n• **Advancement Goal:** Top **36 Teams** reach the League Stage', 
-                        inline: false
-                    },
-                    { name: '\u200B', value: '\u200B', inline: false },
-                    { 
-                        name: '🏐 LEAGUE STAGE (36 TEAMS)', 
-                        value: '>>> • **Structure:** 6 Pools of 6 Teams (Round-Robin)\n• **Match Length:** Best 2-out-of-3 sets\n• **Scoring System:**\n  └ **3 pts:** 2-0 Win | **2 pts:** 2-1 Win\n  └ **1 pt:** 1-2 Loss | **0 pts:** 0-2 Loss\n• **Advancement:** Top 2 per pool (12) + Top 4 Wildcards (**16 total**)', 
-                        inline: false 
-                    },
-                    { name: '\u200B', value: '\u200B', inline: false },
-                    { 
-                        name: '👑 FINALS — NT PLAYOFFS (16 TEAMS)', 
-                        value: '>>> • **Format:** Single-Elimination Bracket (Random Seeding)\n• **Match Length:** Best 3-out-of-5 sets\n• **Progression:** Round of 16 ➔ Quarterfinals ➔ Semifinals\n• **Podium Matches:**\n  └ 🥉 **3rd Place Match:** Semifinal Losers\n  └ 🏆 **Grand Final:** Semifinal Winners', 
-                        inline: false 
-                    }
-                )
-                .setColor('#FFD700')
-                .setFooter({ text: 'Volleyball Revengers • National Tournament Information' })
-                .setTimestamp();
-
-            return await interaction.editReply({ embeds: [embed] });
-        }
-
-        if (commandName === 'msg') {
-            if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-                return await interaction.editReply({ content: '❌ Administrator permission required.' });
-            }
-
-            const channelOption = interaction.options.getChannel('channel');
-            const messageText = interaction.options.getString('message');
-            const targetChannel = interaction.guild.channels.cache.get(channelOption.id);
-            if (!targetChannel || !targetChannel.isTextBased()) {
-                return await interaction.editReply({ content: '❌ Selected channel is not a valid text channel.' });
-            }
-
-            try {
-                await targetChannel.send(messageText);
-                return await interaction.editReply({ content: `✅ Sent to ${targetChannel}!` });
-            } catch (sendErr) {
-                console.error(`[MSG Command Error]:`, sendErr);
-                return await interaction.editReply({ content: `❌ Failed to send message to ${targetChannel}. Check bot permissions.` });
-            }
-        }
-
-        if (commandName === 'club') {
-            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
-            const user = await enforceAccountLink(interaction, targetDiscordUser);
-            if (!user) return;
-
-            const userData = await getPlayerData(user.PlayFabId);
-            const clubName = userData.ClubName?.Value || 'Free Agent (No Club)';
-            const pendingInvites = userData.ClubInvites?.Value ? JSON.parse(userData.ClubInvites.Value) : [];
-
-            const clubEmbed = new EmbedBuilder()
-                .setTitle(`🛡️ Club Details: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
-                .setColor('#1E90D8')
-                .addFields(
-                    { name: '🏷️ Current Club', value: `**${clubName}**`, inline: false },
-                    { name: '📩 Pending Invites', value: pendingInvites.length > 0 ? pendingInvites.join(', ') : 'None', inline: false },
-                    { name: '🌐 Management Portal', value: 'Manage invitations, view stats, and access settings at:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/club', inline: false }
-                )
-                .setFooter({ text: 'Volleyball Revengers • Club Hub' });
-
-            await interaction.editReply({ embeds: [clubEmbed] });
-        }
-
-        if (commandName === 'party') {
-            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
-            const user = await enforceAccountLink(interaction, targetDiscordUser);
-            if (!user) return;
-
-            const [userData, inbox] = await Promise.all([
-                getPlayerData(user.PlayFabId),
-                executeCloudScript("getInboxData", {}, user.PlayFabId)
-            ]);
-
-            const partyStatus = userData.ActivePartyId?.Value ? `In Party (\`${userData.ActivePartyId.Value}\`)` : 'Not in a Party';
-            const partyInvites = Array.isArray(inbox) 
-                ? inbox.filter(item => item.Type === 1).map(inv => `From **${inv.SenderDisplayName}** (ID: \`${inv.PayloadId}\`)`) 
-                : [];
-
-            const partyEmbed = new EmbedBuilder()
-                .setTitle(`🎉 Party Hub: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
-                .setColor('#FF007F')
-                .addFields(
-                    { name: '👥 Party Status', value: `**${partyStatus}**`, inline: false },
-                    { name: '📩 Pending Party Invites', value: partyInvites.length > 0 ? partyInvites.join('\n') : 'None', inline: false }
-                )
-                .setFooter({ text: 'Volleyball Revengers • Party Hub' });
-
-            await interaction.editReply({ embeds: [partyEmbed] });
-        }
-
-        if (commandName === 'friends') {
-            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
-            const user = await enforceAccountLink(interaction, targetDiscordUser);
-            if (!user) return;
-
-            const userData = await getPlayerData(user.PlayFabId);
-            const friendList = userData.FriendList?.Value ? JSON.parse(userData.FriendList.Value) : [];
-            const pendingRequests = userData.FriendRequests?.Value ? JSON.parse(userData.FriendRequests.Value) : [];
-
-            const friendsEmbed = new EmbedBuilder()
-                .setTitle(`🤝 Friends Overview: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
-                .setColor('#00FF7F')
-                .addFields(
-                    { name: `👥 Friends (${friendList.length})`, value: friendList.length > 0 ? friendList.slice(0, 10).join(', ') : 'No friends added yet.', inline: false },
-                    { name: '📩 Pending Requests', value: pendingRequests.length > 0 ? pendingRequests.join(', ') : 'None', inline: false },
-                    { name: '🌐 Manage Friends', value: 'Add or remove friends on the dashboard:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/friends', inline: false }
-                )
-                .setFooter({ text: 'Volleyball Revengers • Social Network' });
-
-            await interaction.editReply({ embeds: [friendsEmbed] });
-        }
-
-        if (commandName === 'setup') {
-            if (!checkPermission(interaction, 'owner')) {
-                return await interaction.editReply({ content: '❌ Only the Server Owner can use the setup command.' });
-            }
-
-            const prefixOpt = interaction.options.getString('prefix');
-            const verifiedRole = interaction.options.getRole('verified_role');
-            const unverifiedRole = interaction.options.getRole('unverified_role');
-            const staffRole = interaction.options.getRole('staff_role');
-            const modRole = interaction.options.getRole('moderation_role');
-            const onBreakRole = interaction.options.getRole('on_break_role');
-            const verifyChan = interaction.options.getChannel('verification_channel');
-            const welcomeChan = interaction.options.getChannel('welcome_channel');
-            const levelsChan = interaction.options.getChannel('levels_channel');
-            const reportsChan = interaction.options.getChannel('reports_channel');
-            const staffBreaksChan = interaction.options.getChannel('staff_breaks_channel');
-            const logsChan = interaction.options.getChannel('logs_channel');
-            const loginsLogoutsChan = interaction.options.getChannel('logins_logouts_channel');
-
-            if (prefixOpt) config.prefix = prefixOpt;
-            if (verifiedRole) config.verifiedRoleId = verifiedRole.id;
-            if (unverifiedRole) config.unverifiedRoleId = unverifiedRole.id;
-            if (staffRole) config.staffRoleId = staffRole.id;
-            if (modRole) config.modRoleId = modRole.id;
-            if (onBreakRole) config.onBreakRoleId = onBreakRole.id;
-            if (verifyChan) config.verificationChannelId = verifyChan.id;
-            if (welcomeChan) config.welcomeChannelId = welcomeChan.id;
-            if (levelsChan) config.levelsChannelId = levelsChan.id;
-            if (reportsChan) config.reportsChannelId = reportsChan.id;
-            if (staffBreaksChan) config.staffBreaksChannelId = staffBreaksChan.id;
-            if (logsChan) config.logsChannelId = logsChan.id;
-            if (loginsLogoutsChan) config.loginsLogoutsChannelId = loginsLogoutsChan.id;
-
-            const setupEmbed = new EmbedBuilder()
-                .setTitle('⚙️ Server Setup Updated')
-                .setColor('#00FF7F')
-                .addFields(
-                    { name: 'Command Prefix', value: `\`${config.prefix}\``, inline: true },
-                    { name: 'Verified Role', value: config.verifiedRoleId ? `<@&${config.verifiedRoleId}>` : 'Not Set', inline: true },
-                    { name: 'Unverified Role', value: config.unverifiedRoleId ? `<@&${config.unverifiedRoleId}>` : 'Not Set', inline: true },
-                    { name: 'Staff Role', value: config.staffRoleId ? `<@&${config.staffRoleId}>` : 'Not Set', inline: true },
-                    { name: 'Moderation Role', value: config.modRoleId ? `<@&${config.modRoleId}>` : 'Not Set', inline: true },
-                    { name: 'On-Break Role', value: config.onBreakRoleId ? `<@&${config.onBreakRoleId}>` : 'Not Set', inline: true },
-                    { name: 'Verification Channel', value: config.verificationChannelId ? `<#${config.verificationChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Welcome Channel', value: config.welcomeChannelId ? `<#${config.welcomeChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Levels Channel', value: config.levelsChannelId ? `<#${config.levelsChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Reports Channel', value: config.reportsChannelId ? `<#${config.reportsChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Staff Breaks Channel', value: config.staffBreaksChannelId ? `<#${config.staffBreaksChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Logs Channel', value: config.logsChannelId ? `<#${config.logsChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Logins/Logouts Channel', value: config.loginsLogoutsChannelId ? `<#${config.loginsLogoutsChannelId}>` : 'Not Set', inline: true }
-                );
-
-            return await interaction.editReply({ embeds: [setupEmbed] });
-        }
-
-        if (commandName === 'log-settings') {
-            if (!checkPermission(interaction, 'owner')) {
-                return await interaction.editReply({ content: '❌ Only the Server Owner can adjust log settings.' });
-            }
-
-            const dailySum = interaction.options.getBoolean('daily_summary');
-            const memberEv = interaction.options.getBoolean('member_events');
-            const modAct = interaction.options.getBoolean('mod_actions');
-
-            if (dailySum !== null) config.logSettings.dailySummary = dailySum;
-            if (memberEv !== null) config.logSettings.memberEvents = memberEv;
-            if (modAct !== null) config.logSettings.modActions = modAct;
-
-            const logEmbed = new EmbedBuilder()
-                .setTitle('📝 Audit Log Settings Configured')
-                .setColor('#00D4FF')
-                .addFields(
-                    { name: 'Daily Summaries', value: config.logSettings.dailySummary ? '✅ Enabled' : '❌ Disabled', inline: true },
-                    { name: 'Member Join/Leave Events', value: config.logSettings.memberEvents ? '✅ Enabled' : '❌ Disabled', inline: true },
-                    { name: 'Moderation Actions', value: config.logSettings.modActions ? '✅ Enabled' : '❌ Disabled', inline: true }
-                );
-
-            return await interaction.editReply({ embeds: [logEmbed] });
-        }
-
-        if (commandName === 'ban') {
-            if (!checkPermission(interaction, 'mod')) {
-                return await interaction.editReply({ content: '❌ You require Moderation permissions to use `/ban`.' });
-            }
-
-            const targetUser = interaction.options.getUser('user');
-            const duration = interaction.options.getString('duration');
-            const reason = interaction.options.getString('reason');
-
-            const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
-            if (member) {
-                await member.ban({ reason: `[${duration}]${reason}` });
-            }
-
-            const banEmbed = new EmbedBuilder()
-                .setTitle('🔨 User Banned')
-                .setColor('#FF4B4B')
-                .addFields(
-                    { name: 'User', value: `${targetUser.tag} (\`${targetUser.id}\`)`, inline: true },
-                    { name: 'Duration', value: duration, inline: true },
-                    { name: 'Reason', value: reason, inline: false },
-                    { name: 'Moderator', value: `${interaction.user}`, inline: true }
-                );
-
-            await sendGuildLog(interaction.guild, 'mod', banEmbed);
-            return await interaction.editReply({ embeds: [banEmbed] });
-        }
-
-        if (commandName === 'ban-player') {
-            if (!checkPermission(interaction, 'mod')) {
-                return await interaction.editReply({ content: '❌ You require Moderation permissions to use `/ban-player`.' });
-            }
-
-            const playerInput = interaction.options.getString('player');
-            const durationHours = parseInt(interaction.options.getString('duration'), 10) || 24;
-            const reason = interaction.options.getString('reason');
-
-            let targetPlayFabId = playerInput;
-            if (playerInput.startsWith('<@') && playerInput.endsWith('>')) {
-                const cleanId = playerInput.replace(/[<@!>]/g, '');
-                const { user } = await getPlayFabUserByDiscordId(cleanId);
-                if (user) targetPlayFabId = user.PlayFabId;
-            }
-
-            const banResult = await new Promise((resolve) => {
-                PlayFabServer.BanUsers({
-                    Bans: [{
-                        PlayFabId: targetPlayFabId,
-                        DurationInHours: durationHours,
-                        Reason: reason
-                    }]
-                }, (err, res) => {
-                    if (err || !res?.data) resolve({ success: false, error: err?.errorMessage || 'Ban failed' });
-                    else resolve({ success: true, banId: res.data.BanData?.[0]?.BanId });
-                });
-            });
-
-            const gameBanEmbed = new EmbedBuilder()
-                .setTitle(banResult.success ? '🚫 In-Game Player Banned' : '❌ Ban Failed')
-                .setColor(banResult.success ? '#FF4B4B' : '#808080')
-                .addFields(
-                    { name: 'PlayFab ID', value: `\`${targetPlayFabId}\``, inline: true },
-                    { name: 'Duration', value: `${durationHours} Hours`, inline: true },
-                    { name: 'Reason', value: reason, inline: false }
-                );
-
-            if (banResult.success) await sendGuildLog(interaction.guild, 'mod', gameBanEmbed);
-            return await interaction.editReply({ embeds: [gameBanEmbed] });
-        }
-
-        if (commandName === 'timeout') {
-            if (!checkPermission(interaction, 'staff')) {
-                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/timeout`.' });
-            }
-
-            const targetUser = interaction.options.getUser('user');
-            const minutes = parseInt(interaction.options.getString('duration'), 10) || 10;
-            const reason = interaction.options.getString('reason');
-
-            const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
-            if (!member) {
-                return await interaction.editReply({ content: '❌ User not found in this server.' });
-            }
-
-            await member.timeout(minutes * 60 * 1000, reason);
-
-            const timeoutEmbed = new EmbedBuilder()
-                .setTitle('⏳ User Timed Out')
-                .setColor('#FF9900')
-                .addFields(
-                    { name: 'User', value: `${targetUser.tag}`, inline: true },
-                    { name: 'Duration', value: `${minutes} Minutes`, inline: true },
-                    { name: 'Reason', value: reason, inline: false }
-                );
-
-            await sendGuildLog(interaction.guild, 'mod', timeoutEmbed);
-            return await interaction.editReply({ embeds: [timeoutEmbed] });
-        }
-
-        if (commandName === 'mute-player') {
-            if (!checkPermission(interaction, 'staff')) {
-                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/mute-player`.' });
-            }
-
-            const playerInput = interaction.options.getString('player');
-            const duration = interaction.options.getString('duration');
-            const reason = interaction.options.getString('reason');
-
-            let targetPlayFabId = playerInput;
-            if (playerInput.startsWith('<@') && playerInput.endsWith('>')) {
-                const cleanId = playerInput.replace(/[<@!>]/g, '');
-                const { user } = await getPlayFabUserByDiscordId(cleanId);
-                if (user) targetPlayFabId = user.PlayFabId;
-            }
-
-            await executeCloudScript('blockPlayerSignal', { TargetId: targetPlayFabId });
-
-            const muteEmbed = new EmbedBuilder()
-                .setTitle('🎙️ In-Game Voice Chat Muted')
-                .setColor('#FF9900')
-                .addFields(
-                    { name: 'Target Player', value: `\`${targetPlayFabId}\``, inline: true },
-                    { name: 'Duration', value: duration, inline: true },
-                    { name: 'Reason', value: reason, inline: false }
-                );
-
-            await sendGuildLog(interaction.guild, 'mod', muteEmbed);
-            return await interaction.editReply({ embeds: [muteEmbed] });
-        }
-
-        if (commandName === 'kick') {
-            if (!checkPermission(interaction, 'staff')) {
-                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/kick`.' });
-            }
-
-            const targetUser = interaction.options.getUser('user');
-            const reason = interaction.options.getString('reason');
-
-            const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
-            if (!member) {
-                return await interaction.editReply({ content: '❌ User not found in this server.' });
-            }
-
-            await member.kick(reason);
-
-            const kickEmbed = new EmbedBuilder()
-                .setTitle('👢 User Kicked')
-                .setColor('#FF9900')
-                .addFields(
-                    { name: 'User', value: `${targetUser.tag}`, inline: true },
-                    { name: 'Reason', value: reason, inline: false }
-                );
-
-            await sendGuildLog(interaction.guild, 'mod', kickEmbed);
-            return await interaction.editReply({ embeds: [kickEmbed] });
-        }
-
-        if (commandName === 'lookup') {
-            const playerInput = interaction.options.getString('player').replace(/[<@!>]/g, '');
-
-            let pfUser = null;
-            if (/^\d{17,19}$/.test(playerInput)) {
-                const res = await getPlayFabUserByDiscordId(playerInput);
-                pfUser = res.user;
-            }
-
-            if (!pfUser) {
-                pfUser = await new Promise((resolve) => {
-                    PlayFabServer.GetUserAccountInfo({ PlayFabId: playerInput }, (err, res) => {
-                        if (!err && res?.data?.UserInfo) resolve(res.data.UserInfo);
-                        else {
-                            PlayFabServer.GetUserAccountInfo({ TitleDisplayName: playerInput }, (err2, res2) => {
-                                if (!err2 && res2?.data?.UserInfo) resolve(res2.data.UserInfo);
-                                else resolve(null);
-                            });
-                        }
-                    });
-                });
-            }
-
-            if (!pfUser) {
-                return await interaction.editReply({ content: '❌ No matching player profile found in PlayFab.' });
-            }
-
-            const [stats, userData] = await Promise.all([
-                getPlayerStats(pfUser.PlayFabId),
-                getPlayerData(pfUser.PlayFabId)
-            ]);
-
-            const lookupEmbed = new EmbedBuilder()
-                .setTitle(`🔍 Player Lookup: ${pfUser.TitleInfo?.DisplayName || 'Unknown'}`)
-                .setColor('#00D4FF')
-                .addFields(
-                    { name: 'PlayFab ID', value: `\`${pfUser.PlayFabId}\``, inline: true },
-                    { name: 'Created', value: `<t:${Math.floor(new Date(pfUser.Created).getTime() / 1000)}:R>`, inline: true },
-                    { name: 'Linked Discord ID', value: userData.DiscordUserId?.Value ? `<@${userData.DiscordUserId.Value}> (\`${userData.DiscordUserId.Value}\`)` : '*Unlinked*', inline: false },
-                    { name: 'ELO Rating', value: `${stats.PlayerElo ?? 0}`, inline: true },
-                    { name: 'Total Matches', value: `${stats.MatchesPlayed ?? 0}`, inline: true }
-                );
-
-            return await interaction.editReply({ embeds: [lookupEmbed] });
-        }
-
-        if (commandName === 'staff-break') {
-            if (!checkPermission(interaction, 'staff')) {
-                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/staff-break`.' });
-            }
-
-            const duration = interaction.options.getString('duration');
-            const reason = interaction.options.getString('reason');
-
-            if (config.onBreakRoleId) {
-                await interaction.member.roles.add(config.onBreakRoleId).catch(() => {});
-            }
-
-            const breakEmbed = new EmbedBuilder()
-                .setTitle('🏖️ Staff Member On Break')
-                .setColor('#FF9900')
-                .setDescription(`${interaction.user} has officially gone on break.`)
-                .addFields(
-                    { name: 'Duration', value: duration, inline: true },
-                    { name: 'Reason', value: reason, inline: false }
-                )
-                .setTimestamp();
-
-            if (config.staffBreaksChannelId) {
-                const breakChannel = await interaction.guild.channels.fetch(config.staffBreaksChannelId).catch(() => null);
-                if (breakChannel && breakChannel.isTextBased()) {
-                    await breakChannel.send({ embeds: [breakEmbed] });
-                }
-            }
-
-            return await interaction.editReply({ content: '✅ Your break status has been logged and role applied.' });
-        }
-
-        if (commandName === 'website') {
-            return await interaction.editReply({ content: '🌐 **Official Website:** https://fpzard-eng.github.io/Volleyball-Revengers/home' });
-        }
-
-        if (commandName === 'link') {
+        else if (commandName === 'link') {
             const rawCode = interaction.options.getString('code');
             const cleanCode = rawCode.replace(/\D/g, '');
 
@@ -1379,21 +890,46 @@ const config = getGuildConfig(interaction.guild?.id || '');
 
             await interaction.editReply({ embeds: [isLinkedEmbed] });
         }
+        
+        else if (commandName === 'check-status') {
+            const targetDiscordUser = interaction.options.getUser('target');
+            const user = await enforceAccountLink(interaction, targetDiscordUser);
+            if (!user) return;
 
-        else if (commandName === 'online-players') {
-            const cloudResult = await executeCloudScript("getGlobalOnlinePlayerCount");
-            const count = cloudResult.success ? (cloudResult.onlineCount || 0) : 0;
+            const playFabId = user.PlayFabId;
+            const displayName = user.TitleInfo?.DisplayName || targetDiscordUser.username;
+            const userData = await getPlayerData(playFabId);
+            const rawStatus = userData.PresenceStatus?.Value || 'Offline';
 
-            const onlineEmbed = new EmbedBuilder()
-                .setTitle('🌐 Online Players')
-                .setColor('#00D4FF')
-                .setDescription(`There are currently **${count}** player${count === 1 ? '' : 's'} online in **Volleyball Revengers**!`)
-                .setFooter({ text: 'Volleyball Revengers • Live Server Monitor' })
+            let statusColor = '#E0E0E0';
+            let statusEmoji = '⚪';
+            let formattedStatus = 'Offline';
+
+            if (rawStatus.toLowerCase().includes('in-game') || rawStatus.toLowerCase().includes('ingame')) {
+                statusColor = '#00D4FF';
+                statusEmoji = '🔵';
+                formattedStatus = 'In-Game';
+            } else if (rawStatus.toLowerCase() === 'online') {
+                statusColor = '#00FF7F';
+                statusEmoji = '🟢';
+                formattedStatus = 'Online';
+            }
+
+            const statusEmbed = new EmbedBuilder()
+                .setTitle(`${statusEmoji} Player Status:${displayName}`)
+                .setColor(statusColor)
+                .setThumbnail(targetDiscordUser.displayAvatarURL({ dynamic: true }))
+                .addFields(
+                    { name: '👤 Discord User', value: `${targetDiscordUser}`, inline: true },
+                    { name: '🆔 PlayFab ID', value: `\`${playFabId}\``, inline: true },
+                    { name: '📡 Status', value: `**${formattedStatus}**`, inline: false }
+                )
+                .setFooter({ text: 'Volleyball Revengers • Status Checker' })
                 .setTimestamp();
 
-            await interaction.editReply({ embeds: [onlineEmbed] });
+            await interaction.editReply({ embeds: [statusEmbed] });
         }
-
+        
         else if (commandName === 'account') {
             const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
             const user = await enforceAccountLink(interaction, targetDiscordUser);
@@ -1424,6 +960,450 @@ const config = getGuildConfig(interaction.guild?.id || '');
                 .setTimestamp();
 
             await interaction.editReply({ embeds: [accountEmbed] });
+        }
+
+        else if (commandName === 'club') {
+            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+            const user = await enforceAccountLink(interaction, targetDiscordUser);
+            if (!user) return;
+
+            const userData = await getPlayerData(user.PlayFabId);
+            const clubName = userData.ClubName?.Value || 'Free Agent (No Club)';
+            const pendingInvites = userData.ClubInvites?.Value ? JSON.parse(userData.ClubInvites.Value) : [];
+
+            const clubEmbed = new EmbedBuilder()
+                .setTitle(`🛡️ Club Details: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
+                .setColor('#1E90D8')
+                .addFields(
+                    { name: '🏷️ Current Club', value: `**${clubName}**`, inline: false },
+                    { name: '📩 Pending Invites', value: pendingInvites.length > 0 ? pendingInvites.join(', ') : 'None', inline: false },
+                    { name: '🌐 Management Portal', value: 'Manage invitations, view stats, and access settings at:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/club', inline: false }
+                )
+                .setFooter({ text: 'Volleyball Revengers • Club Hub' });
+
+            await interaction.editReply({ embeds: [clubEmbed] });
+        }
+
+        else if (commandName === 'party') {
+            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+            const user = await enforceAccountLink(interaction, targetDiscordUser);
+            if (!user) return;
+
+            const [userData, inbox] = await Promise.all([
+                getPlayerData(user.PlayFabId),
+                executeCloudScript("getInboxData", {}, user.PlayFabId)
+            ]);
+
+            const partyStatus = userData.ActivePartyId?.Value ? `In Party (\`${userData.ActivePartyId.Value}\`)` : 'Not in a Party';
+            const partyInvites = Array.isArray(inbox) 
+                ? inbox.filter(item => item.Type === 1).map(inv => `From **${inv.SenderDisplayName}** (ID: \`${inv.PayloadId}\`)`) 
+                : [];
+
+            const partyEmbed = new EmbedBuilder()
+                .setTitle(`🎉 Party Hub: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
+                .setColor('#FF007F')
+                .addFields(
+                    { name: '👥 Party Status', value: `**${partyStatus}**`, inline: false },
+                    { name: '📩 Pending Party Invites', value: partyInvites.length > 0 ? partyInvites.join('\n') : 'None', inline: false }
+                )
+                .setFooter({ text: 'Volleyball Revengers • Party Hub' });
+
+            await interaction.editReply({ embeds: [partyEmbed] });
+        }
+
+        else if (commandName === 'friends') {
+            const targetDiscordUser = interaction.options.getUser('target') || interaction.user;
+            const user = await enforceAccountLink(interaction, targetDiscordUser);
+            if (!user) return;
+
+            const userData = await getPlayerData(user.PlayFabId);
+            const friendList = userData.FriendList?.Value ? JSON.parse(userData.FriendList.Value) : [];
+            const pendingRequests = userData.FriendRequests?.Value ? JSON.parse(userData.FriendRequests.Value) : [];
+
+            const friendsEmbed = new EmbedBuilder()
+                .setTitle(`🤝 Friends Overview: ${user.TitleInfo?.DisplayName || targetDiscordUser.username}`)
+                .setColor('#00FF7F')
+                .addFields(
+                    { name: `👥 Friends (${friendList.length})`, value: friendList.length > 0 ? friendList.slice(0, 10).join(', ') : 'No friends added yet.', inline: false },
+                    { name: '📩 Pending Requests', value: pendingRequests.length > 0 ? pendingRequests.join(', ') : 'None', inline: false },
+                    { name: '🌐 Manage Friends', value: 'Add or remove friends on the dashboard:\nhttps://fpzard-eng.github.io/Volleyball-Revengers/friends', inline: false }
+                )
+                .setFooter({ text: 'Volleyball Revengers • Social Network' });
+
+            await interaction.editReply({ embeds: [friendsEmbed] });
+        }
+        
+        else if (commandName === 'club-info') {
+            const embed = new EmbedBuilder()
+                .setTitle('🏐 Club System Overview')
+                .setDescription('Clubs are the core competitive units in Volleyball Revengers. Build your roster, compete in regional circuits, and climb the standings toward full release.')
+                .addFields(
+                    { name: '👥 Roster Capacity', value: '• **Standard Roster:** 12 Players\n• **Max Roster (with Coaches):** 14 Players', inline: true },
+                    { name: '🏆 Competitive Paths', value: '• Open Gym / Regional Matches\n• Qualification Play-Ins\n• National Tournament (NT)', inline: false }
+                )
+                .setColor('#2B2D31')
+                .setFooter({ text: 'Volleyball Revengers • Club Information' });
+
+            return await interaction.editReply({ embeds: [embed] });
+        }
+        
+        else if (commandName === 'nt-info') {
+            const embed = new EmbedBuilder()
+                .setTitle('🏆 NATIONAL TOURNAMENT (NT)')
+                .setDescription('**The Premier Championship for Volleyball Revengers**')
+                .addFields(
+                    { 
+                        name: '🥇 QUALIFICATION ROUND', 
+                        value: '>>> • **Format:** Single-Elimination Knockout (Best of 3)\n• **Entrants:** Open Entrant Pool\n• **Advancement Goal:** Top **36 Teams** reach the League Stage', 
+                        inline: false
+                    },
+                    { name: '\u200B', value: '\u200B', inline: false },
+                    { 
+                        name: '🏐 LEAGUE STAGE (36 TEAMS)', 
+                        value: '>>> • **Structure:** 6 Pools of 6 Teams (Round-Robin)\n• **Match Length:** Best 2-out-of-3 sets\n• **Scoring System:**\n  └ **3 pts:** 2-0 Win | **2 pts:** 2-1 Win\n  └ **1 pt:** 1-2 Loss | **0 pts:** 0-2 Loss\n• **Advancement:** Top 2 per pool (12) + Top 4 Wildcards (**16 total**)', 
+                        inline: false 
+                    },
+                    { name: '\u200B', value: '\u200B', inline: false },
+                    { 
+                        name: '👑 FINALS — NT PLAYOFFS (16 TEAMS)', 
+                        value: '>>> • **Format:** Single-Elimination Bracket (Random Seeding)\n• **Match Length:** Best 3-out-of-5 sets\n• **Progression:** Round of 16 ➔ Quarterfinals ➔ Semifinals\n• **Podium Matches:**\n  └ 🥉 **3rd Place Match:** Semifinal Losers\n  └ 🏆 **Grand Final:** Semifinal Winners', 
+                        inline: false 
+                    }
+                )
+                .setColor('#FFD700')
+                .setFooter({ text: 'Volleyball Revengers • National Tournament Information' })
+                .setTimestamp();
+
+            return await interaction.editReply({ embeds: [embed] });
+        }
+        
+        else if (commandName === 'online-players') {
+            const cloudResult = await executeCloudScript("getGlobalOnlinePlayerCount");
+            const count = cloudResult.success ? (cloudResult.onlineCount || 0) : 0;
+
+            const onlineEmbed = new EmbedBuilder()
+                .setTitle('🌐 Online Players')
+                .setColor('#00D4FF')
+                .setDescription(`There are currently **${count}** player${count === 1 ? '' : 's'} online in **Volleyball Revengers**!`)
+                .setFooter({ text: 'Volleyball Revengers • Live Server Monitor' })
+                .setTimestamp();
+
+            await interaction.editReply({ embeds: [onlineEmbed] });
+        }
+
+        else if (commandName === 'ban') {
+            if (!checkPermission(interaction, 'mod')) {
+                return await interaction.editReply({ content: '❌ You require Moderation permissions to use `/ban`.' });
+            }
+
+            const targetUser = interaction.options.getUser('user');
+            const duration = interaction.options.getString('duration');
+            const reason = interaction.options.getString('reason');
+
+            const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+            if (member) {
+                await member.ban({ reason: `[${duration}]${reason}` });
+            }
+
+            const banEmbed = new EmbedBuilder()
+                .setTitle('🔨 User Banned')
+                .setColor('#FF4B4B')
+                .addFields(
+                    { name: 'User', value: `${targetUser.tag} (\`${targetUser.id}\`)`, inline: true },
+                    { name: 'Duration', value: duration, inline: true },
+                    { name: 'Reason', value: reason, inline: false },
+                    { name: 'Moderator', value: `${interaction.user}`, inline: true }
+                );
+
+            await sendGuildLog(interaction.guild, 'mod', banEmbed);
+            return await interaction.editReply({ embeds: [banEmbed] });
+        }
+
+        else if (commandName === 'ban-player') {
+            if (!checkPermission(interaction, 'mod')) {
+                return await interaction.editReply({ content: '❌ You require Moderation permissions to use `/ban-player`.' });
+            }
+
+            const playerInput = interaction.options.getString('player');
+            const durationHours = parseInt(interaction.options.getString('duration'), 10) || 24;
+            const reason = interaction.options.getString('reason');
+
+            let targetPlayFabId = playerInput;
+            if (playerInput.startsWith('<@') && playerInput.endsWith('>')) {
+                const cleanId = playerInput.replace(/[<@!>]/g, '');
+                const { user } = await getPlayFabUserByDiscordId(cleanId);
+                if (user) targetPlayFabId = user.PlayFabId;
+            }
+
+            const banResult = await new Promise((resolve) => {
+                PlayFabServer.BanUsers({
+                    Bans: [{
+                        PlayFabId: targetPlayFabId,
+                        DurationInHours: durationHours,
+                        Reason: reason
+                    }]
+                }, (err, res) => {
+                    if (err || !res?.data) resolve({ success: false, error: err?.errorMessage || 'Ban failed' });
+                    else resolve({ success: true, banId: res.data.BanData?.[0]?.BanId });
+                });
+            });
+
+            const gameBanEmbed = new EmbedBuilder()
+                .setTitle(banResult.success ? '🚫 In-Game Player Banned' : '❌ Ban Failed')
+                .setColor(banResult.success ? '#FF4B4B' : '#808080')
+                .addFields(
+                    { name: 'PlayFab ID', value: `\`${targetPlayFabId}\``, inline: true },
+                    { name: 'Duration', value: `${durationHours} Hours`, inline: true },
+                    { name: 'Reason', value: reason, inline: false }
+                );
+
+            if (banResult.success) await sendGuildLog(interaction.guild, 'mod', gameBanEmbed);
+            return await interaction.editReply({ embeds: [gameBanEmbed] });
+        }
+
+        else if (commandName === 'timeout') {
+            if (!checkPermission(interaction, 'staff')) {
+                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/timeout`.' });
+            }
+
+            const targetUser = interaction.options.getUser('user');
+            const minutes = parseInt(interaction.options.getString('duration'), 10) || 10;
+            const reason = interaction.options.getString('reason');
+
+            const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+            if (!member) {
+                return await interaction.editReply({ content: '❌ User not found in this server.' });
+            }
+
+            await member.timeout(minutes * 60 * 1000, reason);
+
+            const timeoutEmbed = new EmbedBuilder()
+                .setTitle('⏳ User Timed Out')
+                .setColor('#FF9900')
+                .addFields(
+                    { name: 'User', value: `${targetUser.tag}`, inline: true },
+                    { name: 'Duration', value: `${minutes} Minutes`, inline: true },
+                    { name: 'Reason', value: reason, inline: false }
+                );
+
+            await sendGuildLog(interaction.guild, 'mod', timeoutEmbed);
+            return await interaction.editReply({ embeds: [timeoutEmbed] });
+        }
+
+        else if (commandName === 'mute-player') {
+            if (!checkPermission(interaction, 'staff')) {
+                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/mute-player`.' });
+            }
+
+            const playerInput = interaction.options.getString('player');
+            const duration = interaction.options.getString('duration');
+            const reason = interaction.options.getString('reason');
+
+            let targetPlayFabId = playerInput;
+            if (playerInput.startsWith('<@') && playerInput.endsWith('>')) {
+                const cleanId = playerInput.replace(/[<@!>]/g, '');
+                const { user } = await getPlayFabUserByDiscordId(cleanId);
+                if (user) targetPlayFabId = user.PlayFabId;
+            }
+
+            await executeCloudScript('blockPlayerSignal', { TargetId: targetPlayFabId });
+
+            const muteEmbed = new EmbedBuilder()
+                .setTitle('🎙️ In-Game Voice Chat Muted')
+                .setColor('#FF9900')
+                .addFields(
+                    { name: 'Target Player', value: `\`${targetPlayFabId}\``, inline: true },
+                    { name: 'Duration', value: duration, inline: true },
+                    { name: 'Reason', value: reason, inline: false }
+                );
+
+            await sendGuildLog(interaction.guild, 'mod', muteEmbed);
+            return await interaction.editReply({ embeds: [muteEmbed] });
+        }
+
+        else if (commandName === 'kick') {
+            if (!checkPermission(interaction, 'staff')) {
+                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/kick`.' });
+            }
+
+            const targetUser = interaction.options.getUser('user');
+            const reason = interaction.options.getString('reason');
+
+            const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+            if (!member) {
+                return await interaction.editReply({ content: '❌ User not found in this server.' });
+            }
+
+            await member.kick(reason);
+
+            const kickEmbed = new EmbedBuilder()
+                .setTitle('👢 User Kicked')
+                .setColor('#FF9900')
+                .addFields(
+                    { name: 'User', value: `${targetUser.tag}`, inline: true },
+                    { name: 'Reason', value: reason, inline: false }
+                );
+
+            await sendGuildLog(interaction.guild, 'mod', kickEmbed);
+            return await interaction.editReply({ embeds: [kickEmbed] });
+        }
+
+        else if (commandName === 'lookup') {
+            const playerInput = interaction.options.getString('player').replace(/[<@!>]/g, '');
+
+            let pfUser = null;
+            if (/^\d{17,19}$/.test(playerInput)) {
+                const res = await getPlayFabUserByDiscordId(playerInput);
+                pfUser = res.user;
+            }
+
+            if (!pfUser) {
+                pfUser = await new Promise((resolve) => {
+                    PlayFabServer.GetUserAccountInfo({ PlayFabId: playerInput }, (err, res) => {
+                        if (!err && res?.data?.UserInfo) resolve(res.data.UserInfo);
+                        else {
+                            PlayFabServer.GetUserAccountInfo({ TitleDisplayName: playerInput }, (err2, res2) => {
+                                if (!err2 && res2?.data?.UserInfo) resolve(res2.data.UserInfo);
+                                else resolve(null);
+                            });
+                        }
+                    });
+                });
+            }
+
+            if (!pfUser) {
+                return await interaction.editReply({ content: '❌ No matching player profile found in PlayFab.' });
+            }
+
+            const [stats, userData] = await Promise.all([
+                getPlayerStats(pfUser.PlayFabId),
+                getPlayerData(pfUser.PlayFabId)
+            ]);
+
+            const lookupEmbed = new EmbedBuilder()
+                .setTitle(`🔍 Player Lookup: ${pfUser.TitleInfo?.DisplayName || 'Unknown'}`)
+                .setColor('#00D4FF')
+                .addFields(
+                    { name: 'PlayFab ID', value: `\`${pfUser.PlayFabId}\``, inline: true },
+                    { name: 'Created', value: `<t:${Math.floor(new Date(pfUser.Created).getTime() / 1000)}:R>`, inline: true },
+                    { name: 'Linked Discord ID', value: userData.DiscordUserId?.Value ? `<@${userData.DiscordUserId.Value}> (\`${userData.DiscordUserId.Value}\`)` : '*Unlinked*', inline: false },
+                    { name: 'ELO Rating', value: `${stats.PlayerElo ?? 0}`, inline: true },
+                    { name: 'Total Matches', value: `${stats.MatchesPlayed ?? 0}`, inline: true }
+                );
+
+            return await interaction.editReply({ embeds: [lookupEmbed] });
+        }
+
+        else if (commandName === 'staff-break') {
+            if (!checkPermission(interaction, 'staff')) {
+                return await interaction.editReply({ content: '❌ You require Staff permissions to use `/staff-break`.' });
+            }
+
+            const duration = interaction.options.getString('duration');
+            const reason = interaction.options.getString('reason');
+
+            if (config.onBreakRoleId) {
+                await interaction.member.roles.add(config.onBreakRoleId).catch(() => {});
+            }
+
+            const breakEmbed = new EmbedBuilder()
+                .setTitle('🏖️ Staff Member On Break')
+                .setColor('#FF9900')
+                .setDescription(`${interaction.user} has officially gone on break.`)
+                .addFields(
+                    { name: 'Duration', value: duration, inline: true },
+                    { name: 'Reason', value: reason, inline: false }
+                )
+                .setTimestamp();
+
+            if (config.staffBreaksChannelId) {
+                const breakChannel = await interaction.guild.channels.fetch(config.staffBreaksChannelId).catch(() => null);
+                if (breakChannel && breakChannel.isTextBased()) {
+                    await breakChannel.send({ embeds: [breakEmbed] });
+                }
+            }
+
+            return await interaction.editReply({ content: '✅ Your break status has been logged and role applied.' });
+        }
+       
+        else if (commandName === 'log-settings') {
+            if (!checkPermission(interaction, 'owner')) {
+                return await interaction.editReply({ content: '❌ Only the Server Owner can adjust log settings.' });
+            }
+
+            const dailySum = interaction.options.getBoolean('daily_summary');
+            const memberEv = interaction.options.getBoolean('member_events');
+            const modAct = interaction.options.getBoolean('mod_actions');
+
+            if (dailySum !== null) config.logSettings.dailySummary = dailySum;
+            if (memberEv !== null) config.logSettings.memberEvents = memberEv;
+            if (modAct !== null) config.logSettings.modActions = modAct;
+
+            const logEmbed = new EmbedBuilder()
+                .setTitle('📝 Audit Log Settings Configured')
+                .setColor('#00D4FF')
+                .addFields(
+                    { name: 'Daily Summaries', value: config.logSettings.dailySummary ? '✅ Enabled' : '❌ Disabled', inline: true },
+                    { name: 'Member Join/Leave Events', value: config.logSettings.memberEvents ? '✅ Enabled' : '❌ Disabled', inline: true },
+                    { name: 'Moderation Actions', value: config.logSettings.modActions ? '✅ Enabled' : '❌ Disabled', inline: true }
+                );
+
+            return await interaction.editReply({ embeds: [logEmbed] });
+        }
+        
+        else if (commandName === 'setup') {
+            if (!checkPermission(interaction, 'owner')) {
+                return await interaction.editReply({ content: '❌ Only the Server Owner can use the setup command.' });
+            }
+
+            const prefixOpt = interaction.options.getString('prefix');
+            const verifiedRole = interaction.options.getRole('verified_role');
+            const unverifiedRole = interaction.options.getRole('unverified_role');
+            const staffRole = interaction.options.getRole('staff_role');
+            const modRole = interaction.options.getRole('moderation_role');
+            const onBreakRole = interaction.options.getRole('on_break_role');
+            const verifyChan = interaction.options.getChannel('verification_channel');
+            const welcomeChan = interaction.options.getChannel('welcome_channel');
+            const levelsChan = interaction.options.getChannel('levels_channel');
+            const reportsChan = interaction.options.getChannel('reports_channel');
+            const staffBreaksChan = interaction.options.getChannel('staff_breaks_channel');
+            const logsChan = interaction.options.getChannel('logs_channel');
+            const loginsLogoutsChan = interaction.options.getChannel('logins_logouts_channel');
+
+            if (prefixOpt) config.prefix = prefixOpt;
+            if (verifiedRole) config.verifiedRoleId = verifiedRole.id;
+            if (unverifiedRole) config.unverifiedRoleId = unverifiedRole.id;
+            if (staffRole) config.staffRoleId = staffRole.id;
+            if (modRole) config.modRoleId = modRole.id;
+            if (onBreakRole) config.onBreakRoleId = onBreakRole.id;
+            if (verifyChan) config.verificationChannelId = verifyChan.id;
+            if (welcomeChan) config.welcomeChannelId = welcomeChan.id;
+            if (levelsChan) config.levelsChannelId = levelsChan.id;
+            if (reportsChan) config.reportsChannelId = reportsChan.id;
+            if (staffBreaksChan) config.staffBreaksChannelId = staffBreaksChan.id;
+            if (logsChan) config.logsChannelId = logsChan.id;
+            if (loginsLogoutsChan) config.loginsLogoutsChannelId = loginsLogoutsChan.id;
+
+            const setupEmbed = new EmbedBuilder()
+                .setTitle('⚙️ Server Setup Updated')
+                .setColor('#00FF7F')
+                .addFields(
+                    { name: 'Command Prefix', value: `\`${config.prefix}\``, inline: true },
+                    { name: 'Verified Role', value: config.verifiedRoleId ? `<@&${config.verifiedRoleId}>` : 'Not Set', inline: true },
+                    { name: 'Unverified Role', value: config.unverifiedRoleId ? `<@&${config.unverifiedRoleId}>` : 'Not Set', inline: true },
+                    { name: 'Staff Role', value: config.staffRoleId ? `<@&${config.staffRoleId}>` : 'Not Set', inline: true },
+                    { name: 'Moderation Role', value: config.modRoleId ? `<@&${config.modRoleId}>` : 'Not Set', inline: true },
+                    { name: 'On-Break Role', value: config.onBreakRoleId ? `<@&${config.onBreakRoleId}>` : 'Not Set', inline: true },
+                    { name: 'Verification Channel', value: config.verificationChannelId ? `<#${config.verificationChannelId}>` : 'Not Set', inline: true },
+                    { name: 'Welcome Channel', value: config.welcomeChannelId ? `<#${config.welcomeChannelId}>` : 'Not Set', inline: true },
+                    { name: 'Levels Channel', value: config.levelsChannelId ? `<#${config.levelsChannelId}>` : 'Not Set', inline: true },
+                    { name: 'Reports Channel', value: config.reportsChannelId ? `<#${config.reportsChannelId}>` : 'Not Set', inline: true },
+                    { name: 'Staff Breaks Channel', value: config.staffBreaksChannelId ? `<#${config.staffBreaksChannelId}>` : 'Not Set', inline: true },
+                    { name: 'Logs Channel', value: config.logsChannelId ? `<#${config.logsChannelId}>` : 'Not Set', inline: true },
+                    { name: 'Logins/Logouts Channel', value: config.loginsLogoutsChannelId ? `<#${config.loginsLogoutsChannelId}>` : 'Not Set', inline: true }
+                );
+
+            return await interaction.editReply({ embeds: [setupEmbed] });
         }
 
         else if (commandName === 'report') {
@@ -1468,6 +1448,27 @@ const config = getGuildConfig(interaction.guild?.id || '');
             await staffChannel.send({ content: `🛡️ ${pingMention} - New Report Received!`, embeds: [reportEmbed] });
 
             return await interaction.editReply({ content: '✅ Report successfully dispatched to moderation team.' });
+        }
+ 
+        else if (commandName === 'msg') {
+            if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+                return await interaction.editReply({ content: '❌ Administrator permission required.' });
+            }
+
+            const channelOption = interaction.options.getChannel('channel');
+            const messageText = interaction.options.getString('message');
+            const targetChannel = interaction.guild.channels.cache.get(channelOption.id);
+            if (!targetChannel || !targetChannel.isTextBased()) {
+                return await interaction.editReply({ content: '❌ Selected channel is not a valid text channel.' });
+            }
+
+            try {
+                await targetChannel.send(messageText);
+                return await interaction.editReply({ content: `✅ Sent to ${targetChannel}!` });
+            } catch (sendErr) {
+                console.error(`[MSG Command Error]:`, sendErr);
+                return await interaction.editReply({ content: `❌ Failed to send message to ${targetChannel}. Check bot permissions.` });
+            }
         }
 
 else {
