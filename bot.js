@@ -396,6 +396,8 @@ async function sendGuildLog(guild, logType, embed) {
 }
 
 function checkPermission(interaction, requiredType) {
+    if (!interaction.guild || !interaction.member) return false;
+
     const config = getGuildConfig(interaction.guild.id);
     const member = interaction.member;
 
