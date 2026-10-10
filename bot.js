@@ -515,6 +515,29 @@ client.on('messageCreate', async message => {
         }
     }
     
+    const config = getGuildConfig(message.guild.id);
+    const prefix = config.prefix || '!';
+
+    if (!message.content.startsWith(prefix)) return;
+
+    const args = message.content.slice(prefix.length).trim().split(/ +/);
+    const commandName = args.shift().toLowerCase();
+
+    if (commandName === 'help' || commandName === 'info') {
+        const helpEmbed = new EmbedBuilder()
+            .setTitle('🏐 VBR Assistant Coach • Commands Menu')
+            .setDescription(`Current prefix: \`${prefix}\` (Change using \`/setup\`)\nUse slash commands (\`/\`) or prefix commands (\`${prefix}\`).`)
+            .addFields(
+                { name: '👥 Player Commands', value: '`/about`, `/info`, `/level`, `/leaderboard`, `/rewards`, `/account`, `/club`, `/party`, `/friends`, `/is-linked`, `/check-status`, `/online-players`, `/report`' },
+                { name: '🛡️ Staff & Moderation', value: '`/ban`, `/ban-player`, `/timeout`, `/mute-player`, `/kick`, `/lookup`, `/staff-break`' },
+                { name: '⚙️ Server Management', value: '`/setup`, `/log-settings`, `/msg`' }
+            )
+            .setColor('#1E90D8');
+
+        await message.reply({ embeds: [helpEmbed] }).catch(() => {});
+    }
+});
+    
 client.once('clientReady', () => {
     console.log(`🤖 VBR Assistant Coach online as ${client.user.tag}!`);
 });
@@ -645,32 +668,6 @@ client.on('interactionCreate', async interaction => {
             console.error('[Verification Execution Error]:', err);
             await interaction.editReply({ content: '❌ Failed to update roles. Please inform a server moderator.' });
         }
-    }
-});
-
-client.on('messageCreate', async message => {
-    if (message.author.bot || !message.guild) return;
-
-    const config = getGuildConfig(message.guild.id);
-    const prefix = config.prefix || '!';
-
-    if (!message.content.startsWith(prefix)) return;
-
-    const args = message.content.slice(prefix.length).trim().split(/ +/);
-    const commandName = args.shift().toLowerCase();
-
-    if (commandName === 'help' || commandName === 'info') {
-        const helpEmbed = new EmbedBuilder()
-            .setTitle('🏐 VBR Assistant Coach • Commands Menu')
-            .setDescription(`Current prefix: \`${prefix}\` (Change using \`/setup\`)\nUse slash commands (\`/\`) or prefix commands (\`${prefix}\`).`)
-            .addFields(
-                { name: '👥 Player Commands', value: '`/about`, `/info`, `/level`, `/leaderboard`, `/rewards`, `/account`, `/club`, `/party`, `/friends`, `/is-linked`, `/check-status`, `/online-players`, `/report`' },
-                { name: '🛡️ Staff & Moderation', value: '`/ban`, `/ban-player`, `/timeout`, `/mute-player`, `/kick`, `/lookup`, `/staff-break`' },
-                { name: '⚙️ Server Management', value: '`/setup`, `/log-settings`, `/msg`' }
-            )
-            .setColor('#1E90D8');
-
-        await message.reply({ embeds: [helpEmbed] }).catch(() => {});
     }
 });
 
