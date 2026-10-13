@@ -285,78 +285,10 @@ const commands = [
         .setDescription('Puts you on break and notifies the staff breaks channel')
         .addStringOption(opt => opt.setName('duration').setDescription('Duration of break').setRequired(true))
         .addStringOption(opt => opt.setName('reason').setDescription('Reason for break').setRequired(true)),
-    
+        
     new SlashCommandBuilder()
         .setName('settings')
-        .setDescription('Configure server settings, channels, roles, and event logging')
-        .addSubcommand(sub =>
-            sub.setName('view')
-               .setDescription('View current server settings and logging toggles')
-        )
-        .addSubcommand(sub =>
-            sub.setName('general')
-               .setDescription('Configure general server settings')
-               .addStringOption(opt => opt.setName('prefix').setDescription('Command prefix (Default: !)'))
-        )
-        .addSubcommand(sub =>
-            sub.setName('roles')
-               .setDescription('Configure server roles')
-               .addRoleOption(opt => opt.setName('verified_role').setDescription('Verified member role'))
-               .addRoleOption(opt => opt.setName('unverified_role').setDescription('Unverified member role'))
-               .addRoleOption(opt => opt.setName('staff_role').setDescription('Staff role'))
-               .addRoleOption(opt => opt.setName('moderation_role').setDescription('Moderation role'))
-               .addRoleOption(opt => opt.setName('on_break_role').setDescription('On Break staff role'))
-        )
-        .addSubcommand(sub =>
-            sub.setName('channels')
-               .setDescription('Configure server channels')
-               .addChannelOption(opt => opt.setName('verification_channel').setDescription('Channel for member verification'))
-               .addChannelOption(opt => opt.setName('welcome_channel').setDescription('Channel for post-verification welcomes'))
-               .addChannelOption(opt => opt.setName('levels_channel').setDescription('Channel for level-ups & XP announcements'))
-               .addChannelOption(opt => opt.setName('reports_channel').setDescription('Channel for member reports'))
-               .addChannelOption(opt => opt.setName('staff_breaks_channel').setDescription('Channel for staff break logs'))
-               .addChannelOption(opt => opt.setName('logs_channel').setDescription('Channel for general server logs'))
-               .addChannelOption(opt => opt.setName('logins_logouts_channel').setDescription('Channel for game logins/logouts'))
-        )
-        .addSubcommand(sub =>
-            sub.setName('logs')
-               .setDescription('Toggle granular event logging settings')
-               // Member Events
-               .addBooleanOption(opt => opt.setName('member_kicked').setDescription('Log member kicks'))
-               .addBooleanOption(opt => opt.setName('member_banned').setDescription('Log member bans'))
-               .addBooleanOption(opt => opt.setName('member_timed_out').setDescription('Log member timeouts'))
-               .addBooleanOption(opt => opt.setName('member_joined').setDescription('Log member joins'))
-               .addBooleanOption(opt => opt.setName('member_left').setDescription('Log member leaves'))
-               .addBooleanOption(opt => opt.setName('member_roles_added').setDescription('Log roles added to member'))
-               .addBooleanOption(opt => opt.setName('member_roles_updated').setDescription('Log role updates on member'))
-               .addBooleanOption(opt => opt.setName('member_roles_removed').setDescription('Log roles removed from member'))
-               // In-Game Events
-               .addBooleanOption(opt => opt.setName('player_banned').setDescription('Log in-game player bans'))
-               .addBooleanOption(opt => opt.setName('player_kicked').setDescription('Log in-game player kicks'))
-               .addBooleanOption(opt => opt.setName('player_vc_banned').setDescription('Log in-game VC mutes/bans'))
-               .addBooleanOption(opt => opt.setName('player_logged_in').setDescription('Log in-game logins'))
-               .addBooleanOption(opt => opt.setName('player_logged_off').setDescription('Log in-game logouts'))
-               // Server Events
-               .addBooleanOption(opt => opt.setName('msg_deleted').setDescription('Log deleted messages'))
-               .addBooleanOption(opt => opt.setName('msg_edited').setDescription('Log edited messages'))
-               .addBooleanOption(opt => opt.setName('msg_bulk_deleted').setDescription('Log bulk message purges'))
-               .addBooleanOption(opt => opt.setName('command_used').setDescription('Log bot command usages'))
-               .addBooleanOption(opt => opt.setName('channel_name_updated').setDescription('Log channel name changes'))
-               .addBooleanOption(opt => opt.setName('channel_perms_updated').setDescription('Log channel permission changes'))
-               .addBooleanOption(opt => opt.setName('channel_created').setDescription('Log created channels'))
-               .addBooleanOption(opt => opt.setName('channel_deleted').setDescription('Log deleted channels'))
-               .addBooleanOption(opt => opt.setName('role_added').setDescription('Log created server roles'))
-               .addBooleanOption(opt => opt.setName('role_deleted').setDescription('Log deleted server roles'))
-               .addBooleanOption(opt => opt.setName('role_perms_updated').setDescription('Log role permission changes'))
-               .addBooleanOption(opt => opt.setName('role_color_updated').setDescription('Log role color updates'))
-               .addBooleanOption(opt => opt.setName('role_name_updated').setDescription('Log role name changes'))
-               .addBooleanOption(opt => opt.setName('invite_created').setDescription('Log created server invites'))
-               .addBooleanOption(opt => opt.setName('invite_deleted').setDescription('Log deleted server invites'))
-               .addBooleanOption(opt => opt.setName('invite_used').setDescription('Log member joins via specific invite'))
-               .addBooleanOption(opt => opt.setName('emoji_created').setDescription('Log created server emojis'))
-               .addBooleanOption(opt => opt.setName('emoji_deleted').setDescription('Log deleted server emojis'))
-               .addBooleanOption(opt => opt.setName('emoji_name_updated').setDescription('Log emoji name updates'))
-        ),
+        .setDescription('View or configure server settings, categories, and logs'),
     
     new SlashCommandBuilder()
         .setName('report')
@@ -533,6 +465,86 @@ async function checkAndGrantRetroactiveCoins(guildId, userId, playFabId) {
         }
     }
     return 0;
+}
+
+async function buildSettingsDashboardEmbed(guildId) {
+    const config = await getGuildConfig(guildId);
+    return new EmbedBuilder()
+        .setTitle('⚙️ Server Configuration & Logging Dashboard')
+        .setDescription('Select a category below using the buttons to view and configure your server settings, roles, channels, and granular event logs.')
+        .setColor('#00FF7F')
+        .addFields(
+            { name: '🌐 General', value: `Prefix: \`${config.prefix}\``, inline: true },
+            { name: '🛡️ Roles & Permissions', value: `Staff: ${config.staffRoleId ? `<@&${config.staffRoleId}>` : 'Not Set'}\nMod: ${config.modRoleId ? `<@&${config.modRoleId}>` : 'Not Set'}`, inline: true },
+            { name: '📋 Channels', value: `Logs: ${config.logsChannelId ? `<#${config.logsChannelId}>` : 'Not Set'}`, inline: true }
+        )
+        .setFooter({ text: 'Volleyball Revengers • Interactive Dashboard' });
+}
+
+function buildDashboardMenuRow(view) {
+    if (view === 'main') {
+        return new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('settings_general').setLabel('General').setStyle(ButtonStyle.Primary).setEmoji('🌐'),
+            new ButtonBuilder().setCustomId('settings_roles').setLabel('Roles').setStyle(ButtonStyle.Primary).setEmoji('🛡️'),
+            new ButtonBuilder().setCustomId('settings_channels').setLabel('Channels').setStyle(ButtonStyle.Primary).setEmoji('📋'),
+            new ButtonBuilder().setCustomId('settings_member_logs').setLabel('Member Logs').setStyle(ButtonStyle.Secondary).setEmoji('📥'),
+            new ButtonBuilder().setCustomId('settings_game_logs').setLabel('In-Game Logs').setStyle(ButtonStyle.Secondary).setEmoji('🎮')
+        );
+    }
+
+    if (view === 'member_logs') {
+        return new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('settings_server_logs').setLabel('Server Logs ➡️').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('settings_home').setLabel('Home Dashboard').setStyle(ButtonStyle.Danger).setEmoji('🏠')
+        );
+    }
+
+    if (view === 'game_logs') {
+        return new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('settings_home').setLabel('Home Dashboard').setStyle(ButtonStyle.Danger).setEmoji('🏠')
+        );
+    }
+    
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('settings_home').setLabel('Home Dashboard').setStyle(ButtonStyle.Danger).setEmoji('🏠')
+    );
+}
+
+async function buildCategoryEmbed(guildId, category) {
+    const config = await getGuildConfig(guildId);
+    const fmt = (b) => b ? '✅ Enabled' : '❌ Disabled';
+
+    const embed = new EmbedBuilder().setColor('#00D4FF');
+
+    if (category === 'general') {
+        embed.setTitle('🌐 General Settings')
+             .setDescription(`Current Prefix: \`${config.prefix}\`\nClick below to edit general settings.`)
+             .addFields({ name: 'Actions', value: 'Use the button below to change the command prefix.' });
+    } else if (category === 'roles') {
+        embed.setTitle('🛡️ Role Configurations')
+             .addFields(
+                 { name: 'Assigned Roles', value: `• **Staff:** ${config.staffRoleId ? `<@&${config.staffRoleId}>` : 'Not Set'}\n• **Moderation:** ${config.modRoleId ? `<@&${config.modRoleId}>` : 'Not Set'}\n• **Verified:** ${config.verifiedRoleId ? `<@&${config.verifiedRoleId}>` : 'Not Set'}\n• **Unverified:** ${config.unverifiedRoleId ? `<@&${config.unverifiedRoleId}>` : 'Not Set'}\n• **On-Break:** ${config.onBreakRoleId ? `<@&${config.onBreakRoleId}>` : 'Not Set'}` }
+             );
+    } else if (category === 'channels') {
+        embed.setTitle('📋 Channel Configurations')
+             .addFields(
+                 { name: 'Assigned Channels', value: `• **Verification:** ${config.verificationChannelId ? `<#${config.verificationChannelId}>` : 'Not Set'}\n• **Welcome:** ${config.welcomeChannelId ? `<#${config.welcomeChannelId}>` : 'Not Set'}\n• **Levels:** ${config.levelsChannelId ? `<#${config.levelsChannelId}>` : 'Not Set'}\n• **Reports:** ${config.reportsChannelId ? `<#${config.reportsChannelId}>` : 'Not Set'}\n• **General Logs:** ${config.logsChannelId ? `<#${config.logsChannelId}>` : 'Not Set'}` }
+             );
+    } else if (category === 'member_logs') {
+        embed.setTitle('📥 Member Event Logging')
+             .setDescription('Toggle granular member event logging preferences:')
+             .addFields(
+                 { name: 'Toggles', value: `• Kicked: ${fmt(config.logSettings.memberKicked)}\n• Banned: ${fmt(config.logSettings.memberBanned)}\n• Timed Out: ${fmt(config.logSettings.memberTimedOut)}\n• Joined: ${fmt(config.logSettings.memberJoined)}\n• Left: ${fmt(config.logSettings.memberLeft)}\n• Roles Added: ${fmt(config.logSettings.memberRolesAdded)}\n• Roles Updated: ${fmt(config.logSettings.memberRolesUpdated)}\n• Roles Removed: ${fmt(config.logSettings.memberRolesRemoved)}` }
+             );
+    } else if (category === 'game_logs') {
+        embed.setTitle('🎮 In-Game Event Logging')
+             .setDescription('Toggle granular PlayFab / In-game event logging preferences:')
+             .addFields(
+                 { name: 'Toggles', value: `• Player Banned: ${fmt(config.logSettings.playerBanned)}\n• Player Kicked: ${fmt(config.logSettings.playerKicked)}\n• VC Banned: ${fmt(config.logSettings.playerVcBanned)}\n• Logged In: ${fmt(config.logSettings.playerLoggedIn)}\n• Logged Off: ${fmt(config.logSettings.playerLoggedOff)}` }
+             );
+    }
+
+    return embed;
 }
 
 function checkPermission(interaction, requiredType) {
@@ -1530,127 +1542,156 @@ client.on('interactionCreate', async interaction => {
 
             return await interaction.editReply({ content: '✅ Your break status has been logged and role applied.' });
         }
-        
-        else if (commandName === 'settings') {
-            if (!checkPermission(interaction, 'owner')) {
-                return await interaction.editReply({ content: '❌ Only the Server Owner can manage server settings.' });
-            }
-
-            const config = await getGuildConfig(interaction.guild.id);
-            const subcommand = interaction.options.getSubcommand();
-
-            if (subcommand === 'general') {
-                const prefixOpt = interaction.options.getString('prefix');
-                if (prefixOpt) config.prefix = prefixOpt;
-                await saveGuildConfig(interaction.guild.id, config);
-                return await interaction.editReply({ content: `✅ General settings updated! Prefix set to \`${config.prefix}\`` });
-            }
-
-            if (subcommand === 'roles') {
-                const verified = interaction.options.getRole('verified_role');
-                const unverified = interaction.options.getRole('unverified_role');
-                const staff = interaction.options.getRole('staff_role');
-                const mod = interaction.options.getRole('moderation_role');
-                const onBreak = interaction.options.getRole('on_break_role');
-
-                if (verified) config.verifiedRoleId = verified.id;
-                if (unverified) config.unverifiedRoleId = unverified.id;
-                if (staff) config.staffRoleId = staff.id;
-                if (mod) config.modRoleId = mod.id;
-                if (onBreak) config.onBreakRoleId = onBreak.id;
-
-                await saveGuildConfig(interaction.guild.id, config);
-                return await interaction.editReply({ content: '✅ Role configurations successfully updated and saved!' });
-            }
-
-            if (subcommand === 'channels') {
-                const verifyChan = interaction.options.getChannel('verification_channel');
-                const welcomeChan = interaction.options.getChannel('welcome_channel');
-                const levelsChan = interaction.options.getChannel('levels_channel');
-                const reportsChan = interaction.options.getChannel('reports_channel');
-                const staffBreaksChan = interaction.options.getChannel('staff_breaks_channel');
-                const logsChan = interaction.options.getChannel('logs_channel');
-                const loginsChan = interaction.options.getChannel('logins_logouts_channel');
-
-                if (verifyChan) config.verificationChannelId = verifyChan.id;
-                if (welcomeChan) config.welcomeChannelId = welcomeChan.id;
-                if (levelsChan) config.levelsChannelId = levelsChan.id;
-                if (reportsChan) config.reportsChannelId = reportsChan.id;
-                if (staffBreaksChan) config.staffBreaksChannelId = staffBreaksChan.id;
-                if (logsChan) config.logsChannelId = logsChan.id;
-                if (loginsChan) config.loginsLogoutsChannelId = loginsChan.id;
-
-                await saveGuildConfig(interaction.guild.id, config);
-                return await interaction.editReply({ content: '✅ Channel configurations successfully updated and saved!' });
-            }
-
-            if (subcommand === 'logs') {
-                const logKeys = [
-                    'member_kicked', 'member_banned', 'member_timed_out', 'member_joined', 'member_left',
-                    'member_roles_added', 'member_roles_updated', 'member_roles_removed',
-                    'player_banned', 'player_kicked', 'player_vc_banned', 'player_logged_in', 'player_logged_off',
-                    'msg_deleted', 'msg_edited', 'msg_bulk_deleted', 'command_used', 'channel_name_updated',
-                    'channel_perms_updated', 'channel_created', 'channel_deleted', 'role_added', 'role_deleted',
-                    'role_perms_updated', 'role_color_updated', 'role_name_updated', 'invite_created',
-                    'invite_deleted', 'invite_used', 'emoji_created', 'emoji_deleted', 'emoji_name_updated'
-                ];
-
-                logKeys.forEach(optKey => {
-                    const val = interaction.options.getBoolean(optKey);
-                    if (val !== null) {
-                        const camelKey = optKey.replace(/_([a-z])/g, g => g[1].toUpperCase());
-                        config.logSettings[camelKey] = val;
-                    }
-                });
-
-                await saveGuildConfig(interaction.guild.id, config);
-                return await interaction.editReply({ content: '✅ Logging preferences successfully updated and saved!' });
-            }
-
-            if (subcommand === 'view') {
-                const fmtBool = (b) => b ? '✅' : '❌';
-
-                const settingsEmbed = new EmbedBuilder()
-                    .setTitle('⚙️ Server Settings & Event Logging')
-                    .setColor('#00FF7F')
-                    .addFields(
-                        { 
-                            name: '🌐 General', 
-                            value: `• **Prefix:** \`${config.prefix}\``, 
-                            inline: false 
-                        },
-                        { 
-                            name: '🛡️ Moderation', 
-                            value: `• **Staff Role:** ${config.staffRoleId ? `<@&${config.staffRoleId}>` : 'Not Set'}\n• **Mod Role:** ${config.modRoleId ? `<@&${config.modRoleId}>` : 'Not Set'}\n• **On-Break Role:** ${config.onBreakRoleId ? `<@&${config.onBreakRoleId}>` : 'Not Set'}\n• **Reports Channel:** ${config.reportsChannelId ? `<#${config.reportsChannelId}>` : 'Not Set'}`, 
-                            inline: false 
-                        },
-                        { 
-                            name: '✅ Verification & Welcome', 
-                            value: `• **Verified Role:** ${config.verifiedRoleId ? `<@&${config.verifiedRoleId}>` : 'Not Set'}\n• **Unverified Role:** ${config.unverifiedRoleId ? `<@&${config.unverifiedRoleId}>` : 'Not Set'}\n• **Verification Channel:** ${config.verificationChannelId ? `<#${config.verificationChannelId}>` : 'Not Set'}\n• **Welcome Channel:** ${config.welcomeChannelId ? `<#${config.welcomeChannelId}>` : 'Not Set'}\n• **Levels Channel:** ${config.levelsChannelId ? `<#${config.levelsChannelId}>` : 'Not Set'}`, 
-                            inline: false 
-                        },
-                        { 
-                            name: '📥 Member Event Logs', 
-                            value: `Kicked: ${fmtBool(config.logSettings.memberKicked)} | Banned: ${fmtBool(config.logSettings.memberBanned)} | Timed Out: ${fmtBool(config.logSettings.memberTimedOut)}\nJoined: ${fmtBool(config.logSettings.memberJoined)} | Left: ${fmtBool(config.logSettings.memberLeft)}\nRoles Added: ${fmtBool(config.logSettings.memberRolesAdded)} | Roles Updated: ${fmtBool(config.logSettings.memberRolesUpdated)} | Roles Removed: ${fmtBool(config.logSettings.memberRolesRemoved)}`, 
-                            inline: false 
-                        },
-                        { 
-                            name: '🎮 In-Game Event Logs', 
-                            value: `Player Banned: ${fmtBool(config.logSettings.playerBanned)} | Player Kicked: ${fmtBool(config.logSettings.playerKicked)} | VC Banned: ${fmtBool(config.logSettings.playerVcBanned)}\nLogged In: ${fmtBool(config.logSettings.playerLoggedIn)} | Logged Off: ${fmtBool(config.logSettings.playerLoggedOff)}`, 
-                            inline: false 
-                        },
-                        { 
-                            name: '🛠️ Server Event Logs', 
-                            value: `Msg Deleted: ${fmtBool(config.logSettings.msgDeleted)} | Msg Edited: ${fmtBool(config.logSettings.msgEdited)} | Bulk Deleted: ${fmtBool(config.logSettings.msgBulkDeleted)}\nCommand Used: ${fmtBool(config.logSettings.commandUsed)} | Channel Name: ${fmtBool(config.logSettings.channelNameUpdated)} | Channel Perms: ${fmtBool(config.logSettings.channelPermsUpdated)}\nChannel Created: ${fmtBool(config.logSettings.channelCreated)} | Channel Deleted: ${fmtBool(config.logSettings.channelDeleted)}\nRole Added: ${fmtBool(config.logSettings.roleAdded)} | Role Deleted: ${fmtBool(config.logSettings.roleDeleted)} | Role Perms: ${fmtBool(config.logSettings.rolePermsUpdated)}\nRole Color: ${fmtBool(config.logSettings.roleColorUpdated)} | Role Name: ${fmtBool(config.logSettings.roleNameUpdated)}\nInvite Created: ${fmtBool(config.logSettings.inviteCreated)} | Invite Deleted: ${fmtBool(config.logSettings.inviteDeleted)} | Invite Used: ${fmtBool(config.logSettings.inviteUsed)}\nEmoji Created: ${fmtBool(config.logSettings.emojiCreated)} | Emoji Deleted: ${fmtBool(config.logSettings.emojiDeleted)} | Emoji Name: ${fmtBool(config.logSettings.emojiNameUpdated)}`, 
-                            inline: false 
-                        }
-                    )
-                    .setFooter({ text: 'Volleyball Revengers • Server Settings' })
-                    .setTimestamp();
-
-                return await interaction.editReply({ embeds: [settingsEmbed] });
-            }
+            
+        client.on('interactionCreate', async interaction => {
+    if (!interaction.guild) return;
+    
+    if (interaction.isChatInputCommand() && interaction.commandName === 'settings') {
+        if (!checkPermission(interaction, 'owner')) {
+            return await interaction.reply({ content: '❌ Only the Server Owner can manage server settings.', flags: [MessageFlags.Ephemeral] });
         }
+
+        await interaction.reply({ 
+            content: '⚙️ Opening Server Configuration Dashboard...', 
+            flags: [MessageFlags.Ephemeral] 
+        });
+
+        const embed = await buildSettingsDashboardEmbed(interaction.guild.id);
+        const row = buildDashboardMenuRow('main');
+
+        return await interaction.editReply({ content: null, embeds: [embed], components: [row] });
+    }
+    
+    if (interaction.isButton() && interaction.customId.startsWith('settings_')) {
+        if (!checkPermission(interaction, 'owner')) {
+            return await interaction.reply({ content: '❌ Only the Server Owner can manage server settings.', flags: [MessageFlags.Ephemeral] });
+        }
+
+        const action = interaction.customId.replace('settings_', '');
+
+        if (action === 'home') {
+            const embed = await buildSettingsDashboardEmbed(interaction.guild.id);
+            const row = buildDashboardMenuRow('main');
+            return await interaction.update({ embeds: [embed], components: [row] });
+        }
+
+        if (['general', 'roles', 'channels', 'member_logs', 'game_logs', 'server_logs'].includes(action)) {
+            const embed = await buildCategoryEmbed(interaction.guild.id, action);
+            const row = buildDashboardMenuRow(action);
+            return await interaction.update({ embeds: [embed], components: [row] });
+        }
+        
+        if (action.startsWith('toggle_')) {
+            const settingKey = action.replace('toggle_', '');
+            const config = await getGuildConfig(interaction.guild.id);
+            
+            if (config.logSettings[settingKey] !== undefined) {
+                config.logSettings[settingKey] = !config.logSettings[settingKey];
+                await saveGuildConfig(interaction.guild.id, config);
+            }
+            
+            let cat = 'server_logs';
+            if (settingKey.startsWith('member')) cat = 'member_logs';
+            if (settingKey.startsWith('player')) cat = 'game_logs';
+
+            const embed = await buildCategoryEmbed(interaction.guild.id, cat);
+            const row = buildDashboardMenuRow(cat);
+            return await interaction.update({ embeds: [embed], components: [row] });
+        }
+        
+        if (action === 'edit_prefix') {
+            const modal = new ModalBuilder().setCustomId('modal_set_prefix').setTitle('Configure Command Prefix');
+            const input = new TextInputBuilder().setCustomId('prefix_input').setLabel('Command Prefix (Default: !)').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(5);
+            modal.addComponents(new ActionRowBuilder().addComponents(input));
+            return await interaction.showModal(modal);
+        }
+
+        if (action === 'edit_roles') {
+            const modal = new ModalBuilder().setCustomId('modal_set_roles').setTitle('Configure Roles (IDs)');
+            const staffInput = new TextInputBuilder().setCustomId('staff_role').setLabel('Staff Role ID').setStyle(TextInputStyle.Short).setRequired(false);
+            const modInput = new TextInputBuilder().setCustomId('mod_role').setLabel('Moderation Role ID').setStyle(TextInputStyle.Short).setRequired(false);
+            const verifiedInput = new TextInputBuilder().setCustomId('verified_role').setLabel('Verified Role ID').setStyle(TextInputStyle.Short).setRequired(false);
+            const unverifiedInput = new TextInputBuilder().setCustomId('unverified_role').setLabel('Unverified Role ID').setStyle(TextInputStyle.Short).setRequired(false);
+            const onBreakInput = new TextInputBuilder().setCustomId('break_role').setLabel('On-Break Role ID').setStyle(TextInputStyle.Short).setRequired(false);
+            
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(staffInput),
+                new ActionRowBuilder().addComponents(modInput),
+                new ActionRowBuilder().addComponents(verifiedInput),
+                new ActionRowBuilder().addComponents(unverifiedInput),
+                new ActionRowBuilder().addComponents(onBreakInput)
+            );
+            return await interaction.showModal(modal);
+        }
+
+        if (action === 'edit_channels') {
+            const modal = new ModalBuilder().setCustomId('modal_set_channels').setTitle('Configure Channels (IDs)');
+            const verifyChan = new TextInputBuilder().setCustomId('verify_chan').setLabel('Verification Channel ID').setStyle(TextInputStyle.Short).setRequired(false);
+            const welcomeChan = new TextInputBuilder().setCustomId('welcome_chan').setLabel('Welcome Channel ID').setStyle(TextInputStyle.Short).setRequired(false);
+            const levelsChan = new TextInputBuilder().setCustomId('levels_chan').setLabel('Levels Channel ID').setStyle(TextInputStyle.Short).setRequired(false);
+            const reportsChan = new TextInputBuilder().setCustomId('reports_chan').setLabel('Reports Channel ID').setStyle(TextInputStyle.Short).setRequired(false);
+            const logsChan = new TextInputBuilder().setCustomId('logs_chan').setLabel('General Logs Channel ID').setStyle(TextInputStyle.Short).setRequired(false);
+
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(verifyChan),
+                new ActionRowBuilder().addComponents(welcomeChan),
+                new ActionRowBuilder().addComponents(levelsChan),
+                new ActionRowBuilder().addComponents(reportsChan),
+                new ActionRowBuilder().addComponents(logsChan)
+            );
+            return await interaction.showModal(modal);
+        }
+    }
+
+    // 3. Handle Modal Submissions for Settings Updates
+    if (interaction.isModalSubmit()) {
+        const config = await getGuildConfig(interaction.guild.id);
+
+        if (interaction.customId === 'modal_set_prefix') {
+            await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+            const newPrefix = interaction.fields.getTextInputValue('prefix_input').trim();
+            if (newPrefix) config.prefix = newPrefix;
+            await saveGuildConfig(interaction.guild.id, config);
+            return await interaction.editReply({ content: `✅ Prefix updated to \`${config.prefix}\`!` });
+        }
+
+        if (interaction.customId === 'modal_set_roles') {
+            await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+            const staff = interaction.fields.getTextInputValue('staff_role').trim();
+            const mod = interaction.fields.getTextInputValue('mod_role').trim();
+            const verified = interaction.fields.getTextInputValue('verified_role').trim();
+            const unverified = interaction.fields.getTextInputValue('unverified_role').trim();
+            const onBreak = interaction.fields.getTextInputValue('break_role').trim();
+
+            if (staff) config.staffRoleId = staff;
+            if (mod) config.modRoleId = mod;
+            if (verified) config.verifiedRoleId = verified;
+            if (unverified) config.unverifiedRoleId = unverified;
+            if (onBreak) config.onBreakRoleId = onBreak;
+
+            await saveGuildConfig(interaction.guild.id, config);
+            return await interaction.editReply({ content: '✅ Role IDs successfully updated!' });
+        }
+
+        if (interaction.customId === 'modal_set_channels') {
+            await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+            const verify = interaction.fields.getTextInputValue('verify_chan').trim();
+            const welcome = interaction.fields.getTextInputValue('welcome_chan').trim();
+            const levels = interaction.fields.getTextInputValue('levels_chan').trim();
+            const reports = interaction.fields.getTextInputValue('reports_chan').trim();
+            const logs = interaction.fields.getTextInputValue('logs_chan').trim();
+
+            if (verify) config.verificationChannelId = verify;
+            if (welcome) config.welcomeChannelId = welcome;
+            if (levels) config.levelsChannelId = levels;
+            if (reports) config.reportsChannelId = reports;
+            if (logs) config.logsChannelId = logs;
+
+            await saveGuildConfig(interaction.guild.id, config);
+            return await interaction.editReply({ content: '✅ Channel IDs successfully updated!' });
+        }
+    }
+});
         
         else if (commandName === 'report') {
             if (!checkPermission(interaction, 'verified')) {
