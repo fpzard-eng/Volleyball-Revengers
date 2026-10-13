@@ -67,7 +67,7 @@ function getGuildConfig(guildId) {
 }
 
 function getXPForLevel(level) {
-    return 5 * (level ** 2) + (50 * level) + 100;
+    return (level + 1) * 100;
 }
 
 const PORT = process.env.PORT || 10000;
@@ -395,6 +395,34 @@ async function sendGuildLog(guild, logType, embed) {
     }
 }
 
+async function checkAndGrantRetroactiveCoins(guildId, userId, playFabId) {
+    const key = `${guildId}_${userId}`;
+    const userData = userXP.get(key);
+    if (!userData || userData.level <= 0) return 0;
+
+    const playerData = await getPlayerData(playFabId);
+    const claimedLevel = parseInt(playerData.RetroactiveLevelClaimed?.Value || '0', 10);
+
+    if (userData.level > claimedLevel) {
+        const levelsDiff = userData.level - claimedLevel;
+        const coinsOwed = levelsDiff * 100;
+
+        const granted = await rewardAeroCoins(playFabId, coinsOwed);
+        if (granted) {
+            await new Promise((resolve) => {
+                PlayFabServer.UpdateUserData({
+                    PlayFabId: playFabId,
+                    Data: {
+                        RetroactiveLevelClaimed: String(userData.level)
+                    }
+                }, (err) => resolve(!err));
+            });
+            return coinsOwed;
+        }
+    }
+    return 0;
+}
+
 function checkPermission(interaction, requiredType) {
     if (!interaction.guild || !interaction.member) return false;
 
@@ -472,11 +500,11 @@ client.on('messageCreate', async message => {
         let userData = userXP.get(key) || { xp: 0, level: 0 };
         const gainedXP = Math.floor(Math.random() * 11) + 15;
         userData.xp += gainedXP;
+        const requiredXP = getXPForLevel(userData.level);
 
-        const nextLevelXP = getXPForLevel(userData.level);
-
-        if (userData.xp >= nextLevelXP) {
+        if (userData.xp >= requiredXP) {
             userData.level += 1;
+            userData.xp = 0;
             userXP.set(key, userData);
 
             const config = getGuildConfig(message.guild.id);
@@ -487,7 +515,7 @@ client.on('messageCreate', async message => {
                 const granted = await rewardAeroCoins(pfUser.PlayFabId, 100);
                 if (granted) rewardNote = "\n💰 **+100 Aero-Coins (AC)** added to your VBR PlayFab account!";
             } else {
-                rewardNote = "\n💡 *Link your PlayFab account using `/link <code>` to receive Aero-Coins on level-up!*";
+                rewardNote = "\n💡 *Link your PlayFab account using `/link <code>` to receive 100 Aero-Coins when leveling up!*";
             }
             
             if (userData.level % 10 === 0 && userData.level <= 100) {
@@ -830,7 +858,7 @@ client.on('interactionCreate', async interaction => {
             return await interaction.editReply({ embeds: [rewardsEmbed] });
         }
 
-        else if (commandName === 'link') {
+      else if (commandName === 'link') {
              if (!checkPermission(interaction, 'verified')) {
                 return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
             }
@@ -850,10 +878,18 @@ client.on('interactionCreate', async interaction => {
                 DiscordUsername: String(interaction.user.username)
             });
 
+            let retroactiveNote = "";
+            if (result.success) {
+                const coinsGranted = await checkAndGrantRetroactiveCoins(interaction.guild.id, interaction.user.id, result.linkedPlayerId);
+                if (coinsGranted > 0) {
+                    retroactiveNote = `\n💰 **Retroactive Bonus:** You received **+${coinsGranted} Aero-Coins** for your unlinked level progress!`;
+                }
+            }
+
             const embed = new EmbedBuilder()
                 .setTitle(result.success ? '🎉 Account Linked!' : '❌ Link Failed')
                 .setDescription(result.success 
-                    ? `Linked **${interaction.user.username}** to PlayFab ID \`${result.linkedPlayerId}\`.`
+                    ? `Linked **${interaction.user.username}** to PlayFab ID \`${result.linkedPlayerId}\`.${retroactiveNote}`
                     : (result.message || 'The code is invalid or expired.'))
                 .setColor(result.success ? '#00FF7F' : '#FF4B4B')
                 .setFooter({ text: 'Volleyball Revengers • Profile Linker' });
