@@ -1691,7 +1691,6 @@ client.on('interactionCreate', async interaction => {
             return await interaction.editReply({ content: '✅ Channel IDs successfully updated!' });
         }
     }
-});
         
         else if (commandName === 'report') {
             if (!checkPermission(interaction, 'verified')) {
