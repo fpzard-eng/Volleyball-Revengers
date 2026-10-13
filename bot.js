@@ -751,9 +751,8 @@ client.on('guildMemberRemove', async member => {
     await sendGuildLog(member.guild, 'member', logEmbed);
 });
 
-client.on('interactionCreate', async interaction => {
-    if (!interaction.guild) return;
-    const config = await getGuildConfig(interaction.guild.id);
+Client.on('interactionCreate', async interaction => {
+    const config = getGuildConfig(interaction.guild?.id || '');
 
     if (interaction.isButton() && interaction.customId === 'verify_member_btn') {
         const modal = new ModalBuilder()
@@ -773,7 +772,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.showModal(modal);
         return;
     }
-    
+
     if (interaction.isModalSubmit() && interaction.customId === 'verification_modal') {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
@@ -789,10 +788,7 @@ client.on('interactionCreate', async interaction => {
                     DiscordUsername: String(interaction.user.username)
                 });
                 if (result.success) {
-                    const coinsGranted = await checkAndGrantRetroactiveCoins(interaction.guild.id, interaction.user.id, result.linkedPlayerId);
-                    let bonusText = coinsGranted > 0 ? ` and received **+${coinsGranted} Aero-Coins** for your level progress` : '';
-                    
-                    linkMessage = `\n🔗 **Account Linked:** Linked to PlayFab ID \`${result.linkedPlayerId}\`${bonusText}!`;
+                    linkMessage = `\n🔗 **Account Linked:** Linked to PlayFab ID \`${result.linkedPlayerId}\`!`;
                 } else {
                     linkMessage = `\n⚠️ **Linking Failed:** ${result.message || 'Invalid code.'}`;
                 }
