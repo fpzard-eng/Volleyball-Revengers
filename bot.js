@@ -36,34 +36,99 @@ const client = new Client({
     ]
 });
 
-const guildSettings = new Map();
-const userXP = new Map();
 const xpCooldowns = new Set();
+const guildSettingsCache = new Map();
+const userXPCache = new Map();
 
-function getGuildConfig(guildId) {
-    if (!guildSettings.has(guildId)) {
-        guildSettings.set(guildId, {
-            prefix: '!',
-            reportsChannelId: null,
-            modRoleId: null,
-            staffRoleId: null,
-            onBreakRoleId: null,
-            unverifiedRoleId: null,
-            verifiedRoleId: null,
-            staffBreaksChannelId: null,
-            logsChannelId: null,
-            loginsLogoutsChannelId: null,
-            verificationChannelId: null,
-            welcomeChannelId: null,
-            levelsChannelId: null,
-            logSettings: {
-                dailySummary: true,
-                memberEvents: true,
-                modActions: true
-            }
-        });
+async function getGuildConfig(guildId) {
+    if (guildSettingsCache.has(guildId)) {
+        return guildSettingsCache.get(guildId);
     }
-    return guildSettings.get(guildId);
+
+    return new Promise((resolve) => {
+        PlayFabServer.GetTitleInternalData({
+            Keys: [`GuildConfig_${guildId}`]
+        }, (error, result) => {
+            let config = {
+                prefix: '!',
+                reportsChannelId: null,
+                modRoleId: null,
+                staffRoleId: null,
+                onBreakRoleId: null,
+                unverifiedRoleId: null,
+                verifiedRoleId: null,
+                staffBreaksChannelId: null,
+                logsChannelId: null,
+                loginsLogoutsChannelId: null,
+                verificationChannelId: null,
+                welcomeChannelId: null,
+                levelsChannelId: null,
+                logSettings: { dailySummary: true, memberEvents: true, modActions: true }
+            };
+
+            if (!error && result?.data?.Data?.[`GuildConfig_${guildId}`]) {
+                try {
+                    config = { ...config, ...JSON.parse(result.data.Data[`GuildConfig_${guildId}`]) };
+                } catch (e) {
+                    console.error('[Config Parse Error]:', e);
+                }
+            }
+
+            guildSettingsCache.set(guildId, config);
+            resolve(config);
+        });
+    });
+}
+
+async function saveGuildConfig(guildId, config) {
+    guildSettingsCache.set(guildId, config);
+    return new Promise((resolve) => {
+        PlayFabServer.SetTitleInternalData({
+            Key: `GuildConfig_${guildId}`,
+            Value: JSON.stringify(config)
+        }, (error) => {
+            if (error) console.error(`[PlayFab Guild Config Save Error]:`, error);
+            resolve(!error);
+        });
+    });
+}
+
+async function getUserXP(guildId, userId) {
+    const key = `${guildId}_${userId}`;
+    if (userXPCache.has(key)) {
+        return userXPCache.get(key);
+    }
+
+    return new Promise((resolve) => {
+        PlayFabServer.GetTitleInternalData({
+            Keys: [`LevelData_${key}`]
+        }, (error, result) => {
+            let data = { xp: 0, level: 0 };
+            if (!error && result?.data?.Data?.[`LevelData_${key}`]) {
+                try {
+                    data = JSON.parse(result.data.Data[`LevelData_${key}`]);
+                } catch (e) {
+                    console.error('[XP Parse Error]:', e);
+                }
+            }
+            userXPCache.set(key, data);
+            resolve(data);
+        });
+    });
+}
+
+async function saveUserXP(guildId, userId, data) {
+    const key = `${guildId}_${userId}`;
+    userXPCache.set(key, data);
+    return new Promise((resolve) => {
+        PlayFabServer.SetTitleInternalData({
+            Key: `LevelData_${key}`,
+            Value: JSON.stringify(data)
+        }, (error) => {
+            if (error) console.error(`[PlayFab XP Save Error]:`, error);
+            resolve(!error);
+        });
+    });
 }
 
 function getXPForLevel(level) {
@@ -221,30 +286,10 @@ const commands = [
         .setDescription('Puts you on break and notifies the staff breaks channel')
         .addStringOption(opt => opt.setName('duration').setDescription('Duration of break').setRequired(true))
         .addStringOption(opt => opt.setName('reason').setDescription('Reason for break').setRequired(true)),
-
+    
     new SlashCommandBuilder()
-        .setName('log-settings')
-        .setDescription('Toggle daily log summaries and log channel preferences')
-        .addBooleanOption(opt => opt.setName('daily_summary').setDescription('Toggle daily summary').setRequired(false))
-        .addBooleanOption(opt => opt.setName('member_events').setDescription('Toggle member joins/leaves logging').setRequired(false))
-        .addBooleanOption(opt => opt.setName('mod_actions').setDescription('Toggle moderation actions logging').setRequired(false)),
-
-    new SlashCommandBuilder()
-        .setName('setup')
-        .setDescription('Configure server roles, channels, and command prefix')
-        .addStringOption(opt => opt.setName('prefix').setDescription('Command prefix (Default: !)'))
-        .addRoleOption(opt => opt.setName('verified_role').setDescription('Verified member role'))
-        .addRoleOption(opt => opt.setName('unverified_role').setDescription('Unverified member role'))
-        .addRoleOption(opt => opt.setName('staff_role').setDescription('Staff role'))
-        .addRoleOption(opt => opt.setName('moderation_role').setDescription('Moderation role'))
-        .addRoleOption(opt => opt.setName('on_break_role').setDescription('On Break staff role'))
-        .addChannelOption(opt => opt.setName('verification_channel').setDescription('Channel for member verification'))
-        .addChannelOption(opt => opt.setName('welcome_channel').setDescription('Channel for post-verification welcomes'))
-        .addChannelOption(opt => opt.setName('levels_channel').setDescription('Channel for level-ups & XP announcements'))
-        .addChannelOption(opt => opt.setName('reports_channel').setDescription('Channel for member reports'))
-        .addChannelOption(opt => opt.setName('staff_breaks_channel').setDescription('Channel for staff break logs'))
-        .addChannelOption(opt => opt.setName('logs_channel').setDescription('Channel for general server logs'))
-        .addChannelOption(opt => opt.setName('logins_logouts_channel').setDescription('Channel for game logins/logouts')),
+        .setName('settings')
+        .setDescription('View or configure server settings, categories, and logs'),
 
     new SlashCommandBuilder()
         .setName('report')
@@ -492,35 +537,46 @@ process.on('uncaughtException', error => console.error('[Uncaught Exception]:', 
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.guild) return;
 
-    const key = `${message.guild.id}_${message.author.id}`;
+    const guildId = message.guild.id;
+    const userId = message.author.id;
+    const key = `${guildId}_${userId}`;
+
     if (!xpCooldowns.has(key)) {
         xpCooldowns.add(key);
         setTimeout(() => xpCooldowns.delete(key), 15000);
 
-        let userData = userXP.get(key) || { xp: 0, level: 0 };
+        let userData = await getUserXP(guildId, userId);
         const gainedXP = Math.floor(Math.random() * 11) + 15;
         userData.xp += gainedXP;
+
         const requiredXP = getXPForLevel(userData.level);
 
         if (userData.xp >= requiredXP) {
             userData.level += 1;
-            userData.xp = 0;
-            userXP.set(key, userData);
+            userData.xp = 0; // Reset XP on level up
+            await saveUserXP(guildId, userId, userData);
 
-            const config = getGuildConfig(message.guild.id);
-            const { user: pfUser } = await getPlayFabUserByDiscordId(message.author.id);
+            const config = await getGuildConfig(guildId);
+            const { user: pfUser } = await getPlayFabUserByDiscordId(userId);
 
             let rewardNote = "";
             if (pfUser) {
                 const granted = await rewardAeroCoins(pfUser.PlayFabId, 100);
                 if (granted) rewardNote = "\n💰 **+100 Aero-Coins (AC)** added to your VBR PlayFab account!";
             } else {
-                rewardNote = "\n💡 *Link your PlayFab account using `/link <code>` to receive 100 Aero-Coins when leveling up!*";
+                rewardNote = "";
             }
             
             if (userData.level % 10 === 0 && userData.level <= 100) {
                 const milestoneRoleName = `Level ${userData.level}`;
-                const existingRole = message.guild.roles.cache.find(r => r.name === milestoneRoleName);
+                let existingRole = message.guild.roles.cache.find(r => r.name === milestoneRoleName);
+                if (!existingRole) {
+                    existingRole = await message.guild.roles.create({
+                        name: milestoneRoleName,
+                        color: '#00D4FF',
+                        reason: 'Auto-created VBR milestone level role'
+                    }).catch(() => null);
+                }
                 if (existingRole) {
                     await message.member.roles.add(existingRole).catch(() => {});
                 }
@@ -540,11 +596,11 @@ client.on('messageCreate', async message => {
                 }
             }
         } else {
-            userXP.set(key, userData);
+            await saveUserXP(guildId, userId, userData);
         }
     }
     
-    const config = getGuildConfig(message.guild.id);
+    const config = await getGuildConfig(guildId);
     const prefix = config.prefix || '!';
 
     if (!message.content.startsWith(prefix)) return;
@@ -1407,87 +1463,51 @@ client.on('interactionCreate', async interaction => {
 
             return await interaction.editReply({ content: '✅ Your break status has been logged and role applied.' });
         }
-       
-        else if (commandName === 'log-settings') {
-            if (!checkPermission(interaction, 'owner')) {
-                return await interaction.editReply({ content: '❌ Only the Server Owner can adjust log settings.' });
-            }
-
-            const dailySum = interaction.options.getBoolean('daily_summary');
-            const memberEv = interaction.options.getBoolean('member_events');
-            const modAct = interaction.options.getBoolean('mod_actions');
-
-            if (dailySum !== null) config.logSettings.dailySummary = dailySum;
-            if (memberEv !== null) config.logSettings.memberEvents = memberEv;
-            if (modAct !== null) config.logSettings.modActions = modAct;
-
-            const logEmbed = new EmbedBuilder()
-                .setTitle('📝 Audit Log Settings Configured')
-                .setColor('#00D4FF')
-                .addFields(
-                    { name: 'Daily Summaries', value: config.logSettings.dailySummary ? '✅ Enabled' : '❌ Disabled', inline: true },
-                    { name: 'Member Join/Leave Events', value: config.logSettings.memberEvents ? '✅ Enabled' : '❌ Disabled', inline: true },
-                    { name: 'Moderation Actions', value: config.logSettings.modActions ? '✅ Enabled' : '❌ Disabled', inline: true }
-                );
-
-            return await interaction.editReply({ embeds: [logEmbed] });
-        }
         
-        else if (commandName === 'setup') {
+        else if (commandName === 'settings') {
             if (!checkPermission(interaction, 'owner')) {
-                return await interaction.editReply({ content: '❌ Only the Server Owner can use the setup command.' });
+                return await interaction.editReply({ content: '❌ Only the Server Owner can view or manage server settings.' });
             }
 
-            const prefixOpt = interaction.options.getString('prefix');
-            const verifiedRole = interaction.options.getRole('verified_role');
-            const unverifiedRole = interaction.options.getRole('unverified_role');
-            const staffRole = interaction.options.getRole('staff_role');
-            const modRole = interaction.options.getRole('moderation_role');
-            const onBreakRole = interaction.options.getRole('on_break_role');
-            const verifyChan = interaction.options.getChannel('verification_channel');
-            const welcomeChan = interaction.options.getChannel('welcome_channel');
-            const levelsChan = interaction.options.getChannel('levels_channel');
-            const reportsChan = interaction.options.getChannel('reports_channel');
-            const staffBreaksChan = interaction.options.getChannel('staff_breaks_channel');
-            const logsChan = interaction.options.getChannel('logs_channel');
-            const loginsLogoutsChan = interaction.options.getChannel('logins_logouts_channel');
+            const config = await getGuildConfig(interaction.guild.id);
 
-            if (prefixOpt) config.prefix = prefixOpt;
-            if (verifiedRole) config.verifiedRoleId = verifiedRole.id;
-            if (unverifiedRole) config.unverifiedRoleId = unverifiedRole.id;
-            if (staffRole) config.staffRoleId = staffRole.id;
-            if (modRole) config.modRoleId = modRole.id;
-            if (onBreakRole) config.onBreakRoleId = onBreakRole.id;
-            if (verifyChan) config.verificationChannelId = verifyChan.id;
-            if (welcomeChan) config.welcomeChannelId = welcomeChan.id;
-            if (levelsChan) config.levelsChannelId = levelsChan.id;
-            if (reportsChan) config.reportsChannelId = reportsChan.id;
-            if (staffBreaksChan) config.staffBreaksChannelId = staffBreaksChan.id;
-            if (logsChan) config.logsChannelId = logsChan.id;
-            if (loginsLogoutsChan) config.loginsLogoutsChannelId = loginsLogoutsChan.id;
-
-            const setupEmbed = new EmbedBuilder()
-                .setTitle('⚙️ Server Setup Updated')
+            const settingsEmbed = new EmbedBuilder()
+                .setTitle('⚙️ Server Settings & Configuration')
+                .setDescription('Below is the current server configuration, organized by category.')
                 .setColor('#00FF7F')
                 .addFields(
-                    { name: 'Command Prefix', value: `\`${config.prefix}\``, inline: true },
-                    { name: 'Verified Role', value: config.verifiedRoleId ? `<@&${config.verifiedRoleId}>` : 'Not Set', inline: true },
-                    { name: 'Unverified Role', value: config.unverifiedRoleId ? `<@&${config.unverifiedRoleId}>` : 'Not Set', inline: true },
-                    { name: 'Staff Role', value: config.staffRoleId ? `<@&${config.staffRoleId}>` : 'Not Set', inline: true },
-                    { name: 'Moderation Role', value: config.modRoleId ? `<@&${config.modRoleId}>` : 'Not Set', inline: true },
-                    { name: 'On-Break Role', value: config.onBreakRoleId ? `<@&${config.onBreakRoleId}>` : 'Not Set', inline: true },
-                    { name: 'Verification Channel', value: config.verificationChannelId ? `<#${config.verificationChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Welcome Channel', value: config.welcomeChannelId ? `<#${config.welcomeChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Levels Channel', value: config.levelsChannelId ? `<#${config.levelsChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Reports Channel', value: config.reportsChannelId ? `<#${config.reportsChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Staff Breaks Channel', value: config.staffBreaksChannelId ? `<#${config.staffBreaksChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Logs Channel', value: config.logsChannelId ? `<#${config.logsChannelId}>` : 'Not Set', inline: true },
-                    { name: 'Logins/Logouts Channel', value: config.loginsLogoutsChannelId ? `<#${config.loginsLogoutsChannelId}>` : 'Not Set', inline: true }
-                );
+                    { 
+                        name: '🌐 General', 
+                        value: `• **Command Prefix:** \`${config.prefix}\``, 
+                        inline: false 
+                    },
+                    { 
+                        name: '🛡️ Moderation', 
+                        value: `• **Staff Role:** ${config.staffRoleId ? `<@&${config.staffRoleId}>` : 'Not Set'}\n• **Moderation Role:** ${config.modRoleId ? `<@&${config.modRoleId}>` : 'Not Set'}\n• **On-Break Role:** ${config.onBreakRoleId ? `<@&${config.onBreakRoleId}>` : 'Not Set'}\n• **Reports Channel:** ${config.reportsChannelId ? `<#${config.reportsChannelId}>` : 'Not Set'}`, 
+                        inline: false 
+                    },
+                    { 
+                        name: '✅ Verification', 
+                        value: `• **Verified Role:** ${config.verifiedRoleId ? `<@&${config.verifiedRoleId}>` : 'Not Set'}\n• **Unverified Role:** ${config.unverifiedRoleId ? `<@&${config.unverifiedRoleId}>` : 'Not Set'}\n• **Verification Channel:** ${config.verificationChannelId ? `<#${config.verificationChannelId}>` : 'Not Set'}`, 
+                        inline: false 
+                    },
+                    { 
+                        name: '🎉 Welcome', 
+                        value: `• **Welcome Channel:** ${config.welcomeChannelId ? `<#${config.welcomeChannelId}>` : 'Not Set'}\n• **Levels Channel:** ${config.levelsChannelId ? `<#${config.levelsChannelId}>` : 'Not Set'}`, 
+                        inline: false 
+                    },
+                    { 
+                        name: '📋 Logs', 
+                        value: `• **Logs Channel:** ${config.logsChannelId ? `<#${config.logsChannelId}>` : 'Not Set'}\n• **Logins/Logouts Channel:** ${config.loginsLogoutsChannelId ? `<#${config.loginsLogoutsChannelId}>` : 'Not Set'}\n• **Staff Breaks Channel:** ${config.staffBreaksChannelId ? `<#${config.staffBreaksChannelId}>` : 'Not Set'}\n• **Daily Summaries:** ${config.logSettings.dailySummary ? '✅ Enabled' : '❌ Disabled'}\n• **Member Events:** ${config.logSettings.memberEvents ? '✅ Enabled' : '❌ Disabled'}\n• **Mod Actions:** ${config.logSettings.modActions ? '✅ Enabled' : '❌ Disabled'}`, 
+                        inline: false 
+                    }
+                )
+                .setFooter({ text: 'Volleyball Revengers • Server Settings' })
+                .setTimestamp();
 
-            return await interaction.editReply({ embeds: [setupEmbed] });
+            return await interaction.editReply({ embeds: [settingsEmbed] });
         }
-
+                    
         else if (commandName === 'report') {
             if (!checkPermission(interaction, 'verified')) {
                 return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
