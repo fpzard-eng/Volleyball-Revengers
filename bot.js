@@ -883,7 +883,9 @@ client.on('interactionCreate', async interaction => {
             return await interaction.showModal(modal);
         }
 
-        const category = interaction.customId.replace('settings_cat_', '');
+        let category = interaction.customId.replace('settings_cat_', '');
+        if (interaction.customId === 'settings_home') category = 'main';
+        
         const embed = generateSettingsEmbed(dashboardConfig, category);
         const rows = generateSettingsActionRows();
 
@@ -961,20 +963,21 @@ client.on('interactionCreate', async interaction => {
                 return await interaction.editReply({ content: '❌ You must be Verified to use this command.' });
             }
 
-            const key = `${interaction.guild.id}_${interaction.user.id}`;
-            const data = userXP.get(key) || { xp: 0, level: 0 };
+            const guildId = interaction.guild.id;
+            const userId = interaction.user.id;
+            const data = await getUserXP(guildId, userId);
             const neededXP = getXPForLevel(data.level);
 
             const serverEntries = [];
-            userXP.forEach((val, k) => {
+            userXPCache.forEach((val, k) => {
                 const [gId, uId] = k.split('_');
-                if (gId === interaction.guild.id) {
+                if (gId === guildId) {
                     serverEntries.push({ userId: uId, ...val });
                 }
             });
 
             serverEntries.sort((a, b) => b.level !== a.level ? b.level - a.level : b.xp - a.xp);
-            const userRankPos = serverEntries.findIndex(e => e.userId === interaction.user.id);
+            const userRankPos = serverEntries.findIndex(e => e.userId === userId);
             const formattedRank = userRankPos !== -1 ? `#${userRankPos + 1}` : 'Unranked';
 
             const levelCardEmbed = new EmbedBuilder()
@@ -1002,7 +1005,7 @@ client.on('interactionCreate', async interaction => {
 
             if (boardType === 'Level') {
                 const serverEntries = [];
-                userXP.forEach((val, k) => {
+                userXPCache.forEach((val, k) => {
                     const [gId, uId] = k.split('_');
                     if (gId === interaction.guild.id) {
                         serverEntries.push({ userId: uId, ...val });
@@ -1623,8 +1626,8 @@ client.on('interactionCreate', async interaction => {
                 return await interaction.editReply({ content: '❌ Only the Server Owner can manage server settings.' });
             }
 
-            const config = await getGuildConfig(interaction.guild.id);
-            const embed = generateSettingsEmbed(config, 'main');
+            const settingsConfig = await getGuildConfig(interaction.guild.id);
+            const embed = generateSettingsEmbed(settingsConfig, 'main');
             const rows = generateSettingsActionRows();
 
             return await interaction.editReply({ embeds: [embed], components: rows });
