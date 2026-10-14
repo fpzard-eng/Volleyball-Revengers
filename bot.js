@@ -18,9 +18,9 @@ const {
     TextInputStyle,
     RoleSelectMenuBuilder,
     ChannelSelectMenuBuilder,
+    StringSelectMenuBuilder,
     MessageFlags
 } = require('discord.js');
-
 const PlayFab = require('playfab-sdk');
 const PlayFabServer = PlayFab.PlayFabServer;
 
