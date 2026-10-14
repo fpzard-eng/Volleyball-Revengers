@@ -571,22 +571,33 @@ function generateSettingsActionRows() {
 
 function generateRoleSelectRow() {
     return new ActionRowBuilder().addComponents(
-        new RoleSelectMenuBuilder()
-            .setCustomId('settings_select_role')
-            .setPlaceholder('🛡️ Select a role type to configure...')
-            .setMinValues(1)
-            .setMaxValues(1)
+        new StringSelectMenuBuilder()
+            .setCustomId('settings_target_role_type')
+            .setPlaceholder('1️⃣ Choose which role to configure first...')
+            .addOptions([
+                { label: 'Verified Role', value: 'verified', emoji: '✅' },
+                { label: 'Unverified Role', value: 'unverified', emoji: '❌' },
+                { label: 'Staff Role', value: 'staff', emoji: '🛡️' },
+                { label: 'Moderation Role', value: 'mod', emoji: '⚔️' },
+                { label: 'On-Break Role', value: 'break', emoji: '🏖️' }
+            ])
     );
 }
 
 function generateChannelSelectRow() {
     return new ActionRowBuilder().addComponents(
-        new ChannelSelectMenuBuilder()
-            .setCustomId('settings_select_channel')
-            .setPlaceholder('📺 Select a channel type to configure...')
-            .setMinValues(1)
-            .setMaxValues(1)
-            .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
+        new StringSelectMenuBuilder()
+            .setCustomId('settings_target_channel_type')
+            .setPlaceholder('1️⃣ Choose which channel to configure first...')
+            .addOptions([
+                { label: 'Verification Channel', value: 'verification', emoji: '📥' },
+                { label: 'Welcome Channel', value: 'welcome', emoji: '🎉' },
+                { label: 'Levels Channel', value: 'levels', emoji: '⭐' },
+                { label: 'Reports Channel', value: 'reports', emoji: '🚨' },
+                { label: 'Staff Breaks Channel', value: 'breaks', emoji: '🏖️' },
+                { label: 'General Logs Channel', value: 'logs', emoji: '📋' },
+                { label: 'Logins/Logouts Channel', value: 'logins', emoji: '🎮' }
+            ])
     );
 }
 
@@ -880,23 +891,6 @@ client.on('interactionCreate', async interaction => {
         return;
     }
     
-    if (interaction.isButton() && interaction.customId.startsWith('settings_')) {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator) && interaction.guild.ownerId !== interaction.user.id) {
-            return await interaction.reply({ content: '❌ Only administrators can interact with this settings menu.', flags: [MessageFlags.Ephemeral] });
-        }
-
-        const dashboardConfig = await getGuildConfig(interaction.guild.id);
-
-        let category = interaction.customId.replace('settings_cat_', '');
-        if (interaction.customId === 'settings_home') category = 'main';
-        
-        const embed = generateSettingsEmbed(dashboardConfig, category);
-        const rows = generateSettingsActionRows();
-
-        await interaction.update({ embeds: [embed], components: rows }).catch(() => {});
-        return;
-    }
-
     if (interaction.isStringSelectMenu() && interaction.customId === 'settings_nav_select') {
         const selectedCat = interaction.values[0];
         const dashboardConfig = await getGuildConfig(interaction.guild.id);
@@ -912,43 +906,70 @@ client.on('interactionCreate', async interaction => {
         await interaction.update({ embeds: [embed], components: rows }).catch(() => {});
         return;
     }
+    
+    if (interaction.isStringSelectMenu() && interaction.customId === 'settings_target_role_type') {
+        const roleType = interaction.values[0];
+        const rolePickerRow = new ActionRowBuilder().addComponents(
+            new RoleSelectMenuBuilder()
+                .setCustomId(`save_role_picker_${roleType}`)
+                .setPlaceholder(`2️⃣ Select the Discord role for [${roleType.toUpperCase()}]...`)
+                .setMinValues(1)
+                .setMaxValues(1)
+        );
 
-    if (interaction.isRoleSelectMenu() && interaction.customId === 'settings_select_role') {
-        const selectedRoleId = interaction.values[0];
-        
-        const modal = new ModalBuilder()
-            .setCustomId(`save_role_modal_${selectedRoleId}`)
-            .setTitle('Assign Selected Role');
-
-        const roleTypeInput = new TextInputBuilder()
-            .setCustomId('role_type_key')
-            .setLabel('Role Type (verified/unverified/staff/mod/break)')
-            .setStyle(TextInputStyle.Short)
-            .setPlaceholder('Type one of: verified, unverified, staff, mod, break')
-            .setRequired(true);
-
-        modal.addComponents(new ActionRowBuilder().addComponents(roleTypeInput));
-        return await interaction.showModal(modal);
+        await interaction.update({ content: `🛡️ Now pick the role for **${roleType}** from the dropdown below:`, components: [rolePickerRow], embeds: [] }).catch(() => {});
+        return;
     }
+    
+    if (interaction.isStringSelectMenu() && interaction.customId === 'settings_target_channel_type') {
+        const channelType = interaction.values[0];
+        const channelPickerRow = new ActionRowBuilder().addComponents(
+            new ChannelSelectMenuBuilder()
+                .setCustomId(`save_channel_picker_${channelType}`)
+                .setPlaceholder(`2️⃣ Select the channel for [${channelType.toUpperCase()}]...`)
+                .setMinValues(1)
+                .setMaxValues(1)
+                .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
+        );
 
-    if (interaction.isChannelSelectMenu() && interaction.customId === 'settings_select_channel') {
-        const selectedChannelId = interaction.values[0];
-
-        const modal = new ModalBuilder()
-            .setCustomId(`save_channel_modal_${selectedChannelId}`)
-            .setTitle('Assign Selected Channel');
-
-        const channelTypeInput = new TextInputBuilder()
-            .setCustomId('channel_type_key')
-            .setLabel('Channel Type (verification/welcome/levels/reports/breaks/logs/logins)')
-            .setStyle(TextInputStyle.Short)
-            .setPlaceholder('Type: verification, welcome, levels, reports, breaks, logs, logins')
-            .setRequired(true);
-
-        modal.addComponents(new ActionRowBuilder().addComponents(channelTypeInput));
-        return await interaction.showModal(modal);
+        await interaction.update({ content: `📺 Now pick the channel for **${channelType}** from the dropdown below:`, components: [channelPickerRow], embeds: [] }).catch(() => {});
+        return;
     }
+    
+    if (interaction.isRoleSelectMenu() && interaction.customId.startsWith('save_role_picker_')) {
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+        const roleType = interaction.customId.replace('save_role_picker_', '');
+        const roleId = interaction.values[0];
 
+        const settingsConfig = await getGuildConfig(interaction.guild.id);
+        if (roleType === 'verified') settingsConfig.verifiedRoleId = roleId;
+        else if (roleType === 'unverified') settingsConfig.unverifiedRoleId = roleId;
+        else if (roleType === 'staff') settingsConfig.staffRoleId = roleId;
+        else if (roleType === 'mod') settingsConfig.modRoleId = roleId;
+        else if (roleType === 'break') settingsConfig.onBreakRoleId = roleId;
+
+        await saveGuildConfig(interaction.guild.id, settingsConfig);
+        return await interaction.editReply({ content: `✅ Successfully assigned role <@&${roleId}> to **${roleType}**!` });
+    }
+    
+    if (interaction.isChannelSelectMenu() && interaction.customId.startsWith('save_channel_picker_')) {
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+        const channelType = interaction.customId.replace('save_channel_picker_', '');
+        const channelId = interaction.values[0];
+
+        const settingsConfig = await getGuildConfig(interaction.guild.id);
+        if (channelType === 'verification') settingsConfig.verificationChannelId = channelId;
+        else if (channelType === 'welcome') settingsConfig.welcomeChannelId = channelId;
+        else if (channelType === 'levels') settingsConfig.levelsChannelId = channelId;
+        else if (channelType === 'reports') settingsConfig.reportsChannelId = channelId;
+        else if (channelType === 'breaks') settingsConfig.staffBreaksChannelId = channelId;
+        else if (channelType === 'logs') settingsConfig.logsChannelId = channelId;
+        else if (channelType === 'logins') settingsConfig.loginsLogoutsChannelId = channelId;
+
+        await saveGuildConfig(interaction.guild.id, settingsConfig);
+        return await interaction.editReply({ content: `✅ Successfully assigned channel <#${channelId}> to **${channelType}**!` });
+    }
+    
     if (interaction.isModalSubmit()) {
         if (interaction.customId.startsWith('save_role_modal_')) {
             await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
