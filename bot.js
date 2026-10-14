@@ -675,10 +675,10 @@ client.on('messageCreate', async message => {
     const userId = message.author.id;
     const key = `${guildId}_${userId}`;
 
-    let currentCount = (userMessageCounts.get(key) || 0) + 1;
+    let currentCount = (userMessageCount.get(key) || 0) + 1;
 
     if (currentCount >= 3) {
-        userMessageCounts.set(key, 0);
+        userMessageCount.set(key, 0);
 
         let userData = await getUserXP(guildId, userId);
         const gainedXP = Math.floor(Math.random() * 11) + 15;
