@@ -426,6 +426,42 @@ function getPlayFabUserByDiscordId(discordId) {
     });
 }
 
+async function getGuildConfig(guildId) {
+    if (guildSettingsCache.has(guildId)) {
+        return guildSettingsCache.get(guildId);
+    }
+
+    return new Promise((resolve) => {
+        PlayFabServer.GetTitleInternalData({
+            Keys: [`GuildConfig_${guildId}`]
+        }, (error, result) => {
+            let config = getDefaultConfig();
+            if (!error && result?.data?.Data?.[`GuildConfig_${guildId}`]) {
+                try {
+                    config = { ...config, ...JSON.parse(result.data.Data[`GuildConfig_${guildId}`]) };
+                } catch (e) {
+                    console.error('[Config Parse Error]:', e);
+                }
+            }
+            guildSettingsCache.set(guildId, config);
+            resolve(config);
+        });
+    });
+}
+
+async function saveGuildConfig(guildId, config) {
+    guildSettingsCache.set(guildId, config);
+    return new Promise((resolve) => {
+        PlayFabServer.SetTitleInternalData({
+            Key: `GuildConfig_${guildId}`,
+            Value: JSON.stringify(config)
+        }, (error) => {
+            if (error) console.error(`[PlayFab Guild Config Save Error]:`, error);
+            resolve(!error);
+        });
+    });
+}
+
 async function sendGuildLog(guild, logType, embed) {
     const config = getGuildConfig(guild.id);
     if (!config.logsChannelId) return;
@@ -609,7 +645,7 @@ client.on('messageCreate', async message => {
 
         if (userData.xp >= requiredXP) {
             userData.level += 1;
-            userData.xp = 0; // Reset XP on level up
+            userData.xp = 0;
             await saveUserXP(guildId, userId, userData);
 
             const config = await getGuildConfig(guildId);
