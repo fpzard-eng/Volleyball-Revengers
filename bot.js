@@ -765,8 +765,11 @@ client.on('guildMemberRemove', async member => {
 });
 
 client.on('interactionCreate', async interaction => {
-    const config = getGuildConfig(interaction.guild?.id || '');
+    const config = await getGuildConfig(interaction.guild?.id || '');
     
+    // ===================================================================
+    // 1. Verification Button Handler
+    // ===================================================================
     if (interaction.isButton() && interaction.customId === 'verify_member_btn') {
         const modal = new ModalBuilder()
             .setCustomId('verification_modal')
@@ -786,6 +789,9 @@ client.on('interactionCreate', async interaction => {
         return;
     }
 
+    // ===================================================================
+    // 2. Verification Modal Submit Handler
+    // ===================================================================
     if (interaction.isModalSubmit() && interaction.customId === 'verification_modal') {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
@@ -850,6 +856,9 @@ client.on('interactionCreate', async interaction => {
         return;
     }
     
+    // ===================================================================
+    // 3. Settings Dashboard Button Handler
+    // ===================================================================
     if (interaction.isButton() && interaction.customId.startsWith('settings_')) {
         if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator) && interaction.guild.ownerId !== interaction.user.id) {
             return await interaction.reply({ content: '❌ Only administrators can interact with this settings menu.', flags: [MessageFlags.Ephemeral] });
@@ -882,6 +891,9 @@ client.on('interactionCreate', async interaction => {
         return;
     }
 
+    // ===================================================================
+    // 4. Settings Modal Submit Handler
+    // ===================================================================
     if (interaction.isModalSubmit() && interaction.customId === 'settings_prefix_modal') {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
@@ -897,43 +909,13 @@ client.on('interactionCreate', async interaction => {
         return await interaction.editReply({ content: `✅ Command prefix successfully updated to \`${newPrefix}\`!` });
     }
     
+    // ===================================================================
+    // 5. Slash Command Handler
+    // ===================================================================
     if (!interaction.isChatInputCommand()) return;
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => {});
 
     const { commandName } = interaction;
-    
-    try {
-        if (commandName === 'settings') {
-            if (!checkPermission(interaction, 'owner')) {
-                return await interaction.editReply({ content: '❌ Only the Server Owner can manage server settings.' });
-            }
-
-            const settingsConfig = await getGuildConfig(interaction.guild.id);
-            const embed = generateSettingsEmbed(settingsConfig, 'main');
-            const rows = generateSettingsActionRows();
-
-            return await interaction.editReply({ embeds: [embed], components: rows });
-        }
-            
-        else {
-            console.warn(`[Command Handler Missing] /${commandName} was registered but has no handler.`);
-            return await interaction.editReply({
-                content: `⚠️ The /${commandName} command is registered, but its functionality is not implemented in this bot version yet.`
-            });
-        }
-
-    } catch (cmdErr) {
-        console.error(`[Command Error] ${commandName}:`, cmdErr);
-        await interaction.editReply({ content: 'An unexpected error occurred while executing this command.' }).catch(() => {});
-    }
-});
-
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand()) return;
-    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => {});
-
-    const { commandName } = interaction;
-    const config = getGuildConfig(interaction.guild?.id || '');
     
     try {
         if (commandName === 'about') {
@@ -1731,5 +1713,5 @@ else {
         await interaction.editReply({ content: 'An unexpected error occurred while executing this command.' }).catch(() => {});
     }
 });
-
+   
 client.login(process.env.DISCORD_BOT_TOKEN);
