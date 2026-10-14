@@ -40,6 +40,7 @@ const client = new Client({
 });
 
 const xpCooldowns = new Set();
+const userMessageCounts = new Map();
 const guildSettingsCache = new Map();
 const userXPCache = new Map();
 
@@ -669,15 +670,16 @@ process.on('uncaughtException', error => console.error('[Uncaught Exception]:', 
 
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.guild) return;
-
+    
     const guildId = message.guild.id;
     const userId = message.author.id;
     const key = `${guildId}_${userId}`;
 
-    if (!xpCooldowns.has(key)) {
-        xpCooldowns.add(key);
-        setTimeout(() => xpCooldowns.delete(key), 15000);
-
+    let currentCount = (userMessageCounts.get(key) || 0) + 1;
+    
+    if (currentCount >= 3) {
+        userMessageCounts.set(key, 0);
+        
         let userData = await getUserXP(guildId, userId);
         const gainedXP = Math.floor(Math.random() * 11) + 15;
         userData.xp += gainedXP;
