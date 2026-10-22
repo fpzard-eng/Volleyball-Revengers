@@ -13,10 +13,10 @@
       font-family: system-ui, -apple-system, sans-serif;
     }
 
-    .circle-btn {
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
+    .rect-btn {
+      width: 100px;
+      height: 150px;
+      border-radius: 18px;
       border: 1px solid rgba(255, 255, 255, 0.15);
       background: rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(8px);
@@ -26,28 +26,28 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 12px;
       cursor: pointer;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
       transition: all 0.2s ease-in-out;
     }
 
-    .circle-btn:hover {
+    .rect-btn:hover {
       transform: translateY(-3px) scale(1.03);
       background: rgba(255, 255, 255, 0.15);
       border-color: rgba(255, 255, 255, 0.3);
       box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
     }
 
-    .circle-btn:active {
+    .rect-btn:active {
       transform: translateY(1px) scale(0.98);
       background: rgba(255, 255, 255, 0.05);
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
 
-    .circle-btn svg {
-      width: 38px;
-      height: 38px;
+    .rect-btn svg {
+      width: 42px;
+      height: 42px;
       fill: none;
       stroke: currentColor;
       stroke-width: 2;
@@ -55,22 +55,27 @@
       stroke-linejoin: round;
     }
 
-    .circle-btn span {
+    .rect-btn span {
       font-size: 0.85rem;
       font-weight: 600;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
     }
   </style>
 </head>
 <body>
 
-  <button class="circle-btn">
-    <!-- Speech/Text Bubble Icon -->
+  <button class="rect-btn">
+    <!-- Trophy / Ranked Icon -->
     <svg viewBox="0 0 24 24">
-      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+      <path d="M4 22h16" />
+      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+      <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
     </svg>
-    <span>Social</span>
+    <span>Ranked</span>
   </button>
 
 </body>
